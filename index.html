@@ -181,74 +181,264 @@
     margin: 0;
   }
 
-  /* 角色选择 */
+  /* ===== 拳皇风格选角 ===== */
   #coverSelect.hidden { display: none; }
-  .pick-row {
+  #coverSelect { width: 92vw; max-width: 1180px; padding: 24px 20px; }
+
+  .kof-title-strip {
+    font-family: "Impact", "PingFang SC", sans-serif;
+    font-size: 30px;
+    letter-spacing: 10px;
+    color: #ffdd55;
+    text-shadow: 0 0 14px #ff7733, 3px 3px 0 #8b1a08, -1px -1px 0 #ffb366;
+    margin: 4px 0 6px 0;
+    animation: kofTitleGlow 2.4s ease-in-out infinite alternate;
+  }
+  @keyframes kofTitleGlow {
+    from { filter: drop-shadow(0 0 2px #ff8833); }
+    to   { filter: drop-shadow(0 0 16px #ffdd55); }
+  }
+  .kof-sub-strip {
+    font-size: 12px;
+    letter-spacing: 8px;
+    color: #9a8fc0;
+    margin-bottom: 20px;
+  }
+
+  .kof-stage {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
-    gap: 48px;
-    margin: 32px 0 48px 0;
+    gap: 0;
+    margin: 10px 0 22px 0;
+    position: relative;
   }
-  .pick-side { display: flex; flex-direction: column; align-items: center; }
-  .pick-label {
-    font-size: 24px;
+  .kof-side {
+    position: relative;
+    width: 340px;
+    padding: 18px 18px 14px 18px;
+    border: 3px solid;
+    border-radius: 10px;
+    box-shadow: 0 0 30px -4px currentColor, inset 0 0 24px rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+  }
+  .kof-side.p1 {
+    color: #ff8a30;
+    background:
+      linear-gradient(135deg, rgba(255,138,48,0.22) 0%, rgba(20,8,40,0.85) 55%, rgba(10,4,24,0.9) 100%);
+  }
+  .kof-side.p2 {
+    color: #4cc8ff;
+    background:
+      linear-gradient(225deg, rgba(76,200,255,0.22) 0%, rgba(20,8,40,0.85) 55%, rgba(10,4,24,0.9) 100%);
+  }
+  .kof-side-badge {
+    position: absolute;
+    top: -20px;
+    font-family: "Impact", "PingFang SC", sans-serif;
+    font-size: 22px;
     font-weight: 900;
-    letter-spacing: 6px;
-    margin-bottom: 16px;
+    letter-spacing: 5px;
+    padding: 3px 16px;
+    background: #0a0518;
+    color: currentColor;
     text-shadow: 0 0 12px currentColor;
+    border: 2px solid currentColor;
+    border-radius: 3px;
   }
-  .pick-cards { display: flex; gap: 14px; }
-  .pick-card {
-    width: 120px;
-    padding: 14px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+  .kof-side.p1 .kof-side-badge { left: 14px; }
+  .kof-side.p2 .kof-side-badge { right: 14px; }
+
+  .kof-portrait {
+    position: relative;
+    width: 100%;
+    height: 260px;
+    margin-top: 10px;
+    border: 2px solid currentColor;
+    border-radius: 6px;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.14), rgba(0,0,0,0.5) 70%);
+  }
+  .kof-portrait::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.18) 2px 3px);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .kof-portrait::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .kof-portrait svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 1;
+  }
+  .kof-corner {
+    position: absolute;
+    width: 18px; height: 18px;
+    border: 2px solid currentColor;
+    z-index: 4;
+  }
+  .kof-corner.tl { top: 4px; left: 4px; border-right: 0; border-bottom: 0; }
+  .kof-corner.tr { top: 4px; right: 4px; border-left: 0; border-bottom: 0; }
+  .kof-corner.bl { bottom: 4px; left: 4px; border-right: 0; border-top: 0; }
+  .kof-corner.br { bottom: 4px; right: 4px; border-left: 0; border-top: 0; }
+
+  .kof-name-banner {
+    margin-top: 10px;
+    padding: 6px 0 7px 0;
+    text-align: center;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.10) 50%, transparent 100%);
+    border-top: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+  }
+  .kof-name-en {
+    font-family: "Impact", "PingFang SC", sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow: 0 0 10px currentColor;
+  }
+  .kof-name-cn {
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: #ddd;
+    margin-top: 2px;
+  }
+
+  .kof-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .kof-cell {
+    position: relative;
+    padding: 10px 6px 8px 6px;
+    border: 2px solid rgba(255,255,255,0.18);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.04);
     cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    color: #fff;
+    font-family: inherit;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    color: #fff;
-    font-family: inherit;
-    transition: all 0.15s;
+    gap: 4px;
   }
-  .pick-card:hover {
-    border-color: #ffdd55;
-    transform: translateY(-3px);
-    background: rgba(255, 221, 85, 0.08);
-  }
-  .pick-card.active {
-    border-color: #ff8a30;
-    background: rgba(255, 138, 48, 0.18);
-    box-shadow: 0 0 22px rgba(255, 138, 48, 0.55);
-  }
-  .pick-cards[data-p="p2"] .pick-card.active {
-    border-color: #4cc8ff;
-    background: rgba(76, 200, 255, 0.18);
-    box-shadow: 0 0 22px rgba(76, 200, 255, 0.55);
-  }
-  .pick-card svg {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
+  .kof-cell svg {
+    width: 54px;
+    height: 54px;
+    border-radius: 6px;
     background: #1a1040;
   }
-  .pick-card span {
-    font-size: 14px;
-    letter-spacing: 3px;
+  .kof-cell.naruto-bg svg { background: #d96518; }
+  .kof-cell.doraemon-bg svg { background: #1d7db8; }
+  .kof-cell.xueking-bg svg { background: #5aa8d8; }
+  .kof-cell-name {
+    font-size: 11px;
+    letter-spacing: 2px;
     font-weight: 700;
   }
-  .vs-mark {
-    font-size: 48px;
+  .kof-cell:hover {
+    border-color: #ffdd55;
+    transform: translateY(-2px);
+  }
+  .kof-side.p1 .kof-cell.selected {
+    border-color: #ff8a30;
+    background: rgba(255,138,48,0.18);
+    box-shadow: 0 0 18px rgba(255,138,48,0.55);
+  }
+  .kof-side.p2 .kof-cell.selected {
+    border-color: #4cc8ff;
+    background: rgba(76,200,255,0.18);
+    box-shadow: 0 0 18px rgba(76,200,255,0.55);
+  }
+  .kof-cursor {
+    position: absolute;
+    inset: -4px;
+    border: 3px solid currentColor;
+    border-radius: 8px;
+    pointer-events: none;
+    display: none;
+    animation: kofCursorPulse 0.55s ease-in-out infinite alternate;
+  }
+  .kof-cell.selected .kof-cursor { display: block; }
+  @keyframes kofCursorPulse {
+    from { box-shadow: 0 0 8px currentColor; opacity: 0.9; }
+    to   { box-shadow: 0 0 22px currentColor, 0 0 34px currentColor; opacity: 1; }
+  }
+
+  .kof-ready {
+    margin-top: 10px;
+    text-align: center;
+    font-family: "Impact", "PingFang SC", sans-serif;
+    font-size: 14px;
+    letter-spacing: 5px;
+    color: #ffdd55;
+    animation: kofReadyBlink 0.65s ease-in-out infinite alternate;
+  }
+  @keyframes kofReadyBlink {
+    from { text-shadow: 0 0 4px #ffdd55; opacity: 0.75; }
+    to   { text-shadow: 0 0 14px #ffdd55, 0 0 24px #ff8833; opacity: 1; }
+  }
+
+  .kof-vs-block {
+    position: relative;
+    align-self: center;
+    margin: 0 -28px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .kof-vs-text {
+    font-family: "Impact", "PingFang SC", sans-serif;
+    font-size: 150px;
     font-weight: 900;
-    letter-spacing: 4px;
-    background: linear-gradient(180deg, #ffeb7a, #ff3355);
+    line-height: 1;
+    letter-spacing: -4px;
+    background: linear-gradient(180deg, #ffeb7a 0%, #ffaa33 45%, #ff3355 70%, #8a1020 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 18px rgba(255,138,48,0.6));
+    filter: drop-shadow(0 0 28px rgba(255,80,40,0.85)) drop-shadow(2px 4px 0 rgba(0,0,0,0.9));
+    transform: skewX(-10deg);
+    animation: kofVsFlicker 1.8s ease-in-out infinite;
+  }
+  @keyframes kofVsFlicker {
+    0%, 100% { filter: drop-shadow(0 0 28px rgba(255,80,40,0.85)) drop-shadow(2px 4px 0 rgba(0,0,0,0.9)); }
+    45%, 55% { filter: drop-shadow(0 0 46px rgba(255,230,90,1)) drop-shadow(2px 4px 0 rgba(0,0,0,0.9)); }
+  }
+
+  .cbtn.kof-fight {
+    background: linear-gradient(180deg, #ff5533, #8a1020);
+    border: 2px solid #ffdd55;
+    box-shadow: 0 0 22px rgba(255,80,40,0.7), inset 0 1px 0 rgba(255,255,255,0.35);
+    letter-spacing: 10px;
+    animation: kofFightPulse 0.9s ease-in-out infinite alternate;
+  }
+  @keyframes kofFightPulse {
+    from { box-shadow: 0 0 16px rgba(255,80,40,0.6), inset 0 1px 0 rgba(255,255,255,0.35); transform: translateY(0); }
+    to   { box-shadow: 0 0 34px rgba(255,220,80,0.95), inset 0 1px 0 rgba(255,255,255,0.5); transform: translateY(-1px); }
+  }
+
+  @media (max-width: 980px) {
+    .kof-side { width: 280px; padding: 14px 12px; }
+    .kof-portrait { height: 220px; }
+    .kof-vs-text { font-size: 96px; }
+    .kof-vs-block { margin: 0 -16px; }
   }
   /* PVP 时隐藏左上角角色切换器（锁定角色） */
   .char-switcher.hidden-pvp { display: none; }
@@ -337,6 +527,7 @@
   }
   .avatar-card.naruto-bg svg { background: #d96518; }
   .avatar-card.doraemon-bg svg { background: #1d7db8; }
+  .avatar-card.xueking-bg svg { background: #5aa8d8; }
   .avatar-card span {
     font-size: 12px;
     letter-spacing: 2px;
@@ -566,12 +757,25 @@
     </div>
 
     <div class="cover-content hidden" id="coverSelect">
-      <div class="cover-badge">选 择 角 色</div>
-      <div class="pick-row">
-        <div class="pick-side">
-          <div class="pick-label" style="color:#ff8a30;">P 1</div>
-          <div class="pick-cards" data-p="p1">
-            <button class="pick-card active" data-char="naruto">
+      <div class="kof-title-strip">SELECT YOUR FIGHTER</div>
+      <div class="kof-sub-strip">拳 皇 · INSERT COIN · 请 选 择</div>
+
+      <div class="kof-stage">
+        <!-- P1 阵营 -->
+        <div class="kof-side p1" data-side="p1">
+          <div class="kof-side-badge">P 1</div>
+          <div class="kof-portrait" id="kofPortraitP1">
+            <span class="kof-corner tl"></span>
+            <span class="kof-corner tr"></span>
+            <span class="kof-corner bl"></span>
+            <span class="kof-corner br"></span>
+          </div>
+          <div class="kof-name-banner">
+            <div class="kof-name-en" id="kofNameEnP1">NARUTO</div>
+            <div class="kof-name-cn" id="kofNameCnP1">鸣 人</div>
+          </div>
+          <div class="kof-grid" data-p="p1">
+            <button class="kof-cell selected naruto-bg" data-char="naruto">
               <svg viewBox="0 0 40 40">
                 <polygon points="6,14 9,2 13,12 16,0 20,10 24,0 27,12 31,2 34,14" fill="#ffd91f"/>
                 <circle cx="20" cy="24" r="12" fill="#ffd9a8"/>
@@ -579,12 +783,11 @@
                 <rect x="12" y="14.5" width="16" height="3.5" fill="#b8b8b8"/>
                 <rect x="15" y="22" width="2" height="2" fill="#111"/>
                 <rect x="23" y="22" width="2" height="2" fill="#111"/>
-                <line x1="8" y1="26" x2="14" y2="26" stroke="#5a3a1a" stroke-width="1"/>
-                <line x1="26" y1="26" x2="32" y2="26" stroke="#5a3a1a" stroke-width="1"/>
               </svg>
-              <span>鸣 人</span>
+              <span class="kof-cell-name">鸣 人</span>
+              <span class="kof-cursor"></span>
             </button>
-            <button class="pick-card" data-char="doraemon">
+            <button class="kof-cell doraemon-bg" data-char="doraemon">
               <svg viewBox="0 0 40 40">
                 <circle cx="20" cy="20" r="16" fill="#30a8e8"/>
                 <ellipse cx="20" cy="22" rx="11" ry="10" fill="#fff"/>
@@ -595,15 +798,46 @@
                 <circle cx="20" cy="20" r="2.5" fill="#e63946"/>
                 <path d="M16 25 Q20 28 24 25" stroke="#111" fill="none" stroke-width="1.2"/>
               </svg>
-              <span>哆 啦 A 梦</span>
+              <span class="kof-cell-name">哆 啦 A 梦</span>
+              <span class="kof-cursor"></span>
+            </button>
+            <button class="kof-cell xueking-bg" data-char="xueking">
+              <svg viewBox="0 0 40 40">
+                <circle cx="20" cy="26" r="12" fill="#ffffff"/>
+                <circle cx="20" cy="16" r="9" fill="#ffffff"/>
+                <polygon points="11,8 14,2 16,7 20,0 24,7 26,2 29,8" fill="#ffd91f" stroke="#b88a10" stroke-width="0.8"/>
+                <circle cx="17" cy="16" r="1.3" fill="#111"/>
+                <circle cx="23" cy="16" r="1.3" fill="#111"/>
+                <polygon points="20,17 27,18 20,19" fill="#ff7733"/>
+                <path d="M8 20 L4 18 L6 28 L10 26 Z" fill="#c9204a"/>
+              </svg>
+              <span class="kof-cell-name">雪 王</span>
+              <span class="kof-cursor"></span>
             </button>
           </div>
+          <div class="kof-ready">● R E A D Y</div>
         </div>
-        <div class="vs-mark">VS</div>
-        <div class="pick-side">
-          <div class="pick-label" style="color:#4cc8ff;">P 2</div>
-          <div class="pick-cards" data-p="p2">
-            <button class="pick-card" data-char="naruto">
+
+        <!-- VS -->
+        <div class="kof-vs-block">
+          <div class="kof-vs-text">VS</div>
+        </div>
+
+        <!-- P2 阵营 -->
+        <div class="kof-side p2" data-side="p2">
+          <div class="kof-side-badge">P 2</div>
+          <div class="kof-portrait" id="kofPortraitP2">
+            <span class="kof-corner tl"></span>
+            <span class="kof-corner tr"></span>
+            <span class="kof-corner bl"></span>
+            <span class="kof-corner br"></span>
+          </div>
+          <div class="kof-name-banner">
+            <div class="kof-name-en" id="kofNameEnP2">DORAEMON</div>
+            <div class="kof-name-cn" id="kofNameCnP2">哆 啦 A 梦</div>
+          </div>
+          <div class="kof-grid" data-p="p2">
+            <button class="kof-cell naruto-bg" data-char="naruto">
               <svg viewBox="0 0 40 40">
                 <polygon points="6,14 9,2 13,12 16,0 20,10 24,0 27,12 31,2 34,14" fill="#ffd91f"/>
                 <circle cx="20" cy="24" r="12" fill="#ffd9a8"/>
@@ -611,12 +845,11 @@
                 <rect x="12" y="14.5" width="16" height="3.5" fill="#b8b8b8"/>
                 <rect x="15" y="22" width="2" height="2" fill="#111"/>
                 <rect x="23" y="22" width="2" height="2" fill="#111"/>
-                <line x1="8" y1="26" x2="14" y2="26" stroke="#5a3a1a" stroke-width="1"/>
-                <line x1="26" y1="26" x2="32" y2="26" stroke="#5a3a1a" stroke-width="1"/>
               </svg>
-              <span>鸣 人</span>
+              <span class="kof-cell-name">鸣 人</span>
+              <span class="kof-cursor"></span>
             </button>
-            <button class="pick-card active" data-char="doraemon">
+            <button class="kof-cell selected doraemon-bg" data-char="doraemon">
               <svg viewBox="0 0 40 40">
                 <circle cx="20" cy="20" r="16" fill="#30a8e8"/>
                 <ellipse cx="20" cy="22" rx="11" ry="10" fill="#fff"/>
@@ -627,15 +860,31 @@
                 <circle cx="20" cy="20" r="2.5" fill="#e63946"/>
                 <path d="M16 25 Q20 28 24 25" stroke="#111" fill="none" stroke-width="1.2"/>
               </svg>
-              <span>哆 啦 A 梦</span>
+              <span class="kof-cell-name">哆 啦 A 梦</span>
+              <span class="kof-cursor"></span>
+            </button>
+            <button class="kof-cell xueking-bg" data-char="xueking">
+              <svg viewBox="0 0 40 40">
+                <circle cx="20" cy="26" r="12" fill="#ffffff"/>
+                <circle cx="20" cy="16" r="9" fill="#ffffff"/>
+                <polygon points="11,8 14,2 16,7 20,0 24,7 26,2 29,8" fill="#ffd91f" stroke="#b88a10" stroke-width="0.8"/>
+                <circle cx="17" cy="16" r="1.3" fill="#111"/>
+                <circle cx="23" cy="16" r="1.3" fill="#111"/>
+                <polygon points="20,17 27,18 20,19" fill="#ff7733"/>
+                <path d="M8 20 L4 18 L6 28 L10 26 Z" fill="#c9204a"/>
+              </svg>
+              <span class="kof-cell-name">雪 王</span>
+              <span class="kof-cursor"></span>
             </button>
           </div>
+          <div class="kof-ready">● R E A D Y</div>
         </div>
       </div>
+
       <div class="cover-buttons">
-        <button class="cbtn" id="btnConfirmPick">
+        <button class="cbtn kof-fight" id="btnConfirmPick">
           <span class="cbtn-icon">⚔</span>
-          <span>开 打!</span>
+          <span>F I G H T !</span>
         </button>
         <button class="cbtn cbtn-secondary" id="btnBackCover">
           <span>← 返 回</span>
@@ -679,6 +928,20 @@
             <line x1="26" y1="22" x2="33" y2="22" stroke="#111" stroke-width="1"/>
           </svg>
           <span>哆 啦 A 梦</span>
+        </button>
+        <button class="avatar-card xueking-bg" data-char="xueking">
+          <svg viewBox="0 0 40 40">
+            <circle cx="20" cy="26" r="12" fill="#ffffff"/>
+            <circle cx="20" cy="16" r="9" fill="#ffffff"/>
+            <polygon points="11,8 14,2 16,7 20,0 24,7 26,2 29,8" fill="#ffd91f" stroke="#b88a10" stroke-width="0.8"/>
+            <circle cx="20" cy="5" r="1.3" fill="#e63946"/>
+            <circle cx="17" cy="16" r="1.3" fill="#111"/>
+            <circle cx="23" cy="16" r="1.3" fill="#111"/>
+            <polygon points="20,17 27,18 20,19" fill="#ff7733"/>
+            <path d="M18 20 Q20 22 22 20" stroke="#c9204a" fill="none" stroke-width="1.1"/>
+            <path d="M8 20 L4 18 L6 28 L10 26 Z" fill="#c9204a"/>
+          </svg>
+          <span>雪 王</span>
         </button>
       </div>
     </div>
@@ -737,6 +1000,12 @@ const skillConfigs = {
     { name: "时空暂停",  key: "l", cd: 15000, icon: "⏸" },
     { name: "铜锣烧防御",key: "u", cd: 10000, icon: "🥮" },
   ],
+  xueking: [
+    { name: "丢冰淇淋", key: "j", cd: 2000,  icon: "🍦" },
+    { name: "下冰雹",   key: "k", cd: 5000,  icon: "❄" },
+    { name: "飞天",     key: "l", cd: 10000, icon: "🕊" },
+    { name: "冰甲",     key: "u", cd: 10000, icon: "🛡" },
+  ],
 };
 
 const keys = {};
@@ -757,6 +1026,7 @@ function handleP2Attack() {
   if (p2.stunT > 0 || p2.downT > 0) return;
   if (performance.now() < timeFrozenUntil) return;
   if (p2.char === "doraemon") handleDoraemonAttack(p2);
+  else if (p2.char === "xueking") handleSnowkingAttack(p2);
   else handleNarutoAttack(p2);
 }
 
@@ -772,6 +1042,10 @@ function handleP2SkillKey(idx) {
 }
 
 function castP2Skill(idx) {
+  if (p2.char === "xueking") {
+    castSnowkingSkill(idx, p2, player, true);
+    return;
+  }
   if (idx === 0) {
     // P2 任意门
     const offset = 80;
@@ -808,9 +1082,12 @@ function castP2Skill(idx) {
       }
     }
   } else if (idx === 1) {
-    // P2 手电筒（对 P1 造 DoT）
-    p2.flashlightEnd = performance.now() + 2000;
+    // P2 手电筒：1s 前摇（霸体）+ 2s 圆柱光束（半屏），每 20ms 60 伤害
+    const castNow = performance.now();
+    p2.flashlightStart = castNow + 1000;
+    p2.flashlightEnd = castNow + 3000;
     p2.flashlightLastTick = 0;
+    p2.invincibleUntil = Math.max(p2.invincibleUntil || 0, castNow + 1000);
   } else if (idx === 2) {
     // P2 时空暂停：冻结 P1
     p1FrozenUntil = performance.now() + 3000;
@@ -834,7 +1111,7 @@ function castP2Skill(idx) {
 addEventListener("keydown", e => {
   const k = e.key === " " ? "space" : e.key.toLowerCase();
   if (k === "space") e.preventDefault();
-  const p1Blocked = matchEnded || performance.now() < p1FrozenUntil;
+  const p1Blocked = matchEnded || performance.now() < p1FrozenUntil || player.downT > 0 || player.stunT > 0;
   if (!keys[k] && !p1Blocked) {
     if (k === "space") {
       if (inAerial()) fireManualAerialShot();
@@ -858,6 +1135,7 @@ const skills = skillConfigs.naruto.map(c => ({ ...c, ready: 0 }));
 
 function applyCharacter(name) {
   selectedChar = name;
+  player.char = name;
   const cfg = skillConfigs[name];
   // 更新 skills 数据
   skills.length = 0;
@@ -881,12 +1159,17 @@ function applyCharacter(name) {
   player.thunderT = 0;
   player.atkT = 0;
   player.atkType = 0;
+  player.arcT = 0;
+  player.arcHit = false;
+  player.flashlightStart = 0;
+  player.flashlightEnd = 0;
   clones.length = 0;
   timeFrozenUntil = 0;
   shieldActiveUntil = 0;
 }
 
 const player = {
+  char: "naruto",
   x: 200, y: GROUND, vx: 0, vy: 0,
   w: 48, h: 80,
   facing: 1,
@@ -913,6 +1196,7 @@ const player = {
   aerialShotsLeft: 0,    // 飞天中剩余发射次数
   sealT: 0,              // 影分身结印动画
   rasenDashT: 0,         // 螺旋丸前冲锁定帧
+  flashlightStart: 0,    // 哆啦A梦手电筒前摇结束（光束开始射出）时刻
   flashlightEnd: 0,      // 哆啦A梦手电筒持续至时刻
   flashlightLastTick: 0, // 上次伤害 tick 时间戳
   invincibleUntil: 0,    // 无敌帧结束时刻
@@ -921,6 +1205,9 @@ const player = {
   spinLastTick: 0,       // 2A 持续伤害的 tick 时间戳
   punchRushT: 0,         // 3A / 5A 小拳拳冲锋
   thunderT: 0,           // 4A 电击枪
+  arcT: 0,               // 雪王挥舞雪仗动画
+  arcHit: false,         // 本次挥杖是否已命中
+  hitFlash: 0,           // 受击闪白（与 p2/dummy 对齐）
 };
 
 const LONG_PRESS_THRESHOLD = 20; // 超过即进入飞天模式
@@ -1000,13 +1287,15 @@ const p2 = {
   hitFlash: 0, shakeT: 0, stunT: 0, downT: 0, cdPenalty: 0,
   invincibleUntil: 0,
   skills: [],
-  flashlightEnd: 0, flashlightLastTick: 0,
+  flashlightStart: 0, flashlightEnd: 0, flashlightLastTick: 0,
   // 完整平A连招状态（与 player 对齐）
   spearT: 0, spinT: 0, spinLastTick: 0,
   punchRushT: 0, thunderT: 0, rasenDashT: 0,
   // 占位
   rasenCharging: false, rasenThrowT: 0, sealT: 0,
   aerialStart: 0,
+  // 雪王
+  arcT: 0, arcHit: false,
 };
 
 // dummy 是共用引用，训练=baseDummy / PVP=p2
@@ -1043,7 +1332,18 @@ function handleNormalAttack() {
   if (player.atkT > 0) return;
   if (inAerial()) return;
   if (selectedChar === "doraemon") handleDoraemonAttack(player);
+  else if (selectedChar === "xueking") handleSnowkingAttack(player);
   else handleNarutoAttack(player);
+}
+
+// 雪王：挥舞雪仗（单段弧形横扫，1 次命中判定）
+function handleSnowkingAttack(e) {
+  e.atkType = 1;
+  e.atkT = 26;
+  e.arcT = 26;
+  e.arcHit = false;
+  e.comboStage = 0;
+  e.comboWindow = 0;
 }
 
 function handleNarutoAttack(e = player) {
@@ -1100,6 +1400,13 @@ function updateEntityCombat(attacker, target, char) {
       else if (attacker.atkType === 4 && Math.abs(dx) < W / 2 && sameSide) {
         dmg = 1000; hit = true;
         target.downT = Math.max(target.downT || 0, 30);
+      }
+    } else if (char === "xueking") {
+      // 雪王挥舞雪仗：弧形扫击，范围 130，单次 700 伤害 + 轻微击退
+      if (attacker.atkType === 1 && Math.abs(dx) < 130 && sameSide) {
+        dmg = 700; hit = true;
+        target.shakeT = 14;
+        target.x += attacker.facing * 12;
       }
     }
     if (hit) {
@@ -1165,6 +1472,7 @@ function updateEntityCombat(attacker, target, char) {
   if (attacker.spearT > 0) attacker.spearT--;
   if (attacker.spinT  > 0) attacker.spinT--;
   if (attacker.flipT  > 0) attacker.flipT--;
+  if (attacker.arcT   > 0) attacker.arcT--;
 
   // 连招窗口
   if (attacker.comboWindow > 0) {
@@ -1262,6 +1570,10 @@ function currentP1RasenKey(){ return currentP1Keys()[2]; }   // 螺旋丸索引=
 function castSkill(idx) {
   if (selectedChar === "doraemon") {
     castDoraemonSkill(idx);
+    return;
+  }
+  if (selectedChar === "xueking") {
+    castSnowkingSkill(idx, player, dummy, false);
     return;
   }
   if (idx === 0) {
@@ -1518,6 +1830,96 @@ function drawRasenOrb(x, y, radius) {
   }
 }
 
+// 雪王·飞天物理 & 自动冰雹（每 500ms 砸 1 颗）
+function updateSnowkingFly(caster, target, isP2) {
+  if (!caster.flyUntil || performance.now() >= caster.flyUntil) return;
+  const hoverY = 180;
+  const dy = hoverY - caster.y;
+  caster.vy = dy * 0.08 + Math.sin(performance.now() / 400) * 0.6;
+  caster.onGround = false;
+  if (performance.now() >= (caster.flyNextHail || 0)) {
+    caster.flyNextHail = performance.now() + 500;
+    projectiles.push({
+      x: target.x + (Math.random() - 0.5) * 40,
+      y: -30,
+      vx: 0, vy: 7 + Math.random() * 2,
+      life: 180,
+      rot: Math.random() * Math.PI,
+      damage: 250,
+      owner: isP2 ? "p2" : "p1",
+      kind: "hail",
+    });
+  }
+}
+
+// 雪王技能（P1/P2 统一）
+// caster: 施法者；target: 目标；isP2: 是否 P2 施法（用于护盾分支与投射物归属）
+function castSnowkingSkill(idx, caster, target, isP2) {
+  const now = performance.now();
+  if (idx === 0) {
+    // J 丢冰淇淋：抛物投射，命中 900 伤害
+    projectiles.push({
+      x: caster.x + caster.facing * 26,
+      y: caster.y - 60,
+      vx: caster.facing * 9,
+      vy: -4,
+      life: 100,
+      rot: 0,
+      damage: 900,
+      owner: isP2 ? "p2" : "p1",
+      kind: "icecream",
+      gravity: 0.28,
+    });
+    spawnParticles(caster.x + caster.facing * 30, caster.y - 50, "#a0e8ff", 6);
+  } else if (idx === 1) {
+    // K 下冰雹：从天而降 6 颗冰晶，砸向目标 x 周围
+    const baseX = target.x;
+    for (let i = 0; i < 6; i++) {
+      projectiles.push({
+        x: baseX + (i - 2.5) * 36 + (Math.random() - 0.5) * 20,
+        y: -30 - i * 14,
+        vx: 0,
+        vy: 7 + Math.random() * 2,
+        life: 180,
+        rot: Math.random() * Math.PI,
+        damage: 250,
+        owner: isP2 ? "p2" : "p1",
+        kind: "hail",
+      });
+    }
+  } else if (idx === 2) {
+    // L 飞天：持续 3s 漂浮 + 每 0.5s 自动召唤 1 颗冰雹
+    caster.flyUntil = now + 3000;
+    caster.flyNextHail = now + 100;
+    caster.vy = -12;
+    caster.onGround = false;
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      particles.push({
+        x: caster.x + Math.cos(a) * 30,
+        y: caster.y - 20 + Math.sin(a) * 10,
+        vx: Math.cos(a) * 2,
+        vy: Math.sin(a) * 1 - 2,
+        life: 40, color: "#a0e8ff", size: 3,
+      });
+    }
+  } else if (idx === 3) {
+    // U 冰甲：5s 受到伤害 -90%（复用护盾机制）
+    if (isP2) p2ShieldUntil = now + 5000;
+    else shieldActiveUntil = now + 5000;
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2;
+      particles.push({
+        x: caster.x + Math.cos(a) * 40,
+        y: caster.y - 40 + Math.sin(a) * 40,
+        vx: Math.cos(a) * 1.5,
+        vy: Math.sin(a) * 1.5 - 0.8,
+        life: 40, color: "#c8f0ff", size: 3,
+      });
+    }
+  }
+}
+
 function castDoraemonSkill(idx) {
   if (idx === 0) {
     // 任意门：无 CD，瞬移到敌方身后（或另一侧），全程 500ms 无敌
@@ -1575,9 +1977,12 @@ function castDoraemonSkill(idx) {
       }
     }
   } else if (idx === 1) {
-    // 手电筒：持续 2 秒光束，每 20ms 对命中目标造成 40 伤害并使其倒地
-    player.flashlightEnd = performance.now() + 2000;
+    // 手电筒：1s 前摇（期间霸体无敌）+ 2s 圆柱光束（半屏），每 20ms 对命中目标造成 60 伤害
+    const castNow = performance.now();
+    player.flashlightStart = castNow + 1000;
+    player.flashlightEnd = castNow + 3000;
     player.flashlightLastTick = 0;
+    player.invincibleUntil = Math.max(player.invincibleUntil || 0, castNow + 1000);
   } else if (idx === 2) {
     // 时空暂停：对方冻结 3s，背景灰化，对手禁动作
     timeFrozenUntil = performance.now() + 3000;
@@ -1834,6 +2239,259 @@ function drawDoraemon(state, attacking, tint) {
   ctx.restore();
 }
 
+// ===== 雪王 =====
+function drawSnowKing(state, attacking, tint) {
+  state = state || player;
+  const x = state.x, y = state.y, facing = state.facing;
+  const moving = Math.abs(state.vx || 0) > 0.15 && state.onGround !== false && !attacking;
+  const jumping = state.onGround === false && !attacking;
+  const walkT = state.walkT || 0;
+  const landT = state.landT || 0;
+  const blinking = (state.blinkT || 0) < 6;
+  const now = performance.now();
+
+  ctx.save();
+  ctx.translate(x, y);
+  if (landT > 0) {
+    const k = landT / 8;
+    ctx.scale(1 + k * 0.15, 1 - k * 0.2);
+  }
+  ctx.scale(facing, 1);
+
+  const white    = tint || "#ffffff";
+  const shadow   = "#cfe2ef";
+  const crown    = "#ffd91f";
+  const crownDk  = "#b88a10";
+  const gem      = "#e63946";
+  const nose     = "#ff7733";
+  const cape     = "#c9204a";
+  const capeDk   = "#7a1020";
+  const cheek    = "#ffb0c0";
+  const black    = "#1a1a1a";
+
+  const idleBob  = Math.sin(now / 500) * 1.1;
+  const walkBob  = moving ? Math.abs(Math.sin(walkT * 2)) * 2 : 0;
+  const bodyY    = moving ? -walkBob : idleBob;
+  const legSwing = moving ? Math.sin(walkT) * 0.35 : 0;
+
+  // 披风（飘动）
+  ctx.save();
+  ctx.translate(-6, -16 + bodyY);
+  const capeSway = Math.sin(now / 220) * 2 + (moving ? 3 : 0);
+  ctx.fillStyle = cape;
+  ctx.beginPath();
+  ctx.moveTo(-4, -14);
+  ctx.lineTo(-20 - capeSway, -4);
+  ctx.lineTo(-22 - capeSway, 18);
+  ctx.lineTo(-6, 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = capeDk;
+  ctx.beginPath();
+  ctx.moveTo(-14 - capeSway, 4);
+  ctx.lineTo(-22 - capeSway, 18);
+  ctx.lineTo(-6, 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // 腿 / 脚
+  function drawFoot(hipX, angle, bent) {
+    ctx.save();
+    ctx.translate(hipX, -6 + bodyY);
+    ctx.rotate(bent || angle);
+    ctx.fillStyle = white;
+    ctx.fillRect(-5, 0, 10, 6);
+    ctx.fillStyle = "#3a3a3a";
+    ctx.fillRect(-6, 5, 12, 2);
+    ctx.restore();
+  }
+  if (jumping) {
+    drawFoot(-6, 0, -0.4);
+    drawFoot(6, 0, -0.2);
+  } else {
+    drawFoot(-6, legSwing, 0);
+    drawFoot(6, -legSwing, 0);
+  }
+
+  // 身体（大白圆）
+  ctx.save();
+  ctx.translate(0, bodyY);
+  ctx.fillStyle = white;
+  ctx.beginPath();
+  ctx.ellipse(0, -22, 20, 20, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // 身侧阴影
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.ellipse(-8, -22, 6, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // 三颗煤扣
+  ctx.fillStyle = black;
+  [-12, -22, -32].forEach(cy => {
+    ctx.beginPath();
+    ctx.arc(-1, cy, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 头（小圆，压在身体上方）
+  ctx.fillStyle = white;
+  ctx.beginPath();
+  ctx.arc(0, -52, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.ellipse(-6, -52, 4, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 腮红
+  ctx.fillStyle = cheek;
+  ctx.beginPath();
+  ctx.arc(-7, -48, 2.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(7, -48, 2.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 眼睛
+  if (blinking) {
+    ctx.strokeStyle = black;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-5, -54); ctx.lineTo(-2, -54);
+    ctx.moveTo(2, -54); ctx.lineTo(5, -54);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = black;
+    ctx.beginPath();
+    ctx.arc(-3.5, -54, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(3.5, -54, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-3, -54.5, 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(4, -54.5, 0.7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 胡萝卜鼻（朝前）
+  ctx.fillStyle = nose;
+  ctx.beginPath();
+  ctx.moveTo(0, -52);
+  ctx.lineTo(11, -49);
+  ctx.lineTo(0, -48);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#c04a10";
+  ctx.lineWidth = 0.7;
+  ctx.stroke();
+
+  // 嘴（小笑）
+  ctx.fillStyle = "#c9204a";
+  ctx.beginPath();
+  ctx.arc(1, -44, 3, 0.2, Math.PI - 0.2);
+  ctx.fill();
+
+  // 王冠
+  ctx.fillStyle = crown;
+  ctx.beginPath();
+  ctx.moveTo(-10, -62);
+  ctx.lineTo(-7, -72);
+  ctx.lineTo(-4, -65);
+  ctx.lineTo(0, -74);
+  ctx.lineTo(4, -65);
+  ctx.lineTo(7, -72);
+  ctx.lineTo(10, -62);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = crownDk;
+  ctx.lineWidth = 1.1;
+  ctx.stroke();
+  // 王冠底环
+  ctx.fillStyle = crownDk;
+  ctx.fillRect(-10, -62, 20, 1.6);
+  // 王冠宝石
+  ctx.fillStyle = gem;
+  ctx.beginPath();
+  ctx.arc(0, -67, 1.7, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore(); // close body
+
+  // ===== 冰淇淋法杖（前手）=====
+  ctx.save();
+  ctx.translate(0, bodyY);
+  // 攻击时杖上抬挥出弧线
+  const atkProg = attacking && state.arcT > 0 ? 1 - state.arcT / 26 : 0;
+  const staffAngle = attacking
+    ? -1.2 + atkProg * 2.4          // 从后上挥到前下
+    : 0.08 + Math.sin(now / 600) * 0.05;
+  const baseX = 14, baseY = -26;
+  ctx.save();
+  ctx.translate(baseX, baseY);
+  ctx.rotate(staffAngle);
+
+  // 杖身
+  ctx.fillStyle = "#8a5a2a";
+  ctx.fillRect(-1.8, -30, 3.6, 36);
+  ctx.strokeStyle = "#5a3812";
+  ctx.lineWidth = 0.6;
+  [-24, -16, -8, 0].forEach(sy => {
+    ctx.beginPath();
+    ctx.moveTo(-1.8, sy);
+    ctx.lineTo(1.8, sy);
+    ctx.stroke();
+  });
+
+  // 顶端甜筒（三角小锥）
+  ctx.fillStyle = "#c89c55";
+  ctx.beginPath();
+  ctx.moveTo(-4, -30);
+  ctx.lineTo(4, -30);
+  ctx.lineTo(0, -22);
+  ctx.closePath();
+  ctx.fill();
+
+  // 冰淇淋球（顶端白球）
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(0, -36, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffe6f0";
+  ctx.beginPath();
+  ctx.arc(-2, -37, 2.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.arc(3, -34, 2.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(-2.5, -38, 1.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // 前手（握杖）
+  ctx.fillStyle = white;
+  ctx.beginPath();
+  ctx.arc(baseX, baseY, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 后手（短圆）
+  const armSwing = moving ? Math.sin(walkT) * 6 : 0;
+  ctx.beginPath();
+  ctx.arc(-16, -22 - armSwing, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+  ctx.restore();
+}
+
 function spawnHitImpact(x, y, radius) {
   // 白色扩散冲击环
   particles.push({
@@ -1941,13 +2599,14 @@ function showSeriesEnd() {
   const sub = document.getElementById("matchSub");
   const buttons = document.querySelector('.match-buttons');
   buttons.style.display = '';
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : "雪 王";
   if (winner === "p1") {
     title.textContent = "P1 总 决 胜!";
-    sub.textContent = `${p1Wins} : ${p2Wins}　·　鸣 人 三 局 两 胜`;
+    sub.textContent = `${p1Wins} : ${p2Wins}　·　${nameOf(selectedChar)} 三 局 两 胜`;
     overlay.className = "overlay win-p1";
   } else {
     title.textContent = "P2 总 决 胜!";
-    sub.textContent = `${p1Wins} : ${p2Wins}　·　哆 啦 A 梦 三 局 两 胜`;
+    sub.textContent = `${p1Wins} : ${p2Wins}　·　${nameOf(p2.char)} 三 局 两 胜`;
     overlay.className = "overlay win-p2";
   }
   overlay.classList.remove("hidden");
@@ -1962,7 +2621,8 @@ function resetRound() {
   p2.facing = -1;
   p2.atkT = 0; p2.atkHit = false; p2.atkType = 0;
   p2.stunT = 0; p2.downT = 0; p2.hitFlash = 0;
-  p2.invincibleUntil = 0; p2.flashlightEnd = 0;
+  p2.invincibleUntil = 0; p2.flashlightStart = 0; p2.flashlightEnd = 0;
+  p2.arcT = 0; p2.arcHit = false; p2.flyUntil = 0; p2.flyNextHail = 0;
   p2.skills = skillConfigs[p2.char].map(c => ({ ...c, ready: 0 }));
   p2ShieldUntil = 0;
   p1FrozenUntil = 0;
@@ -1976,7 +2636,8 @@ function resetRound() {
   player.invincibleUntil = 0;
   player.rasenCharging = false; player.rasenThrowT = 0;
   player.aerialStart = 0; player.sealT = 0;
-  player.flashlightEnd = 0;
+  player.flashlightStart = 0; player.flashlightEnd = 0;
+  player.arcT = 0; player.arcHit = false; player.flyUntil = 0; player.flyNextHail = 0;
   player.comboStage = 0; player.comboWindow = 0;
   skills.forEach(s => s.ready = 0);
   clones.length = 0;
@@ -2021,11 +2682,11 @@ function updateWinPips() {
   };
   const p1NameEl = document.querySelector('.hpbar.left .name > span');
   const p2NameEl = document.querySelector('.hpbar.right .name > span');
-  const p1Name = selectedChar === "naruto" ? "鸣 人" : "哆 啦 A 梦";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : "雪 王";
+  const p1Name = nameOf(selectedChar);
   if (gameMode === "pvp") {
     p1NameEl.innerHTML = p1Name + pipsHtml(p1Wins);
-    const p2Name = p2.char === "doraemon" ? "哆 啦 A 梦" : "鸣 人";
-    p2NameEl.innerHTML = p2Name + pipsHtml(p2Wins);
+    p2NameEl.innerHTML = nameOf(p2.char) + pipsHtml(p2Wins);
   } else {
     p1NameEl.textContent = p1Name;
     p2NameEl.textContent = "木 桩";
@@ -2079,9 +2740,19 @@ function flashSkill(idx, success) {
 function update() {
   if (hitStopT > 0) { hitStopT--; return; }
   if (shakeT > 0) shakeT--;
-  // 玩家移动
+
+  // P1 状态衰减（被 P2 技能压制：倒地/眩晕）
+  if (player.stunT > 0) player.stunT--;
+  if (player.downT > 0) player.downT--;
+  const p1Disabled = player.downT > 0 || player.stunT > 0;
+
+  // 玩家移动（被压制时禁动作，物理/重力仍生效）
   const speed = inAerial() ? 5 : 4;
-  if (player.rasenDashT > 0) {
+  if (p1Disabled) {
+    player.vx = 0;
+    // 中断螺旋丸冲刺
+    if (player.rasenDashT > 0) player.rasenDashT = 0;
+  } else if (player.rasenDashT > 0) {
     // 螺旋丸前冲（锁定方向）
     player.vx = player.facing * 5.5;
     player.rasenDashT--;
@@ -2091,7 +2762,7 @@ function update() {
   else if (keys["d"]) { player.vx = speed; player.facing = 1; }
   else player.vx = 0;
 
-  if (keys["w"] && player.onGround) {
+  if (!p1Disabled && keys["w"] && player.onGround) {
     player.vy = -14;
     player.onGround = false;
   }
@@ -2111,6 +2782,10 @@ function update() {
     player.aerialStart = 0;
     player.aerialShotsLeft = 0;
   }
+
+  // 雪王·飞天：持续漂浮在 180 高度 + 每 500ms 召唤 1 颗冰雹
+  updateSnowkingFly(player, dummy, false);
+  if (gameMode === "pvp") updateSnowkingFly(p2, player, true);
 
   if (player.y >= GROUND) {
     player.y = GROUND;
@@ -2179,15 +2854,37 @@ function update() {
   }
   // atkT/combo/spear/spin/flip 全部由 updateEntityCombat() 处理
 
-  // 手里剑
+  // 投射物（手里剑 / 冰淇淋 / 冰雹）
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i];
     p.x += p.vx;
+    p.y += (p.vy || 0);
+    if (p.gravity) p.vy = (p.vy || 0) + p.gravity;
     p.rot += 0.4;
     p.life--;
-    // 碰到木桩
-    if (Math.abs(p.x - dummy.x) < 40 && Math.abs(p.y - (dummy.y - 50)) < 60) {
+    // 命中 P1（仅由 P2 发出的弹可伤 P1）
+    if (p.owner === "p2" && Math.abs(p.x - player.x) < 32 && Math.abs(p.y - (player.y - 50)) < 56) {
+      damagePlayer(p.damage || 10);
+      spawnHitImpact(p.x, p.y, 28);
+      projectiles.splice(i, 1);
+      continue;
+    }
+    // 命中 P2/木桩（P1 发出的 + 无归属兼容）
+    if (p.owner !== "p2" && Math.abs(p.x - dummy.x) < 40 && Math.abs(p.y - (dummy.y - 50)) < 60) {
       damageDummy(p.damage || 10);
+      if (p.kind === "icecream" || p.kind === "hail") spawnHitImpact(p.x, p.y, 28);
+      projectiles.splice(i, 1);
+      continue;
+    }
+    // 冰雹落地爆开
+    if (p.kind === "hail" && p.y >= GROUND - 6) {
+      spawnParticles(p.x, GROUND - 4, "#a0e8ff", 8);
+      projectiles.splice(i, 1);
+      continue;
+    }
+    // 冰淇淋落地也消失
+    if (p.kind === "icecream" && p.y >= GROUND - 6) {
+      spawnParticles(p.x, GROUND - 4, "#ffe0ec", 6);
       projectiles.splice(i, 1);
       continue;
     }
@@ -2288,38 +2985,38 @@ function update() {
     p2.blinkT = (p2.blinkT + 1) % 180;
     // P2 平A 命中/combo/计时器 由 updateEntityCombat(p2, player, p2.char) 统一处理
 
-    // P2 手电筒持续伤害
-    if (performance.now() < p2.flashlightEnd) {
+    // P2 手电筒持续伤害（圆柱形，半屏 W/2；仅前摇结束后才造成伤害）
+    const p2Now = performance.now();
+    if (p2Now >= p2.flashlightStart && p2Now < p2.flashlightEnd) {
       const dx = player.x - p2.x;
       const dy = (player.y - 50) - (p2.y - 40);
-      if (Math.sign(dx) === p2.facing && Math.abs(dx) < 390 && Math.abs(dy) < 110) {
-        const now = performance.now();
-        if (now - (p2.flashlightLastTick || 0) >= 20) {
-          damagePlayer(40);
-          p2.flashlightLastTick = now;
+      if (Math.sign(dx) === p2.facing && Math.abs(dx) < W / 2 && Math.abs(dy) < 110) {
+        if (p2Now - (p2.flashlightLastTick || 0) >= 20) {
+          damagePlayer(60);
+          p2.flashlightLastTick = p2Now;
           player.downT = 30;
         }
       }
     }
   }
 
-  // 手电筒持续伤害（范围 +50%：横向 390 / 纵向 ±110）
-  if (performance.now() < player.flashlightEnd) {
+  // 手电筒持续伤害（圆柱形，半屏 W/2；前摇 1s 内无伤害）
+  const fl1Now = performance.now();
+  if (fl1Now >= player.flashlightStart && fl1Now < player.flashlightEnd) {
     const dx = dummy.x - player.x;
     const dy = (dummy.y - 50) - (player.y - 40);
-    if (Math.sign(dx) === player.facing && Math.abs(dx) < 390 && Math.abs(dy) < 110) {
-      const now = performance.now();
-      if (now - (player.flashlightLastTick || 0) >= 20) {
-        damageDummy(40);
-        player.flashlightLastTick = now;
+    if (Math.sign(dx) === player.facing && Math.abs(dx) < W / 2 && Math.abs(dy) < 110) {
+      if (fl1Now - (player.flashlightLastTick || 0) >= 20) {
+        damageDummy(60);
+        player.flashlightLastTick = fl1Now;
         dummy.downT = 30;  // 命中期间一直刷新倒地（离开后 0.5s 缓冲）
       }
     }
-    // 持续光束粒子
+    // 持续光束粒子（贯穿整条圆柱）
     if (Math.random() < 0.5) {
       spawnParticles(
-        player.x + player.facing * (60 + Math.random() * 320),
-        player.y - 40 + (Math.random() - 0.5) * 80,
+        player.x + player.facing * (60 + Math.random() * (W / 2 - 80)),
+        player.y - 40 + (Math.random() - 0.5) * 180,
         "#ffee80", 1
       );
     }
@@ -2375,6 +3072,521 @@ function update() {
       mask.textContent = "";
     }
   });
+}
+
+// 通用：绘制某个角色的普攻连招特效（石矛/回旋/电击枪/小拳拳）
+// state = 攻击方；target = 被攻击方（用于小拳拳的拟声词定位 & 距离判定）
+function drawComboVFX(state, target) {
+  // 石矛（1A 跟随旋转 / 2A 直冲突刺）
+  if (state.spearT > 0) {
+    const isSpin = state.spinT > 0;
+    const prog = 1 - state.spearT / (isSpin ? 28 : 24);
+    ctx.save();
+    ctx.translate(state.x, state.y - 40);
+
+    if (isSpin) {
+      const spinProg = 1 - state.spinT / 28;
+      ctx.rotate(spinProg * Math.PI * 4 - Math.PI / 2);
+    } else {
+      ctx.scale(state.facing, 1);
+      for (let i = 3; i >= 1; i--) {
+        ctx.save();
+        ctx.translate(-i * 14, 0);
+        ctx.globalAlpha = 0.14 * i;
+        ctx.fillStyle = "#ff9955";
+        ctx.fillRect(16, -8, 110, 12);
+        ctx.beginPath();
+        ctx.moveTo(124, -20); ctx.lineTo(164, -2); ctx.lineTo(124, 16);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    ctx.fillStyle = "#8a6a3a";
+    ctx.fillRect(16, -8, 110, 12);
+    ctx.fillStyle = "#ac8a52";
+    ctx.fillRect(16, -8, 110, 3);
+    ctx.fillStyle = "#5a3a1a";
+    ctx.fillRect(16, 2, 110, 2);
+    ctx.strokeStyle = "#5a3a1a";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      ctx.moveTo(24 + i * 16, -8);
+      ctx.lineTo(30 + i * 16, 4);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#3a2212";
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i < 5; i++) {
+      const xx = 30 + i * 18;
+      ctx.beginPath();
+      ctx.moveTo(xx, -10);
+      ctx.lineTo(xx + 4, 10);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#c8c8cc";
+    ctx.beginPath();
+    ctx.moveTo(124, -20);
+    ctx.lineTo(166, -2);
+    ctx.lineTo(124, 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#888888";
+    ctx.beginPath();
+    ctx.moveTo(124, -2);
+    ctx.lineTo(166, -2);
+    ctx.lineTo(124, 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#2a2a2a";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(130, -14); ctx.lineTo(146, -4); ctx.lineTo(140, 6);
+    ctx.moveTo(146, -4); ctx.lineTo(156, -1);
+    ctx.moveTo(134, 2); ctx.lineTo(150, 8);
+    ctx.stroke();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(124, -20); ctx.lineTo(166, -2);
+    ctx.stroke();
+
+    const pulse = 0.6 + Math.sin(performance.now() / 30) * 0.3;
+    ctx.strokeStyle = `rgba(255,170,60,${pulse})`;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = "#ff8833";
+    ctx.shadowBlur = 22;
+    ctx.beginPath();
+    ctx.moveTo(124, -20);
+    ctx.lineTo(166, -2);
+    ctx.lineTo(124, 16);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.strokeStyle = `rgba(255,255,255,${0.7 * (1 - prog)})`;
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(170 + i * 10, -14 + i * 7);
+      ctx.lineTo(200 + i * 10, -14 + i * 7);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // 2A 回旋斩
+  if (state.spinT > 0) {
+    const prog = 1 - state.spinT / 28;
+    ctx.save();
+    ctx.translate(state.x, state.y - 40);
+
+    const trails = [
+      { color: "#ffdd55", r: 48, w: 6 },
+      { color: "#ff8855", r: 44, w: 5 },
+      { color: "#ff55aa", r: 40, w: 4 },
+      { color: "#aa55ff", r: 36, w: 3 },
+    ];
+    trails.forEach((t, i) => {
+      ctx.strokeStyle = t.color;
+      ctx.lineWidth = t.w;
+      ctx.shadowColor = t.color;
+      ctx.shadowBlur = 14;
+      ctx.globalAlpha = 0.8 - i * 0.12;
+      ctx.beginPath();
+      const base = prog * Math.PI * 4;
+      ctx.arc(0, 0, t.r, base - 0.7 - i * 0.15, base + 0.7);
+      ctx.stroke();
+    });
+
+    if (prog > 0.3 && prog < 0.85) {
+      const ringT = (prog - 0.3) / 0.55;
+      ctx.strokeStyle = `rgba(255,255,255,${(1 - ringT) * 0.9})`;
+      ctx.lineWidth = 4;
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(0, 0, 20 + ringT * 90, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255,220,100,${(1 - ringT) * 0.7})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 15 + ringT * 60, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < 6; i++) {
+      const ang = prog * Math.PI * 4 + i * Math.PI / 3;
+      const px = Math.cos(ang) * 50;
+      const py = Math.sin(ang) * 50;
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = "#fff";
+      ctx.shadowColor = "#ffeeaa";
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // 4A 电击枪
+  if (state.thunderT > 0) {
+    const alpha = Math.min(1, state.thunderT / 10);
+    ctx.save();
+    ctx.translate(state.x + state.facing * 20, state.y - 42);
+    ctx.scale(state.facing, 1);
+    ctx.fillStyle = "#555";
+    ctx.fillRect(0, -4, 24, 10);
+    ctx.fillStyle = "#888";
+    ctx.fillRect(20, -6, 14, 14);
+    ctx.strokeStyle = `rgba(255,255,120,${alpha})`;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "#ffee88";
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    let sx = 34, sy = 0;
+    ctx.moveTo(sx, sy);
+    for (let i = 0; i < 12; i++) {
+      sx += (W / 2) / 12;
+      sy = (Math.random() - 0.5) * 24;
+      ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = `rgba(180,240,255,${alpha * 0.7})`;
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      const bx = 34 + ((W / 2) / 4) * i;
+      ctx.moveTo(bx, 0);
+      ctx.lineTo(bx + 15, (Math.random() - 0.5) * 30);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  // 3A / 5A 小拳拳特效
+  if (state.punchRushT > 0) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) {
+      const offsetY = (Math.random() - 0.5) * 60;
+      const baseX = state.x - state.facing * (20 + i * 20);
+      ctx.beginPath();
+      ctx.moveTo(baseX, state.y - 40 + offsetY);
+      ctx.lineTo(baseX - state.facing * (15 + Math.random() * 15), state.y - 40 + offsetY);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    const fistOffset = Math.sin(performance.now() / 30) * 18;
+    for (let i = 0; i < 3; i++) {
+      ctx.save();
+      ctx.globalAlpha = 0.25 - i * 0.07;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(
+        state.x + state.facing * (28 + fistOffset - i * 8),
+        state.y - 50,
+        8, 0, Math.PI * 2
+      );
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (state.punchRushT % 3 === 0) {
+      const dx = target.x - state.x;
+      if (Math.sign(dx) === state.facing && Math.abs(dx) < 150) {
+        const onos = ["POW!", "BAM!", "WHAM!", "BOOM!", "KAPOW!", "ZAP!"];
+        const text = onos[Math.floor(Math.random() * onos.length)];
+        const colors = ["#ff3355", "#ffdd33", "#ff8833", "#ff55dd"];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const rot = (Math.random() - 0.5) * 0.5;
+        const bx = target.x - state.facing * 30 + (Math.random() - 0.5) * 60;
+        const by = target.y - 60 + (Math.random() - 0.5) * 50;
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate(rot);
+        ctx.font = "900 22px -apple-system, 'PingFang SC', sans-serif";
+        ctx.textAlign = "center";
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#000";
+        ctx.strokeText(text, 0, 0);
+        ctx.fillStyle = color;
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          particles.push({
+            x: bx, y: by,
+            vx: Math.cos(a) * 3 + (Math.random() - 0.5),
+            vy: Math.sin(a) * 3 + (Math.random() - 0.5),
+            life: 18,
+            color: "#fff",
+            size: 2,
+          });
+        }
+      }
+    }
+  }
+}
+
+// 通用：绘制某个角色的平A 刀光
+function drawSlashVFX(state) {
+  if (state.atkT > 0) {
+    const prog = 1 - state.atkT / (state.atkType === 3 ? 26 : state.atkType === 2 ? 22 : 18);
+    ctx.save();
+    ctx.translate(state.x, state.y - 50);
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 4;
+    ctx.shadowColor = "#9df";
+    ctx.shadowBlur = 16;
+    if (state.atkType === 1) {
+      ctx.beginPath();
+      const start = -Math.PI / 3, end = Math.PI / 3;
+      const a0 = start + (end - start) * Math.max(0, prog - 0.2);
+      const a1 = start + (end - start) * Math.min(1, prog + 0.3);
+      ctx.arc(state.facing * 30, 0, 60, state.facing > 0 ? a0 : Math.PI - a1,
+              state.facing > 0 ? a1 : Math.PI - a0);
+      ctx.stroke();
+    } else if (state.atkType === 2) {
+      ctx.beginPath();
+      const a0 = Math.PI / 2 + (prog - 0.3) * 1.4;
+      const a1 = Math.PI / 2 + (prog + 0.2) * 1.4;
+      ctx.arc(state.facing * 20, 10, 55,
+              state.facing > 0 ? -a1 : Math.PI + a0,
+              state.facing > 0 ? -a0 : Math.PI + a1);
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = "#a0f";
+      ctx.shadowColor = "#a0f";
+      for (let i = 0; i < 3; i++) {
+        ctx.globalAlpha = 0.4 - i * 0.1;
+        ctx.beginPath();
+        ctx.moveTo(state.facing * (20 + i * 15), -10);
+        ctx.lineTo(state.facing * (60 + i * 15), 20);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+}
+
+// 通用：绘制雪王挥杖弧光（冰蓝新月）
+function drawFrostArcVFX(state) {
+  if (!state.arcT || state.arcT <= 0) return;
+  const total = 26;
+  const prog = 1 - state.arcT / total; // 0→1
+  ctx.save();
+  ctx.translate(state.x, state.y - 48);
+  ctx.scale(state.facing, 1);
+  // 弧角：从上挥到前下
+  const startA = -Math.PI * 0.7;
+  const endA = Math.PI * 0.3;
+  const a0 = startA + (endA - startA) * Math.max(0, prog - 0.15);
+  const a1 = startA + (endA - startA) * Math.min(1, prog + 0.25);
+
+  // 主新月
+  ctx.strokeStyle = "#c8f0ff";
+  ctx.lineWidth = 7;
+  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.arc(10, 0, 70, a0, a1);
+  ctx.stroke();
+  // 内白芯
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 3;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(10, 0, 70, a0, a1);
+  ctx.stroke();
+  // 尾迹羽丝
+  ctx.strokeStyle = "rgba(160,232,255,0.55)";
+  ctx.lineWidth = 1.5;
+  ctx.shadowBlur = 0;
+  for (let i = 0; i < 3; i++) {
+    ctx.globalAlpha = 0.6 - i * 0.15;
+    ctx.beginPath();
+    ctx.arc(10, 0, 62 - i * 6, a0 - 0.05, a1 + 0.05);
+    ctx.stroke();
+  }
+  // 弧顶冰晶碎片（2 小菱）
+  ctx.globalAlpha = 1;
+  for (let i = 0; i < 2; i++) {
+    const a = a0 + (a1 - a0) * (0.3 + i * 0.4);
+    const cx = 10 + Math.cos(a) * 70;
+    const cy = Math.sin(a) * 70;
+    ctx.fillStyle = "#c8f0ff";
+    ctx.shadowColor = "#7dd3fc";
+    ctx.shadowBlur = 8;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(0, -5);
+    ctx.lineTo(3, 0);
+    ctx.lineTo(0, 5);
+    ctx.lineTo(-3, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// 冰甲：沿身体画 6 片浮冰碎片 + 蓝色光环（复用 shield 计时器）
+function drawIceArmorVFX(state, until) {
+  const now = performance.now();
+  if (now >= until) return;
+  const t = now / 100;
+  ctx.save();
+  ctx.translate(state.x, state.y - 40);
+  ctx.strokeStyle = "rgba(160,232,255,0.75)";
+  ctx.lineWidth = 3;
+  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowBlur = 14;
+  for (let k = 0; k < 3; k++) {
+    ctx.globalAlpha = 0.45 + Math.sin(t + k) * 0.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 46 + k * 3, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // 6 片漂浮冰晶
+  ctx.shadowBlur = 8;
+  ctx.globalAlpha = 0.9;
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + now / 700;
+    const rx = Math.cos(a) * 48;
+    const ry = Math.sin(a) * 48;
+    ctx.save();
+    ctx.translate(rx, ry);
+    ctx.rotate(a);
+    ctx.fillStyle = "#c8f0ff";
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(4, 0);
+    ctx.lineTo(0, 6);
+    ctx.lineTo(-4, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// 通用：绘制某个角色的手电筒特效（1s 前摇充能 + 2s 圆柱光束）
+function drawFlashlightVFX(state) {
+  const now = performance.now();
+  if (now >= state.flashlightEnd || state.flashlightStart <= 0) return;
+
+  ctx.save();
+  ctx.translate(state.x, state.y - 40);
+  ctx.scale(state.facing, 1);
+
+  const BEAM_LEN = W / 2;
+
+  if (now < state.flashlightStart) {
+    // ===== 前摇充能阶段（1s）=====
+    const chargeT = 1 - (state.flashlightStart - now) / 1000; // 0→1
+    // 手电筒外壳（提前亮起）
+    ctx.fillStyle = "#555";
+    ctx.fillRect(10, -6, 16, 12);
+    ctx.fillStyle = "#888";
+    ctx.fillRect(24, -10, 10, 20);
+    // 镜面聚光（从暗到亮）
+    const coreGlow = 0.3 + chargeT * 0.7;
+    ctx.fillStyle = `rgba(255,255,180,${coreGlow})`;
+    ctx.beginPath();
+    ctx.arc(34, 0, 8 + chargeT * 10, 0, Math.PI * 2);
+    ctx.fill();
+    // 内核高光
+    ctx.fillStyle = `rgba(255,255,255,${chargeT})`;
+    ctx.beginPath();
+    ctx.arc(34, 0, 3 + chargeT * 4, 0, Math.PI * 2);
+    ctx.fill();
+    // 环绕聚能粒子圈
+    ctx.strokeStyle = `rgba(255,230,120,${chargeT})`;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "#ffee88";
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(34, 0, 18 - chargeT * 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    // 8 道收缩光芒（越临近发射越紧）
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + chargeT * 2;
+      const rOut = 36 - chargeT * 14;
+      const rIn  = 20 - chargeT * 10;
+      ctx.strokeStyle = `rgba(255,220,120,${chargeT * 0.8})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(34 + Math.cos(a) * rOut, Math.sin(a) * rOut);
+      ctx.lineTo(34 + Math.cos(a) * rIn,  Math.sin(a) * rIn);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 头顶"霸体"标签（世界坐标，不随 flip）
+    const alpha = 0.6 + Math.sin(now / 60) * 0.4;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "900 14px -apple-system, 'PingFang SC', sans-serif";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = `rgba(255,220,80,${alpha})`;
+    ctx.strokeText("霸 体", state.x, state.y - 130);
+    ctx.fillText("霸 体", state.x, state.y - 130);
+    ctx.restore();
+    return;
+  }
+
+  // ===== 光束发射阶段 =====
+  const remain = state.flashlightEnd - now;
+  const alpha = Math.min(1, remain / 400);  // 最后 400ms 渐隐
+
+  // 主光柱（圆柱形，等宽）
+  const grad = ctx.createLinearGradient(20, 0, BEAM_LEN, 0);
+  grad.addColorStop(0, `rgba(255,255,200,${0.92 * alpha})`);
+  grad.addColorStop(0.85, `rgba(255,230,120,${0.55 * alpha})`);
+  grad.addColorStop(1, `rgba(255,210,80,${0.15 * alpha})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(20, -110, BEAM_LEN - 20, 220);
+
+  // 中心高光芯（等宽）
+  ctx.fillStyle = `rgba(255,255,255,${0.55 * alpha})`;
+  ctx.fillRect(20, -26, BEAM_LEN - 20, 52);
+
+  // 细热心线
+  ctx.fillStyle = `rgba(255,255,255,${0.9 * alpha})`;
+  ctx.fillRect(20, -4, BEAM_LEN - 20, 8);
+
+  // 边缘闪烁亮环（每 60ms 抖一次）
+  const edgeFlicker = 0.35 + (Math.sin(now / 30) + 1) * 0.15;
+  ctx.strokeStyle = `rgba(255,240,150,${edgeFlicker * alpha})`;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = "#ffee88";
+  ctx.shadowBlur = 14;
+  ctx.strokeRect(20, -110, BEAM_LEN - 20, 220);
+  ctx.shadowBlur = 0;
+
+  // 手电筒外壳
+  ctx.fillStyle = "#555";
+  ctx.fillRect(10, -6, 16, 12);
+  ctx.fillStyle = "#888";
+  ctx.fillRect(24, -10, 10, 20);
+
+  ctx.restore();
 }
 
 function draw() {
@@ -2497,10 +3709,33 @@ function draw() {
 
   // 玩家
   const flashOn = performance.now() < player.flashlightEnd;
+  const p1Down = player.downT > 0;
+  if (p1Down) {
+    // 倒地：向造成倒地的一侧倾倒（远离面向 = 被光束击退的方向）
+    const opponent = !dummy.isDummy ? p2 : dummy;
+    const tilt = opponent.x < player.x ? Math.PI / 2.6 : -Math.PI / 2.6;
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(tilt);
+    ctx.translate(-player.x, -player.y);
+  }
   if (selectedChar === "doraemon") {
     drawDoraemon(player, player.atkT > 0 || flashOn);
+  } else if (selectedChar === "xueking") {
+    drawSnowKing(player, player.atkT > 0 || player.arcT > 0);
   } else {
     drawNinja(player.x, player.y, player.facing, player.slashT > 0 || player.atkT > 0);
+  }
+  if (p1Down) {
+    ctx.restore();
+    // "倒地" 标签
+    ctx.fillStyle = "#ff3355";
+    ctx.font = "900 14px -apple-system, 'PingFang SC', sans-serif";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 3;
+    ctx.strokeText("倒 地", player.x, player.y - 130);
+    ctx.fillText("倒 地", player.x, player.y - 130);
   }
 
   // 无敌帧视觉（任意门期间 500ms）
@@ -2526,321 +3761,21 @@ function draw() {
     ctx.restore();
   }
 
-  // 石矛（1A 跟随旋转 / 2A 直冲突刺）
-  if (player.spearT > 0) {
-    const isSpin = player.spinT > 0;
-    const prog = 1 - player.spearT / (isSpin ? 28 : 24);
-    ctx.save();
-    ctx.translate(player.x, player.y - 40);
+  // 普攻连招特效（石矛/回旋/电击枪/小拳拳）— P1
+  drawComboVFX(player, dummy);
+  // 普攻连招特效 — P2（PVP 模式）
+  if (gameMode === "pvp") drawComboVFX(p2, player);
 
-    if (isSpin) {
-      // 1A：矛跟随旋转角
-      const spinProg = 1 - player.spinT / 28;
-      ctx.rotate(spinProg * Math.PI * 4 - Math.PI / 2);
-    } else {
-      // 2A：直线突刺
-      ctx.scale(player.facing, 1);
-      // 冲击残影（3 道半透明后拖）
-      for (let i = 3; i >= 1; i--) {
-        ctx.save();
-        ctx.translate(-i * 14, 0);
-        ctx.globalAlpha = 0.14 * i;
-        ctx.fillStyle = "#ff9955";
-        ctx.fillRect(16, -8, 110, 12);
-        ctx.beginPath();
-        ctx.moveTo(124, -20); ctx.lineTo(164, -2); ctx.lineTo(124, 16);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-    }
+  // 雪王挥杖弧光
+  if (player.char === "xueking") drawFrostArcVFX(player);
+  if (gameMode === "pvp" && p2.char === "xueking") drawFrostArcVFX(p2);
 
-    // 矛柄（木质+纹理）
-    ctx.fillStyle = "#8a6a3a";
-    ctx.fillRect(16, -8, 110, 12);
-    // 木纹高光
-    ctx.fillStyle = "#ac8a52";
-    ctx.fillRect(16, -8, 110, 3);
-    ctx.fillStyle = "#5a3a1a";
-    ctx.fillRect(16, 2, 110, 2);
-    // 木纹斜线
-    ctx.strokeStyle = "#5a3a1a";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      ctx.moveTo(24 + i * 16, -8);
-      ctx.lineTo(30 + i * 16, 4);
-    }
-    ctx.stroke();
+  // 雪王冰甲（P1/P2 分别挂在各自 shield 计时器上）
+  if (player.char === "xueking") drawIceArmorVFX(player, shieldActiveUntil);
+  if (gameMode === "pvp" && p2.char === "xueking") drawIceArmorVFX(p2, p2ShieldUntil);
 
-    // 绳绑（5 道）
-    ctx.strokeStyle = "#3a2212";
-    ctx.lineWidth = 2.5;
-    for (let i = 0; i < 5; i++) {
-      const xx = 30 + i * 18;
-      ctx.beginPath();
-      ctx.moveTo(xx, -10);
-      ctx.lineTo(xx + 4, 10);
-      ctx.stroke();
-    }
-
-    // 矛尖石头（放大版，带锐利三角）
-    ctx.fillStyle = "#c8c8cc";
-    ctx.beginPath();
-    ctx.moveTo(124, -20);
-    ctx.lineTo(166, -2);
-    ctx.lineTo(124, 16);
-    ctx.closePath();
-    ctx.fill();
-    // 石头暗面
-    ctx.fillStyle = "#888888";
-    ctx.beginPath();
-    ctx.moveTo(124, -2);
-    ctx.lineTo(166, -2);
-    ctx.lineTo(124, 16);
-    ctx.closePath();
-    ctx.fill();
-    // 裂纹
-    ctx.strokeStyle = "#2a2a2a";
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(130, -14); ctx.lineTo(146, -4); ctx.lineTo(140, 6);
-    ctx.moveTo(146, -4); ctx.lineTo(156, -1);
-    ctx.moveTo(134, 2); ctx.lineTo(150, 8);
-    ctx.stroke();
-    // 高光锋线
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(124, -20); ctx.lineTo(166, -2);
-    ctx.stroke();
-
-    // 能量光晕（矛尖橙色辉光）
-    const pulse = 0.6 + Math.sin(performance.now() / 30) * 0.3;
-    ctx.strokeStyle = `rgba(255,170,60,${pulse})`;
-    ctx.lineWidth = 4;
-    ctx.shadowColor = "#ff8833";
-    ctx.shadowBlur = 22;
-    ctx.beginPath();
-    ctx.moveTo(124, -20);
-    ctx.lineTo(166, -2);
-    ctx.lineTo(124, 16);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // 矛尖前冲击线（速度线）
-    ctx.strokeStyle = `rgba(255,255,255,${0.7 * (1 - prog)})`;
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 4; i++) {
-      ctx.beginPath();
-      ctx.moveTo(170 + i * 10, -14 + i * 7);
-      ctx.lineTo(200 + i * 10, -14 + i * 7);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-  }
-
-  // 2A 回旋斩（四色彩虹 + 冲击波环 + 粒子旋流）
-  if (player.spinT > 0) {
-    const prog = 1 - player.spinT / 28;
-    ctx.save();
-    ctx.translate(player.x, player.y - 40);
-
-    // 四道彩色尾迹（层叠）
-    const trails = [
-      { color: "#ffdd55", r: 48, w: 6 },
-      { color: "#ff8855", r: 44, w: 5 },
-      { color: "#ff55aa", r: 40, w: 4 },
-      { color: "#aa55ff", r: 36, w: 3 },
-    ];
-    trails.forEach((t, i) => {
-      ctx.strokeStyle = t.color;
-      ctx.lineWidth = t.w;
-      ctx.shadowColor = t.color;
-      ctx.shadowBlur = 14;
-      ctx.globalAlpha = 0.8 - i * 0.12;
-      ctx.beginPath();
-      const base = prog * Math.PI * 4;
-      ctx.arc(0, 0, t.r, base - 0.7 - i * 0.15, base + 0.7);
-      ctx.stroke();
-    });
-
-    // 中央冲击波环（peak 时爆发）
-    if (prog > 0.3 && prog < 0.85) {
-      const ringT = (prog - 0.3) / 0.55;
-      ctx.strokeStyle = `rgba(255,255,255,${(1 - ringT) * 0.9})`;
-      ctx.lineWidth = 4;
-      ctx.shadowBlur = 20;
-      ctx.beginPath();
-      ctx.arc(0, 0, 20 + ringT * 90, 0, Math.PI * 2);
-      ctx.stroke();
-      // 内环
-      ctx.strokeStyle = `rgba(255,220,100,${(1 - ringT) * 0.7})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, 15 + ringT * 60, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // 星光粒子围绕（6 个点光）
-    for (let i = 0; i < 6; i++) {
-      const ang = prog * Math.PI * 4 + i * Math.PI / 3;
-      const px = Math.cos(ang) * 50;
-      const py = Math.sin(ang) * 50;
-      ctx.globalAlpha = 0.8;
-      ctx.fillStyle = "#fff";
-      ctx.shadowColor = "#ffeeaa";
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(px, py, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
-
-  // 4A 电击枪：水平锯齿电流
-  if (player.thunderT > 0) {
-    const alpha = Math.min(1, player.thunderT / 10);
-    ctx.save();
-    ctx.translate(player.x + player.facing * 20, player.y - 42);
-    ctx.scale(player.facing, 1);
-    // 电击枪（灰色手持）
-    ctx.fillStyle = "#555";
-    ctx.fillRect(0, -4, 24, 10);
-    ctx.fillStyle = "#888";
-    ctx.fillRect(20, -6, 14, 14);
-    // 闪电主线
-    ctx.strokeStyle = `rgba(255,255,120,${alpha})`;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = "#ffee88";
-    ctx.shadowBlur = 14;
-    ctx.beginPath();
-    let sx = 34, sy = 0;
-    ctx.moveTo(sx, sy);
-    for (let i = 0; i < 12; i++) {
-      sx += (W / 2) / 12;
-      sy = (Math.random() - 0.5) * 24;
-      ctx.lineTo(sx, sy);
-    }
-    ctx.stroke();
-    // 分叉
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = `rgba(180,240,255,${alpha * 0.7})`;
-    for (let i = 0; i < 4; i++) {
-      ctx.beginPath();
-      const bx = 34 + ((W / 2) / 4) * i;
-      ctx.moveTo(bx, 0);
-      ctx.lineTo(bx + 15, (Math.random() - 0.5) * 30);
-      ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
-    ctx.restore();
-  }
-
-  // 3A / 5A 小拳拳特效（范围 150，满屏拟声词+拳影+速度线）
-  if (player.punchRushT > 0) {
-    // 玩家身后速度线
-    ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.55)";
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 5; i++) {
-      const offsetY = (Math.random() - 0.5) * 60;
-      const baseX = player.x - player.facing * (20 + i * 20);
-      ctx.beginPath();
-      ctx.moveTo(baseX, player.y - 40 + offsetY);
-      ctx.lineTo(baseX - player.facing * (15 + Math.random() * 15), player.y - 40 + offsetY);
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    // 拳头残影（朝前快速抖动）
-    const fistOffset = Math.sin(performance.now() / 30) * 18;
-    for (let i = 0; i < 3; i++) {
-      ctx.save();
-      ctx.globalAlpha = 0.25 - i * 0.07;
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(
-        player.x + player.facing * (28 + fistOffset - i * 8),
-        player.y - 50,
-        8, 0, Math.PI * 2
-      );
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // 每几帧甩一个拟声词
-    if (player.punchRushT % 3 === 0) {
-      const dx = dummy.x - player.x;
-      if (Math.sign(dx) === player.facing && Math.abs(dx) < 150) {
-        const onos = ["POW!", "BAM!", "WHAM!", "BOOM!", "KAPOW!", "ZAP!"];
-        const text = onos[Math.floor(Math.random() * onos.length)];
-        const colors = ["#ff3355", "#ffdd33", "#ff8833", "#ff55dd"];
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        const rot = (Math.random() - 0.5) * 0.5;
-        const bx = dummy.x - player.facing * 30 + (Math.random() - 0.5) * 60;
-        const by = dummy.y - 60 + (Math.random() - 0.5) * 50;
-        ctx.save();
-        ctx.translate(bx, by);
-        ctx.rotate(rot);
-        ctx.font = "900 22px -apple-system, 'PingFang SC', sans-serif";
-        ctx.textAlign = "center";
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#000";
-        ctx.strokeText(text, 0, 0);
-        ctx.fillStyle = color;
-        ctx.fillText(text, 0, 0);
-        ctx.restore();
-
-        // 星爆（从拟声词位置炸开）
-        for (let i = 0; i < 6; i++) {
-          const a = (i / 6) * Math.PI * 2;
-          particles.push({
-            x: bx, y: by,
-            vx: Math.cos(a) * 3 + (Math.random() - 0.5),
-            vy: Math.sin(a) * 3 + (Math.random() - 0.5),
-            life: 18,
-            color: "#fff",
-            size: 2,
-          });
-        }
-      }
-    }
-  }
-
-  // 哆啦A梦手电筒光束（持续 2s，范围扩大 50%）
-  if (flashOn) {
-    const remain = player.flashlightEnd - performance.now();
-    const alpha = Math.min(1, remain / 400);  // 最后 400ms 渐隐
-    ctx.save();
-    ctx.translate(player.x, player.y - 40);
-    ctx.scale(player.facing, 1);
-    const grad = ctx.createLinearGradient(20, 0, 390, 0);
-    grad.addColorStop(0, `rgba(255,255,200,${0.9 * alpha})`);
-    grad.addColorStop(1, `rgba(255,230,100,0)`);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(20, -12);
-    ctx.lineTo(390, -105);
-    ctx.lineTo(390, 105);
-    ctx.lineTo(20, 12);
-    ctx.closePath();
-    ctx.fill();
-    // 中心高光芯
-    ctx.fillStyle = `rgba(255,255,255,${0.5 * alpha})`;
-    ctx.beginPath();
-    ctx.moveTo(20, -4);
-    ctx.lineTo(390, -25);
-    ctx.lineTo(390, 25);
-    ctx.lineTo(20, 4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
+  // 哆啦A梦手电筒（1s 前摇充能 + 2s 圆柱光束；霸体时附加光环）
+  drawFlashlightVFX(player);
 
   // 任意门
   for (let i = doors.length - 1; i >= 0; i--) {
@@ -2974,81 +3909,45 @@ function draw() {
     ctx.restore();
   }
 
-  // PVP: P2 手电筒光束
-  if (gameMode === "pvp" && performance.now() < p2.flashlightEnd) {
-    const remain = p2.flashlightEnd - performance.now();
-    const alpha = Math.min(1, remain / 400);
-    ctx.save();
-    ctx.translate(p2.x, p2.y - 40);
-    ctx.scale(p2.facing, 1);
-    const grad = ctx.createLinearGradient(20, 0, 390, 0);
-    grad.addColorStop(0, `rgba(255,255,200,${0.9 * alpha})`);
-    grad.addColorStop(1, `rgba(255,230,100,0)`);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(20, -12);
-    ctx.lineTo(390, -105);
-    ctx.lineTo(390, 105);
-    ctx.lineTo(20, 12);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
+  // PVP: P2 手电筒（前摇 + 圆柱光束）
+  if (gameMode === "pvp") drawFlashlightVFX(p2);
 
-  // 平A 刀光
-  if (player.atkT > 0) {
-    const prog = 1 - player.atkT / (player.atkType === 3 ? 26 : player.atkType === 2 ? 22 : 18);
-    ctx.save();
-    ctx.translate(player.x, player.y - 50);
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 4;
-    ctx.shadowColor = "#9df";
-    ctx.shadowBlur = 16;
-    if (player.atkType === 1) {
-      // 横斩：前方弧线
-      ctx.beginPath();
-      const start = -Math.PI / 3, end = Math.PI / 3;
-      const a0 = start + (end - start) * Math.max(0, prog - 0.2);
-      const a1 = start + (end - start) * Math.min(1, prog + 0.3);
-      ctx.arc(player.facing * 30, 0, 60, player.facing > 0 ? a0 : Math.PI - a1,
-              player.facing > 0 ? a1 : Math.PI - a0);
-      ctx.stroke();
-    } else if (player.atkType === 2) {
-      // 上勾：向上弧线
-      ctx.beginPath();
-      const a0 = Math.PI / 2 + (prog - 0.3) * 1.4;
-      const a1 = Math.PI / 2 + (prog + 0.2) * 1.4;
-      ctx.arc(player.facing * 20, 10, 55,
-              player.facing > 0 ? -a1 : Math.PI + a0,
-              player.facing > 0 ? -a0 : Math.PI + a1);
-      ctx.stroke();
-    } else {
-      // 3A 后翻：身后拖尾
-      ctx.strokeStyle = "#a0f";
-      ctx.shadowColor = "#a0f";
-      for (let i = 0; i < 3; i++) {
-        ctx.globalAlpha = 0.4 - i * 0.1;
-        ctx.beginPath();
-        ctx.moveTo(player.facing * (20 + i * 15), -10);
-        ctx.lineTo(player.facing * (60 + i * 15), 20);
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
+  // 平A 刀光 — P1
+  drawSlashVFX(player);
+  // 平A 刀光 — P2（PVP 模式）
+  if (gameMode === "pvp") drawSlashVFX(p2);
 
   // 木桩 or P2
   const shakeX = dummy.shakeT > 0 ? (Math.random() - 0.5) * 6 : 0;
   if (!dummy.isDummy) {
     // PVP: 绘制 P2 角色
+    const p2Down = p2.downT > 0;
     ctx.save();
     ctx.translate(shakeX, 0);
+    if (p2Down) {
+      const tilt = player.x < p2.x ? Math.PI / 2.6 : -Math.PI / 2.6;
+      ctx.translate(p2.x, p2.y);
+      ctx.rotate(tilt);
+      ctx.translate(-p2.x, -p2.y);
+    }
     if (p2.char === "doraemon") {
-      drawDoraemon(p2, p2.atkT > 0);
+      drawDoraemon(p2, p2.atkT > 0 || performance.now() < p2.flashlightEnd);
+    } else if (p2.char === "xueking") {
+      drawSnowKing(p2, p2.atkT > 0 || p2.arcT > 0);
     } else {
       drawNinja(p2.x, p2.y, p2.facing, p2.atkT > 0, undefined, p2);
     }
     ctx.restore();
+    if (p2Down) {
+      // "倒地" 标签
+      ctx.fillStyle = "#ff3355";
+      ctx.font = "900 14px -apple-system, 'PingFang SC', sans-serif";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 3;
+      ctx.strokeText("倒 地", p2.x + shakeX, p2.y - 130);
+      ctx.fillText("倒 地", p2.x + shakeX, p2.y - 130);
+    }
     // 保留眩晕星星/倒地标签逻辑继续走下面分支
   } else if (dummy.downT > 0) {
     // 倒地：向本体一侧倾倒
@@ -3086,10 +3985,88 @@ function draw() {
     ctx.restore();
   }
 
-  // 苦无（匕首形状 + 拖尾）
+  // 投射物（苦无 / 冰淇淋 / 冰雹）
   projectiles.forEach(p => {
-    const dir = Math.sign(p.vx);
-    // 拖尾
+    const dir = Math.sign(p.vx) || 1;
+
+    if (p.kind === "icecream") {
+      // 冰淇淋：甜筒 + 白球，带旋转
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      // 甜筒
+      ctx.fillStyle = "#c89c55";
+      ctx.beginPath();
+      ctx.moveTo(-6, 4);
+      ctx.lineTo(6, 4);
+      ctx.lineTo(0, 16);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "#7a5020";
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      // 格纹
+      ctx.strokeStyle = "#7a5020";
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(-4, 7); ctx.lineTo(4, 7);
+      ctx.moveTo(-3, 10); ctx.lineTo(3, 10);
+      ctx.stroke();
+      // 冰淇淋球
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(0, -2, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffe0ec";
+      ctx.beginPath();
+      ctx.arc(-2, -4, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      // 拖尾雾
+      ctx.fillStyle = "rgba(200,230,255,0.45)";
+      ctx.beginPath();
+      ctx.arc(-10, 0, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    if (p.kind === "hail") {
+      // 冰雹：菱形冰晶 + 下坠蓝光尾
+      ctx.save();
+      // 尾迹
+      ctx.strokeStyle = "rgba(160,232,255,0.6)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y - 18);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      // 冰晶本体（上下尖菱形）
+      ctx.fillStyle = "#c8f0ff";
+      ctx.shadowColor = "#7dd3fc";
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.moveTo(0, -10);
+      ctx.lineTo(6, 0);
+      ctx.lineTo(0, 10);
+      ctx.lineTo(-6, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // 高光
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.moveTo(-2, -4);
+      ctx.lineTo(1, -6);
+      ctx.lineTo(-1, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    // 默认：苦无
     ctx.strokeStyle = "rgba(200,220,255,0.4)";
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -3099,16 +4076,13 @@ function draw() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.scale(dir, 1);
-    // 握柄（深色布条）
     ctx.fillStyle = "#3a2418";
     ctx.fillRect(-12, -2, 10, 4);
-    // 环
     ctx.strokeStyle = "#777";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(-14, 0, 3, 0, Math.PI * 2);
     ctx.stroke();
-    // 刀身（银色三角）
     ctx.fillStyle = "#d8dde4";
     ctx.beginPath();
     ctx.moveTo(-2, -5);
@@ -3564,17 +4538,184 @@ function startPVPMatch(p1Char = "naruto", p2Char = "doraemon") {
 let pickedP1 = "naruto";
 let pickedP2 = "doraemon";
 
-document.querySelectorAll("#coverSelect .pick-card").forEach(el => {
+// 拳皇风格大肖像（把小 SVG 放大 + 加戏剧性背景 + 速度线）
+function buildKofPortraitSVG(char) {
+  const themes = {
+    naruto:   { bg1: "#ff8a30", bg2: "#8a1a08", ray: "#ffdd55", nameColor: "#ffdd55" },
+    doraemon: { bg1: "#4cc8ff", bg2: "#0a3a6a", ray: "#ffffff", nameColor: "#ffeecc" },
+    xueking:  { bg1: "#7dd3fc", bg2: "#0c4a6e", ray: "#e0f2fe", nameColor: "#e0f2fe" },
+  };
+  const t = themes[char];
+  const innerXueking = `
+    <!-- 雪王（上半身）-->
+    <g transform="translate(100 165) scale(4.5)">
+      <!-- 披风 -->
+      <path d="M-16,-4 L-30,-6 L-32,22 L-16,14 Z" fill="#c9204a"/>
+      <path d="M16,-4 L30,-6 L32,22 L16,14 Z" fill="#c9204a"/>
+      <!-- 身体（大白圆）-->
+      <ellipse cx="0" cy="12" rx="22" ry="18" fill="#ffffff"/>
+      <ellipse cx="-8" cy="14" rx="5" ry="12" fill="#cfe2ef"/>
+      <!-- 煤炭扣 -->
+      <circle cx="-2" cy="2" r="1.6" fill="#1a1a1a"/>
+      <circle cx="-2" cy="10" r="1.6" fill="#1a1a1a"/>
+      <circle cx="-2" cy="18" r="1.6" fill="#1a1a1a"/>
+      <!-- 头 -->
+      <circle cx="0" cy="-14" r="16" fill="#ffffff"/>
+      <ellipse cx="-6" cy="-14" rx="4" ry="10" fill="#cfe2ef"/>
+      <!-- 腮红 -->
+      <circle cx="-8" cy="-10" r="2.6" fill="#ffb0c0"/>
+      <circle cx="8" cy="-10" r="2.6" fill="#ffb0c0"/>
+      <!-- 眼睛 -->
+      <circle cx="-4" cy="-16" r="2.2" fill="#111"/>
+      <circle cx="4" cy="-16" r="2.2" fill="#111"/>
+      <circle cx="-3.5" cy="-16.5" r="0.8" fill="#fff"/>
+      <circle cx="4.5" cy="-16.5" r="0.8" fill="#fff"/>
+      <!-- 胡萝卜鼻 -->
+      <polygon points="0,-14 14,-11 0,-10" fill="#ff7733" stroke="#c04a10" stroke-width="0.5"/>
+      <!-- 嘴（笑）-->
+      <path d="M-3 -5 Q1 -2 5 -5" stroke="#c9204a" stroke-width="1.3" fill="#7a1020"/>
+      <!-- 王冠 -->
+      <polygon points="-12,-26 -9,-36 -5,-28 0,-38 5,-28 9,-36 12,-26"
+               fill="#ffd91f" stroke="#b88a10" stroke-width="1"/>
+      <rect x="-12" y="-26" width="24" height="2" fill="#b88a10"/>
+      <circle cx="0" cy="-32" r="1.8" fill="#e63946"/>
+      <!-- 握杖的手 -->
+      <circle cx="20" cy="-6" r="5" fill="#fff"/>
+      <!-- 杖 -->
+      <rect x="22" y="-30" width="3" height="34" fill="#8a5a2a"/>
+      <!-- 甜筒顶 -->
+      <polygon points="18,-30 28,-30 23,-22" fill="#c89c55"/>
+      <!-- 冰淇淋球 -->
+      <circle cx="23" cy="-36" r="6" fill="#ffffff"/>
+      <circle cx="21" cy="-37" r="2" fill="#ffe6f0"/>
+      <circle cx="25" cy="-35" r="2" fill="#cfe2ef"/>
+    </g>
+  `;
+  const innerSVG = char === "xueking" ? innerXueking : (char === "naruto" ? `
+    <!-- 鸣人（上半身）-->
+    <g transform="translate(100 150) scale(4.4)">
+      <!-- 脖子 -->
+      <rect x="-6" y="-2" width="12" height="6" fill="#ffd9a8"/>
+      <!-- 头发底 -->
+      <polygon points="-18,-6 -15,-22 -10,-10 -6,-24 -2,-12 2,-24 6,-10 10,-22 14,-8 18,-6"
+               fill="#ffd91f"/>
+      <!-- 脸 -->
+      <ellipse cx="0" cy="0" rx="12" ry="11" fill="#ffd9a8"/>
+      <!-- 护额 -->
+      <rect x="-13" y="-6" width="26" height="5" fill="#2f55b8"/>
+      <rect x="-10" y="-5.5" width="20" height="3.5" fill="#b8b8b8"/>
+      <!-- 眼（坚定） -->
+      <rect x="-5" y="1" width="2.5" height="2.5" fill="#111"/>
+      <rect x="2.5" y="1" width="2.5" height="2.5" fill="#111"/>
+      <!-- 胡须线 -->
+      <line x1="-11" y1="4" x2="-5" y2="4" stroke="#5a3a1a" stroke-width="0.8"/>
+      <line x1="-11" y1="6.5" x2="-5" y2="6.5" stroke="#5a3a1a" stroke-width="0.8"/>
+      <line x1="5" y1="4" x2="11" y2="4" stroke="#5a3a1a" stroke-width="0.8"/>
+      <line x1="5" y1="6.5" x2="11" y2="6.5" stroke="#5a3a1a" stroke-width="0.8"/>
+      <!-- 嘴（咬牙）-->
+      <path d="M-4 8 L4 8" stroke="#111" stroke-width="1.2" fill="none"/>
+      <!-- 肩膀与衣领 -->
+      <path d="M-40,28 L-14,6 L14,6 L40,28 L40,50 L-40,50 Z" fill="#ff8a30"/>
+      <path d="M-14,6 L0,16 L14,6 L10,22 L-10,22 Z" fill="#c95a10"/>
+      <!-- 拳头（抬起一只朝前） -->
+      <circle cx="28" cy="30" r="10" fill="#ffd9a8"/>
+      <rect x="20" y="28" width="4" height="5" fill="#ffd9a8"/>
+    </g>
+  ` : `
+    <!-- 哆啦A梦（上半身）-->
+    <g transform="translate(100 160) scale(4.6)">
+      <!-- 身体 -->
+      <ellipse cx="0" cy="18" rx="22" ry="18" fill="#30a8e8"/>
+      <ellipse cx="0" cy="20" rx="14" ry="13" fill="#fff"/>
+      <!-- 口袋 -->
+      <path d="M-8 14 A8 8 0 0 0 8 14 L8 14 Z" fill="#fff" stroke="#1d7db8" stroke-width="0.8"/>
+      <!-- 红项圈 -->
+      <rect x="-20" y="-2" width="40" height="4" fill="#e63946"/>
+      <circle cx="0" cy="3" r="3.5" fill="#ffd91f" stroke="#111" stroke-width="0.6"/>
+      <line x1="-2" y1="2.5" x2="2" y2="2.5" stroke="#111" stroke-width="0.6"/>
+      <line x1="0" y1="3.5" x2="0" y2="6" stroke="#111" stroke-width="0.6"/>
+      <!-- 头（大圆蓝） -->
+      <circle cx="0" cy="-18" r="22" fill="#30a8e8"/>
+      <!-- 脸（白） -->
+      <ellipse cx="0" cy="-13" rx="15" ry="14" fill="#fff"/>
+      <!-- 眼睛（超大眼） -->
+      <ellipse cx="-4.5" cy="-22" rx="4.5" ry="6" fill="#fff" stroke="#111" stroke-width="1"/>
+      <ellipse cx="4.5" cy="-22" rx="4.5" ry="6" fill="#fff" stroke="#111" stroke-width="1"/>
+      <circle cx="-2.8" cy="-21" r="1.8" fill="#111"/>
+      <circle cx="2.8" cy="-21" r="1.8" fill="#111"/>
+      <!-- 红鼻 -->
+      <circle cx="0" cy="-13" r="3.5" fill="#e63946"/>
+      <circle cx="-1" cy="-14" r="1.1" fill="#ffb0b0"/>
+      <!-- 胡须 -->
+      <g stroke="#111" stroke-width="1">
+        <line x1="6" y1="-12" x2="16" y2="-14"/>
+        <line x1="6" y1="-10" x2="16" y2="-10"/>
+        <line x1="6" y1="-8" x2="16" y2="-6"/>
+        <line x1="-6" y1="-12" x2="-16" y2="-14"/>
+        <line x1="-6" y1="-10" x2="-16" y2="-10"/>
+        <line x1="-6" y1="-8" x2="-16" y2="-6"/>
+      </g>
+      <!-- 嘴（大大的咧嘴） -->
+      <path d="M-5 -7 Q0 -3 5 -7" stroke="#111" stroke-width="1.3" fill="#7a1a1a"/>
+      <!-- 抬起的手（小石矛） -->
+      <circle cx="-26" cy="6" r="6" fill="#fff"/>
+      <circle cx="-28" cy="4" r="6" fill="#30a8e8"/>
+    </g>
+  `);
+  // 背景光芒（16 道辐射）
+  let rays = "";
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    const x1 = 100 + Math.cos(a) * 30;
+    const y1 = 130 + Math.sin(a) * 30;
+    const x2 = 100 + Math.cos(a) * 260;
+    const y2 = 130 + Math.sin(a) * 260;
+    rays += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${t.ray}" stroke-width="8" opacity="0.18"/>`;
+  }
+  return `
+    <svg viewBox="0 0 200 260" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id="kofBg_${char}" cx="50%" cy="50%">
+          <stop offset="0%" stop-color="${t.bg1}" stop-opacity="0.95"/>
+          <stop offset="60%" stop-color="${t.bg2}" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="#000" stop-opacity="1"/>
+        </radialGradient>
+      </defs>
+      <rect width="200" height="260" fill="url(#kofBg_${char})"/>
+      <g opacity="0.55">${rays}</g>
+      ${innerSVG}
+    </svg>
+  `;
+}
+
+function updateKofPortrait(side, char) {
+  const wrap = document.getElementById(side === "p1" ? "kofPortraitP1" : "kofPortraitP2");
+  // 清掉除了四个角标的旧内容
+  [...wrap.querySelectorAll("svg")].forEach(n => n.remove());
+  wrap.insertAdjacentHTML("afterbegin", buildKofPortraitSVG(char));
+  const enName = char === "naruto" ? "NARUTO" : char === "xueking" ? "SNOW KING" : "DORAEMON";
+  const cnName = char === "naruto" ? "鸣 人" : char === "xueking" ? "雪 王" : "哆 啦 A 梦";
+  document.getElementById(side === "p1" ? "kofNameEnP1" : "kofNameEnP2").textContent = enName;
+  document.getElementById(side === "p1" ? "kofNameCnP1" : "kofNameCnP2").textContent = cnName;
+}
+
+// 选人点击
+document.querySelectorAll("#coverSelect .kof-cell").forEach(el => {
   el.addEventListener("click", () => {
-    const cards = el.closest(".pick-cards");
-    const side = cards.dataset.p;
+    const grid = el.closest(".kof-grid");
+    const side = grid.dataset.p;
     const char = el.dataset.char;
     if (side === "p1") pickedP1 = char;
     else pickedP2 = char;
-    cards.querySelectorAll(".pick-card").forEach(c => c.classList.remove("active"));
-    el.classList.add("active");
+    grid.querySelectorAll(".kof-cell").forEach(c => c.classList.remove("selected"));
+    el.classList.add("selected");
+    updateKofPortrait(side, char);
   });
 });
+
+// 初始化两侧大肖像
+updateKofPortrait("p1", pickedP1);
+updateKofPortrait("p2", pickedP2);
 
 document.getElementById("btnStart").addEventListener("click", () => {
   // 打开角色选择页
@@ -3635,8 +4776,10 @@ function refreshAvatarDisplay() {
   const card = document.querySelector(`.avatar-card[data-char="${selectedChar}"]`);
   currentSvg.innerHTML = card.querySelector("svg").innerHTML;
   const btn = document.getElementById("avatarBtn");
-  btn.style.background = selectedChar === "naruto" ? "#d96518" : "#1d7db8";
-  btn.style.borderColor = selectedChar === "naruto" ? "#ffdd55" : "#4cc8ff";
+  const bgMap  = { naruto: "#d96518", doraemon: "#1d7db8", xueking: "#5aa8d8" };
+  const brdMap = { naruto: "#ffdd55", doraemon: "#4cc8ff", xueking: "#c8f0ff" };
+  btn.style.background = bgMap[selectedChar] || "#1d7db8";
+  btn.style.borderColor = brdMap[selectedChar] || "#fff";
   // 更新卡片选中态
   document.querySelectorAll(".avatar-card").forEach(c => {
     c.classList.toggle("active", c.dataset.char === selectedChar);
