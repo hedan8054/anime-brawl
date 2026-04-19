@@ -2088,6 +2088,9 @@ const baseDummy = {
   stunT: 0,
   downT: 0,
   cdPenalty: 0,
+  // 可被"飞天类"技能吹起来；在训练模式也有反馈（落地重置 vy、onGround）
+  vy: 0, onGround: true,
+  facing: -1,
 };
 
 // 玩家 2（PVP 对战对象）
@@ -3316,8 +3319,8 @@ function castZjySkill(idx, caster, target) {
     caster.atkT = Math.max(caster.atkT || 0, 24);
     const stacks = caster.rageStacks || 0;
     // 起飞速度：基础 -9，每层红温 -1.5，封顶 -22
-    // 红温越多飞越高；0 层 -14，4 层 -34，理论封顶 -40
-    const launchVy = -Math.min(40, 14 + stacks * 5);
+    // 红温越多飞越高；0 层 -20，4 层 -40（封顶，飞出画面顶千余 px）
+    const launchVy = -Math.min(40, 20 + stacks * 5);
     // 伤害：基础 400 + 每层 150，再乘 mul（mul 里已含红温倍率 + 可能的耶 buff）
     const dealt = Math.ceil((400 + stacks * 150) * mul);
     if (!isInSubstitute(target)) {
@@ -3763,20 +3766,47 @@ function drawZjy(state, attacking, tint) {
   const bodyY   = moving ? -walkBob : (spinning ? 4 : idleBob);
   const legSwing = moving ? Math.sin(walkT) * 0.38 : 0;
 
-  function drawLeg(hipX, swing) {
+  function drawLeg(hipX, swing, kickPose) {
     ctx.save();
     ctx.translate(hipX, -4 + bodyY);
-    ctx.rotate(jumping ? -0.3 : swing);
-    ctx.fillStyle = pants;
-    ctx.fillRect(-4, 0, 8, 22);
-    ctx.fillStyle = shoes;
-    ctx.fillRect(-5, 20, 11, 6);
-    ctx.fillStyle = "#cccccc";
-    ctx.fillRect(-5, 25, 11, 1);
+    if (kickPose) {
+      // 2A 跳踢：前腿整条张开伸直，几乎水平向前
+      ctx.rotate(-Math.PI / 2);        // 正好水平（-90°）
+      // 大腿加长加粗，强调张开
+      ctx.fillStyle = pants;
+      ctx.fillRect(-5, 0, 10, 22);     // 大腿（10×22，比普通腿粗）
+      ctx.fillStyle = "#0a142a";       // 大腿外侧深色描边（让"大张"更立体）
+      ctx.fillRect(-5, 0, 10, 2);
+      ctx.translate(0, 22);
+      ctx.rotate(0.08);                // 几乎不弯，保持直腿
+      ctx.fillStyle = pants;
+      ctx.fillRect(-4, 0, 8, 16);      // 小腿
+      ctx.fillStyle = shoes;
+      ctx.fillRect(-7, 16, 20, 8);     // 大号鞋头向前伸出
+      ctx.fillStyle = "#cccccc";
+      ctx.fillRect(-7, 23, 20, 1);
+      // 鞋尖红光（表示踢击的焦点）
+      ctx.fillStyle = "rgba(255,80,40,0.9)";
+      ctx.shadowColor = "#ff2200";
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(12, 18, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.rotate(jumping ? -0.3 : swing);
+      ctx.fillStyle = pants;
+      ctx.fillRect(-4, 0, 8, 22);
+      ctx.fillStyle = shoes;
+      ctx.fillRect(-5, 20, 11, 6);
+      ctx.fillStyle = "#cccccc";
+      ctx.fillRect(-5, 25, 11, 1);
+    }
     ctx.restore();
   }
-  drawLeg(-5, legSwing);
-  drawLeg(5, -legSwing);
+  const isKick2A = state.atkType === 2 && state.atkT > 0;
+  drawLeg(-5, legSwing);             // 后腿照常
+  drawLeg(5, -legSwing, isKick2A);   // 前腿张开踢
 
   ctx.save();
   ctx.translate(0, bodyY);
@@ -4901,6 +4931,15 @@ function update() {
   if (dummy.stunT > 0) dummy.stunT--;
   if (dummy.downT > 0) dummy.downT--;
   if ((dummy.rageGainFlash || 0) > 0) dummy.rageGainFlash--;
+  // 训练木桩：接受飞天物理（只在 isDummy 时运行，不干扰 PVP p2 自己的物理）
+  if (dummy.isDummy && typeof dummy.vy === "number") {
+    if (!dummy.onGround || dummy.vy < 0) {
+      dummy.y += dummy.vy;
+      dummy.vy += GRAVITY;
+      if (dummy.y >= GROUND) { dummy.y = GROUND; dummy.vy = 0; dummy.onGround = true; }
+      else dummy.onGround = false;
+    }
+  }
 
   // === PVP: 玩家 2 操作 / 物理 / 攻击 ===
   if (gameMode === "pvp") {
@@ -5081,12 +5120,86 @@ function drawZjyFistVFX(state) {
   const now = performance.now();
   const maxT = stage === 5 ? 48 : stage === 4 ? 28 : 22;
   const prog = Math.min(1, 1 - state.atkT / maxT);
+
+  // 5A 小拳拳：走"散点多拳"路径，不画单个大拳 + 拖影
+  if (stage === 5) {
+    ctx.save();
+    ctx.translate(state.x, state.y);
+    ctx.scale(state.facing, 1);
+    // 基础位置表（相对脚底，x 向前；多高多低分层铺开）
+    const slots = [
+      { x: 30,  y: -40, s: 18 },
+      { x: 60,  y: -28, s: 22 },
+      { x: 90,  y: -46, s: 16 },
+      { x: 45,  y: -56, s: 14 },
+      { x: 75,  y: -68, s: 18 },
+      { x: 110, y: -32, s: 20 },
+      { x: 125, y: -52, s: 14 },
+      { x: 55,  y: -76, s: 12 },
+      { x: 95,  y: -18, s: 16 },
+      { x: 20,  y: -62, s: 12 },
+    ];
+    for (let i = 0; i < slots.length; i++) {
+      const p = slots[i];
+      const seed = i * 13.7;
+      const jx = p.x + Math.sin(now / 38 + seed) * 9;
+      const jy = p.y + Math.cos(now / 42 + seed * 1.3) * 6;
+      const sz = p.s + Math.sin(now / 50 + seed) * 2.5;
+      const fade = 0.55 + 0.45 * Math.abs(Math.sin(now / 60 + seed));  // 每个拳独立呼吸淡入淡出
+      ctx.save();
+      ctx.translate(jx, jy);
+      ctx.globalAlpha = fade;
+      // 随机混多种色调：猩红 / 橙红 / 品红 / 金红
+      const palettes = [
+        ["#ffee66", "#ff3322", "#5a0505"],
+        ["#ffbb44", "#ff6611", "#6a1010"],
+        ["#ffaa88", "#ee2266", "#4a0420"],
+        ["#ffff99", "#ff8844", "#5a2200"],
+      ];
+      const pal = palettes[i % palettes.length];
+      const grad = ctx.createRadialGradient(-sz * 0.2, -sz * 0.2, 0, 0, 0, sz);
+      grad.addColorStop(0, pal[0]);
+      grad.addColorStop(0.5, pal[1]);
+      grad.addColorStop(1, pal[2]);
+      ctx.fillStyle = grad;
+      ctx.shadowColor = pal[1];
+      ctx.shadowBlur = 10 + Math.sin(now / 40 + seed) * 4;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, sz * 1.08, sz, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // 简化的指节（小弧线）
+      if (sz > 15) {
+        ctx.strokeStyle = "rgba(90,4,5,0.7)";
+        ctx.lineWidth = 1.4;
+        for (let k = 0; k < 3; k++) {
+          const ky = -sz * 0.45 + k * sz * 0.4;
+          ctx.beginPath();
+          ctx.arc(sz * 0.12, ky, sz * 0.2, -Math.PI / 2 + 0.2, Math.PI / 2 - 0.2);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+    // 点缀：一圈发散火星
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + now / 100;
+      const r = 80 + Math.sin(now / 80 + i) * 10;
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = i % 2 ? "#ff3322" : "#ffaa33";
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * r, -40 + Math.sin(a) * r * 0.4, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+
   // 不同段的拳头大小 / 相对位置
   const cfgs = {
     1: { size: 40, offY: -18, punch: true },   // 1A 前踢冲刺 → 大拳开路
-    2: { size: 36, offY: -38, punch: false },  // 2A 跳踢 → 高位红腿
+    2: { size: 34, offY: -8,  punch: false },  // 2A 跳踢 → 附在脚位（低位，大小适配）
     4: { size: 55, offY: -18, punch: true },   // 4A 重拳 → 最大
-    5: { size: 26, offY: -20, punch: true },   // 5A 小拳拳 → 小拳连发
     6: { size: 34, offY: -30, punch: false },  // 6A 踢腿
   };
   const cfg = cfgs[stage] || cfgs[1];
@@ -5097,8 +5210,7 @@ function drawZjyFistVFX(state) {
   // 前冲距离随进度推进
   const reachX = 22 + prog * 96;
 
-  // 5A 小拳拳：额外抖一下位置，模拟多拳轰击
-  const jitter = stage === 5 ? Math.sin(now / 40) * 8 : 0;
+  const jitter = 0;
 
   // 4 层拖影：从远到近、从淡到深
   for (let i = 4; i >= 0; i--) {
