@@ -1398,12 +1398,11 @@ const skillConfigs = {
     { name: "冰门穿梭", key: "l", cd: 10000, icon: "🧊" },
     { name: "冰甲",     key: "u", cd: 10000, icon: "🛡" },
   ],
-  // 红温（zjy）：技能先放占位，后面再细化（用户说"技能我等会儿再想"）
   zjy: [
-    { name: "怒拳",     key: "j", cd: 4000,  icon: "👊" },
-    { name: "暴怒踢",   key: "k", cd: 5000,  icon: "🦵" },
-    { name: "红温斩",   key: "l", cd: 7000,  icon: "🔥" },
-    { name: "怒火爆发", key: "u", cd: 20000, icon: "💢" },
+    { name: "我就不!",   key: "j", cd: 8000,  icon: "📢" },
+    { name: "我去你的!", key: "k", cd: 12000, icon: "👊" },
+    { name: "红温斩",    key: "l", cd: 7000,  icon: "🔥" },
+    { name: "怒火爆发",  key: "u", cd: 20000, icon: "💢" },
   ],
 };
 
@@ -1430,6 +1429,8 @@ addEventListener("keydown", e => {
 function handleP2Attack() {
   if (matchEnded) return;
   if (roundCountdownActive()) return;  // 开局 3-2-1 禁操作
+  // 张鸡块「我去你的!」狂按窗口：优先拦截，不走普攻
+  if (isZjySmashing(p2)) { zjySmashBeat(p2); return; }
   if (p2.atkT > 0) return;
   if (p2.stunT > 0 || p2.downT > 0) return;
   if (performance.now() < timeFrozenUntil) return;
@@ -1724,6 +1725,10 @@ const player = {
   rageStacks: 0,         // 红温（zjy）：被打概率叠层，最高 4
   rageGainFlash: 0,      // 红温叠层时刻闪光（用于 VFX）
   rageBurstUntil: 0,     // 怒火爆发期间所有伤害额外加成
+  soundDebuffUntil: 0,   // 被张鸡块 J「我就不!」音波标记后，输出 -20%
+  smashUntil: 0,         // 张鸡块 K「我去你的!」狂按窗口结束时刻
+  smashPresses: 0,       // 狂按窗口内已按次数
+  smashTargetIsP2: false,// 锁定的目标（true=打 p2，false=打 player）
 };
 
 const LONG_PRESS_THRESHOLD = 20; // 超过即进入飞天模式
@@ -1807,6 +1812,81 @@ function rageDamageMul(attacker) {
   const base = 1 + (attacker.rageStacks || 0) * RAGE_DMG_PER_STACK;
   const burst = performance.now() < (attacker.rageBurstUntil || 0) ? RAGE_BURST_BONUS : 0;
   return base + burst;
+}
+
+// 张鸡块「我去你的!」处于狂按窗口中
+function isZjySmashing(entity) {
+  return entity && entity.char === "zjy" && performance.now() < (entity.smashUntil || 0);
+}
+
+// 窗口内按一次平A：小段伤害 + 增加累计按数
+function zjySmashBeat(caster) {
+  const target = (caster === player) ? dummy : player;
+  caster.smashPresses = (caster.smashPresses || 0) + 1;
+  const mul = rageDamageMul(caster);
+  const dmg = Math.ceil(120 * mul);
+  if (target === player) damagePlayer(dmg);
+  else damageDummy(dmg);
+  spawnZjyHitParticles(target.x - caster.facing * 16, target.y - 60, caster.facing, 10);
+  spawnHitImpact(target.x - caster.facing * 16, target.y - 60, 24);
+  hitStopT = Math.max(hitStopT, 2);
+  shakeT = 6; shakeStrength = 3;
+  target.shakeT = 10;
+  caster.atkT = 8;  // 短前摇，保持角色攻击姿态
+  caster.atkType = 2;  // 借 2A 跳踢姿势做动画
+  caster.atkHit = true;
+  // 每按一次冒一朵红云
+  for (let i = 0; i < 8; i++) {
+    const a = Math.random() * Math.PI * 2;
+    particles.push({
+      x: target.x + Math.cos(a) * 16,
+      y: target.y - 60 + Math.sin(a) * 12,
+      vx: Math.cos(a) * 3, vy: Math.sin(a) * 2 - 1.5,
+      life: 20, color: i % 2 ? "#ff3322" : "#ffaa33", size: 3,
+    });
+  }
+}
+
+// 狂按窗口结束：按总按数把目标打上天 + 额外伤害
+function zjyFinishSmash(caster) {
+  const presses = caster.smashPresses || 0;
+  if (presses <= 0) { caster.smashUntil = 0; caster.smashPresses = 0; return; }
+  // caster 是 player → target = dummy（训练 baseDummy / PVP p2）
+  // caster 是 p2 → target = player
+  const target = caster === player ? dummy : player;
+  const mul = rageDamageMul(caster);
+  // 起飞速度 = 8 + presses × 0.9，封顶 -22
+  const launchVy = -Math.min(22, 8 + presses * 0.9);
+  if (!isInSubstitute(target) && typeof target.vy === "number") {
+    target.vy = launchVy;
+    target.onGround = false;
+    target.stunT = 0;  // 解锁，让物理接管
+  }
+  // 收尾爆发伤害 = 400 基础 + 按数额外 80/次
+  const finishDmg = Math.ceil((400 + presses * 80) * mul);
+  if (target === player) damagePlayer(finishDmg);
+  else damageDummy(finishDmg);
+  hitStopT = Math.max(hitStopT, 8);
+  shakeT = 18; shakeStrength = 10;
+  spawnHitImpact(target.x, target.y - 60, 60);
+  damageTexts.push({
+    x: target.x, y: target.y - 150,
+    vx: 0, vy: -3.2, life: 80, maxLife: 80,
+    text: `飞 天!  ×${presses}`, color: "#ff2200", size: 32, crit: true,
+  });
+  // 上射粒子束
+  for (let i = 0; i < 30; i++) {
+    particles.push({
+      x: target.x + (Math.random() - 0.5) * 30,
+      y: target.y - 40 + (Math.random() - 0.5) * 20,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -6 - Math.random() * 4,
+      life: 40 + Math.random() * 20,
+      color: i % 2 ? "#ff3322" : "#ffaa33", size: 3 + Math.random() * 2,
+    });
+  }
+  caster.smashUntil = 0;
+  caster.smashPresses = 0;
 }
 
 // 张鸡块命中红色粒子（每段平A 命中都撒一把）
@@ -1931,6 +2011,7 @@ function damagePlayer(amount) {
     const tNow = performance.now();
     if (tNow < (p2.narutoBuffUntil || 0)) amount = Math.ceil(amount * 1.4); // 影分身 buff
     if (tNow < (p2.dmgDebuffUntil || 0))  amount = Math.max(1, Math.ceil(amount * 0.7)); // 冰雹降伤
+    if (tNow < (p2.soundDebuffUntil || 0)) amount = Math.max(1, Math.ceil(amount * 0.8)); // 我就不! 音波 -20%
   }
   // 雪王冰甲护盾优先吸收
   if (player.shieldAmount > 0 && performance.now() < player.shieldExpiry) {
@@ -2024,6 +2105,8 @@ const p2 = {
   substituteReady: 0, substituteTaps: [],
   // 红温
   rageStacks: 0, rageGainFlash: 0, rageBurstUntil: 0,
+  // 张鸡块技能
+  soundDebuffUntil: 0, smashUntil: 0, smashPresses: 0, smashTargetIsP2: false,
 };
 
 // dummy 是共用引用，训练=baseDummy / PVP=p2
@@ -2076,6 +2159,8 @@ function roundTimeIsUp() {
 }
 
 function handleNormalAttack() {
+  // 张鸡块「我去你的!」狂按窗口：优先拦截，绕开 atkT 门
+  if (isZjySmashing(player)) { zjySmashBeat(player); return; }
   if (player.atkT > 0) return;
   if (inAerial()) return;
   if (selectedChar === "doraemon") handleDoraemonAttack(player);
@@ -2300,6 +2385,11 @@ function updateEntityCombat(attacker, target, char) {
       // 张鸡块所有段平A 都撒红色粒子
       if (char === "zjy") spawnZjyHitParticles(target.x - attacker.facing * 16, target.y - 60, attacker.facing);
     }
+  }
+
+  // 张鸡块「我去你的!」窗口结束 → 把目标打上天
+  if (char === "zjy" && (attacker.smashUntil || 0) > 0 && performance.now() >= attacker.smashUntil) {
+    zjyFinishSmash(attacker);
   }
 
   // 张鸡块 1A 前踢冲刺：spearT 期间持续把目标带走（替身状态免疫）
@@ -3115,49 +3205,65 @@ function castZjySkill(idx, caster, target) {
   const now = performance.now();
   const mul = rageDamageMul(caster);
   if (idx === 0) {
-    // J 怒拳：前冲挥拳，150px 内造成 400×mul 伤害，短击退
-    caster.atkT = Math.max(caster.atkT || 0, 20);
-    caster.x += caster.facing * 30;
-    caster.x = Math.max(40, Math.min(W_WORLD - 40, caster.x));
+    // J 我就不！——前方音波，命中则目标后续 5s 输出 -20%
+    caster.atkT = Math.max(caster.atkT || 0, 18);
     const dx = target.x - caster.x;
-    if (Math.sign(dx) === caster.facing && Math.abs(dx) < 150) {
-      const dealt = Math.ceil(400 * mul);
-      if (target === player) damagePlayer(dealt);
-      else damageDummy(dealt);
-      if (!isInSubstitute(target)) target.x += caster.facing * 18;
-      target.shakeT = 14;
-      hitStopT = Math.max(hitStopT, 4);
-      spawnHitImpact(target.x - caster.facing * 16, target.y - 60, 38);
-    }
-    for (let i = 0; i < 14; i++) {
-      const a = Math.random() * Math.PI * 2;
-      particles.push({
-        x: caster.x + caster.facing * 36, y: caster.y - 50,
-        vx: Math.cos(a) * 4 + caster.facing * 3,
-        vy: Math.sin(a) * 3 - 1,
-        life: 22 + Math.random() * 10,
-        color: i % 2 ? "#ff5a30" : "#ffbb33", size: 3 + Math.random() * 2,
+    if (Math.sign(dx) === caster.facing && Math.abs(dx) < 260) {
+      target.soundDebuffUntil = now + 5000;
+      target.shakeT = 10;
+      damageTexts.push({
+        x: target.x, y: target.y - 140,
+        vx: 0, vy: -2.0, life: 55, maxLife: 55,
+        text: "我 就 不!", color: "#ff4422", size: 22, crit: true,
       });
     }
-  } else if (idx === 1) {
-    // K 暴怒踢：正面 120px 内 500×mul 伤害 + 短眩晕
-    caster.atkT = Math.max(caster.atkT || 0, 22);
-    const dx = target.x - caster.x;
-    if (Math.sign(dx) === caster.facing && Math.abs(dx) < 120) {
-      const dealt = Math.ceil(500 * mul);
-      if (target === player) damagePlayer(dealt);
-      else damageDummy(dealt);
-      if (!isInSubstitute(target)) target.stunT = Math.max(target.stunT || 0, 30);
-      target.shakeT = 16;
-      hitStopT = Math.max(hitStopT, 5);
-      spawnHitImpact(target.x - caster.facing * 10, target.y - 60, 46);
+    // 音波：三层同心扇形弧 + 射线粒子（朝 facing 方向）
+    for (let ring = 0; ring < 3; ring++) {
+      const ringR = 30 + ring * 18;
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 3 + (i / 9) * (Math.PI * 2 / 3);  // 前方扇形
+        particles.push({
+          x: caster.x + caster.facing * 20,
+          y: caster.y - 50,
+          vx: caster.facing * Math.cos(a) * (3 + ring * 1.4),
+          vy: Math.sin(a) * 2.4,
+          life: 24 + ring * 6,
+          color: ring === 0 ? "#ffee66" : (ring === 1 ? "#ff8844" : "#ff4422"),
+          size: 3 + Math.random() * 2,
+        });
+      }
     }
-    for (let i = 0; i < 18; i++) {
-      const a = (i / 18) * Math.PI * 2;
+    hitStopT = Math.max(hitStopT, 3);
+  } else if (idx === 1) {
+    // K 我去你的！——锁定目标 2s，期间按平A 每按一次造成小段伤害；
+    // 2s 结束时按累计按数把目标打上天 + 额外起飞伤害
+    caster.atkT = Math.max(caster.atkT || 0, 18);
+    caster.smashUntil = now + 2000;
+    caster.smashPresses = 0;
+    caster.smashTargetIsP2 = (target === p2 || target === dummy);
+    // 前冲贴脸
+    const dist = target.x - caster.x;
+    const faceTo = Math.sign(dist) || caster.facing;
+    caster.facing = faceTo;
+    caster.x = target.x - faceTo * 60;
+    caster.x = Math.max(40, Math.min(W_WORLD - 40, caster.x));
+    // 锁住目标（短眩晕，替身免疫）
+    if (!isInSubstitute(target)) {
+      target.stunT = Math.max(target.stunT || 0, 120);
+      target.vx = 0;
+    }
+    damageTexts.push({
+      x: caster.x, y: caster.y - 150,
+      vx: 0, vy: -2.4, life: 60, maxLife: 60,
+      text: "我 去 你 的!", color: "#ff2200", size: 24, crit: true,
+    });
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
       particles.push({
-        x: caster.x + caster.facing * 40, y: caster.y - 50,
-        vx: Math.cos(a) * 5, vy: Math.sin(a) * 3 - 1,
-        life: 28, color: "#ff8833", size: 3 + Math.random() * 2,
+        x: caster.x + Math.cos(a) * 30,
+        y: caster.y - 50 + Math.sin(a) * 20,
+        vx: Math.cos(a) * 3, vy: Math.sin(a) * 2 - 1,
+        life: 30, color: i % 2 ? "#ff3322" : "#ffaa33", size: 3 + Math.random() * 2,
       });
     }
   } else if (idx === 2) {
@@ -4140,9 +4246,12 @@ function spawnSmoke(x, y, n) {
 
 function damageDummy(amount) {
   if (matchEnded) return;
-  // 攻击方（P1）状态修正：冰雹降伤 -30%
+  // 攻击方（P1）状态修正：冰雹降伤 -30% / 我就不!音波 -20%
   if (performance.now() < (player.dmgDebuffUntil || 0)) {
     amount = Math.max(1, Math.ceil(amount * 0.7));
+  }
+  if (performance.now() < (player.soundDebuffUntil || 0)) {
+    amount = Math.max(1, Math.ceil(amount * 0.8));
   }
   // 雪王冰甲护盾优先吸收（dummy 也可能是 p2）
   if (dummy.shieldAmount > 0 && performance.now() < dummy.shieldExpiry) {
@@ -4287,6 +4396,7 @@ function resetRound() {
   p2.shieldAmount = 0; p2.shieldExpiry = 0;
   p2.substituteReady = 0; p2.substituteTaps = []; p2.substituteUntil = 0;
   p2.rageStacks = 0; p2.rageGainFlash = 0; p2.rageBurstUntil = 0;
+  p2.soundDebuffUntil = 0; p2.smashUntil = 0; p2.smashPresses = 0;
   p2.icecreamEnd = 0; p2.icecreamNextTick = 0;
   p2.iceGate1 = null; p2.iceGate2 = null; p2.iceGateCooldown = 0;
   p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
@@ -4311,6 +4421,7 @@ function resetRound() {
   player.shieldAmount = 0; player.shieldExpiry = 0;
   player.substituteReady = 0; player.substituteTaps = []; player.substituteUntil = 0;
   player.rageStacks = 0; player.rageGainFlash = 0; player.rageBurstUntil = 0;
+  player.soundDebuffUntil = 0; player.smashUntil = 0; player.smashPresses = 0;
   player.icecreamEnd = 0; player.icecreamNextTick = 0;
   player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
   player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
