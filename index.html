@@ -5070,9 +5070,130 @@ function update() {
   if (typeof netMode !== "undefined" && netMode === "host") netBroadcastState();
 }
 
+// 张鸡块专属：大号红色虚影拳头（不用石矛/刀光）
+// 根据 atkType 调整拳头大小和位置，带 4 层拖影
+function drawZjyFistVFX(state) {
+  if (!state || state.atkT <= 0 || state.atkType === 0) return;
+  const stage = state.atkType;
+  // 3A 蹲转已有独立扫腿 VFX（drawZjy 里做了），这里跳过避免叠层
+  if (stage === 3) return;
+  const now = performance.now();
+  const maxT = stage === 5 ? 48 : stage === 4 ? 28 : 22;
+  const prog = Math.min(1, 1 - state.atkT / maxT);
+  // 不同段的拳头大小 / 相对位置
+  const cfgs = {
+    1: { size: 40, offY: -18, punch: true },   // 1A 前踢冲刺 → 大拳开路
+    2: { size: 36, offY: -38, punch: false },  // 2A 跳踢 → 高位红腿
+    4: { size: 55, offY: -18, punch: true },   // 4A 重拳 → 最大
+    5: { size: 26, offY: -20, punch: true },   // 5A 小拳拳 → 小拳连发
+    6: { size: 34, offY: -30, punch: false },  // 6A 踢腿
+  };
+  const cfg = cfgs[stage] || cfgs[1];
+  ctx.save();
+  ctx.translate(state.x, state.y + cfg.offY);
+  ctx.scale(state.facing, 1);
+
+  // 前冲距离随进度推进
+  const reachX = 22 + prog * 96;
+
+  // 5A 小拳拳：额外抖一下位置，模拟多拳轰击
+  const jitter = stage === 5 ? Math.sin(now / 40) * 8 : 0;
+
+  // 4 层拖影：从远到近、从淡到深
+  for (let i = 4; i >= 0; i--) {
+    const tx = reachX - i * 22 + jitter * (i === 0 ? 1 : 0.2);
+    const alpha = i === 0 ? 0.92 : (0.46 - i * 0.09);
+    const size = cfg.size + i * 3.5;
+
+    ctx.save();
+    ctx.translate(tx, 0);
+    ctx.globalAlpha = alpha;
+
+    // 红色径向渐变拳头本体
+    const grad = ctx.createRadialGradient(-size * 0.2, -size * 0.2, 0, 0, 0, size);
+    grad.addColorStop(0, "#ffee66");
+    grad.addColorStop(0.3, "#ff5533");
+    grad.addColorStop(0.75, "#dd1510");
+    grad.addColorStop(1, "#5a0405");
+    ctx.fillStyle = grad;
+    ctx.shadowColor = "#ff2200";
+    ctx.shadowBlur = i === 0 ? 32 : 18;
+    ctx.beginPath();
+    // 稍微椭圆，前端（右）更尖一点
+    ctx.ellipse(0, 0, size * 1.1, size, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 最近一层画指节褶皱细节
+    if (i === 0 && cfg.punch) {
+      ctx.strokeStyle = "rgba(90,4,5,0.85)";
+      ctx.lineWidth = 2.4;
+      // 指节四道弧线（横向，面朝前方）
+      for (let k = 0; k < 4; k++) {
+        const ky = -size * 0.48 + k * (size * 0.32);
+        ctx.beginPath();
+        ctx.arc(size * 0.1, ky, size * 0.22, -Math.PI / 2 + 0.2, Math.PI / 2 - 0.2);
+        ctx.stroke();
+      }
+      // 中央高光
+      ctx.fillStyle = "rgba(255,240,150,0.55)";
+      ctx.beginPath();
+      ctx.ellipse(-size * 0.3, -size * 0.35, size * 0.25, size * 0.18, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+      // 手腕（肤色延伸回身体方向）
+      ctx.fillStyle = "#c89674";
+      ctx.fillRect(-size - 10, -8, 14, 16);
+      ctx.fillStyle = "rgba(100,50,30,0.4)";
+      ctx.fillRect(-size - 10, -8, 14, 2);
+    }
+    ctx.restore();
+  }
+
+  // 速度线（4 道红色短横）
+  ctx.strokeStyle = "rgba(255,80,40,0.85)";
+  ctx.lineWidth = 2.4;
+  ctx.shadowColor = "#ff2200";
+  ctx.shadowBlur = 10;
+  for (let i = 0; i < 4; i++) {
+    const y = -22 + i * 11;
+    const x0 = -30 - i * 6;
+    const x1 = reachX - cfg.size * 1.0;
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+
+  // 冲击光圈：命中瞬间（prog > 0.5 开始出现，逐渐扩大淡出）
+  if (prog > 0.45) {
+    const ringP = (prog - 0.45) / 0.55;
+    ctx.strokeStyle = `rgba(255,80,40,${(1 - ringP) * 0.85})`;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = "#ff2200";
+    ctx.shadowBlur = 22;
+    ctx.beginPath();
+    ctx.arc(reachX, 0, cfg.size * (1 + ringP * 0.8), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255,220,80,${(1 - ringP) * 0.6})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(reachX, 0, cfg.size * (0.6 + ringP * 0.5), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+}
+
 // 通用：绘制某个角色的普攻连招特效（石矛/回旋/电击枪/小拳拳）
 // state = 攻击方；target = 被攻击方（用于小拳拳的拟声词定位 & 距离判定）
 function drawComboVFX(state, target) {
+  // 张鸡块用独立的红色拳头虚影，不走石矛/刀光那套
+  if (state && state.char === "zjy") {
+    drawZjyFistVFX(state);
+    return;
+  }
   // 石矛（1A 跟随旋转 / 2A 直冲突刺）
   if (state.spearT > 0) {
     const isSpin = state.spinT > 0;
