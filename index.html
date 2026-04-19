@@ -1769,6 +1769,17 @@ function inAerial() {
   return player.aerialStart > 0 && (performance.now() - player.aerialStart) < player.aerialDuration;
 }
 
+// 任一"锁定在空中"的飞天状态：鸣人飞天 / 雪王飞天 / 哆啦竹蜻蜓
+// 用于"敌方在地面时无法通过近战命中飞天目标"的判定
+function isAerialLocked(e) {
+  if (!e) return false;
+  const now = performance.now();
+  if (e.char === "naruto"   && e.aerialStart > 0 && (now - e.aerialStart) < (e.aerialDuration || 5000)) return true;
+  if (e.char === "xueking"  && e.flyUntil && now < e.flyUntil) return true;
+  if (e.char === "doraemon" && e.copterActive) return true;
+  return false;
+}
+
 // 对手（未来玩家2）是否被时空暂停——PVP 时在对手 keydown 和 update 里判断
 function isOpponentFrozen() {
   return performance.now() < timeFrozenUntil;
@@ -2147,6 +2158,19 @@ function damagePlayer(amount) {
       size: 20,
       crit: false,
     });
+    // 铜锣烧反伤：原始伤害 50% 回敬攻击方（PVP 才有攻击方实体）
+    if (gameMode === "pvp" && !_shieldReflectInFlight) {
+      _shieldReflectInFlight = true;
+      const reflect = Math.max(1, Math.ceil(amount * 0.5));
+      damageDummy(reflect);
+      _shieldReflectInFlight = false;
+      damageTexts.push({
+        x: p2.x, y: p2.y - 120,
+        vx: 0, vy: -2.5, life: 50, maxLife: 50,
+        text: `反伤 -${reflect}`, color: "#ffcc66", size: 18, crit: true,
+      });
+      spawnParticles(p2.x, p2.y - 60, "#ffcc66", 12);
+    }
   }
   player.hp = Math.max(0, player.hp - final);
   // 伤害飘字 + 受击粒子
@@ -2236,6 +2260,7 @@ let timeFrozenUntil = 0;    // P1 冻结 P2 的结束时刻
 let p1FrozenUntil = 0;      // P2 冻结 P1 的结束时刻（PVP）
 let shieldActiveUntil = 0;  // P1 盾
 let p2ShieldUntil = 0;      // P2 盾
+let _shieldReflectInFlight = false; // 铜锣烧反伤防递归锁
 const doors = [];           // 任意门特效
 
 // 胜负（三局两胜）
@@ -2372,6 +2397,10 @@ function handleNarutoAttack(e = player) {
 }
 
 function applyDamageTo(target, amount) {
+  // 飞天保护：目标锁定在空中 + 攻击方在地面 → 近战/地面技能打不到
+  // （投射物/AoE 走 damagePlayer/damageDummy 直通，绕过本函数 → 天然"对空"）
+  const attacker = (target === player) ? (gameMode === "pvp" ? p2 : null) : player;
+  if (attacker && isAerialLocked(target) && attacker.onGround) return;
   if (target === player) damagePlayer(amount);
   else damageDummy(amount);
 }
@@ -4650,6 +4679,7 @@ function damageDummy(amount) {
   if (!dummy.isDummy) {
     if (performance.now() < dummy.invincibleUntil) return;
     if (performance.now() < p2ShieldUntil) {
+      const original = amount;
       amount = Math.max(1, Math.ceil(amount * 0.1));
       damageTexts.push({
         x: p2.x, y: p2.y - 90,
@@ -4657,6 +4687,19 @@ function damageDummy(amount) {
         life: 45, maxLife: 45,
         text: "-90%", color: "#66ff99", size: 20, crit: false,
       });
+      // 铜锣烧反伤：原始伤害 50% 回敬攻击方（P1）
+      if (!_shieldReflectInFlight) {
+        _shieldReflectInFlight = true;
+        const reflect = Math.max(1, Math.ceil(original * 0.5));
+        damagePlayer(reflect);
+        _shieldReflectInFlight = false;
+        damageTexts.push({
+          x: player.x, y: player.y - 120,
+          vx: 0, vy: -2.5, life: 50, maxLife: 50,
+          text: `反伤 -${reflect}`, color: "#ffcc66", size: 18, crit: true,
+        });
+        spawnParticles(player.x, player.y - 60, "#ffcc66", 12);
+      }
     }
   }
   dummy.hp = Math.max(0, dummy.hp - amount);
