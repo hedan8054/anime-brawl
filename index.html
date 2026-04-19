@@ -2312,18 +2312,32 @@ function updateEntityCombat(attacker, target, char) {
     }
   }
 
-  // 张鸡块 3A 回旋踢 tick（持续 2s 造成小伤害 + 红色火星）
-  if (char === "zjy" && attacker.spinT > 0) {
+  // 张鸡块 3A 回旋踢 tick（持续 2s；长按普攻可无限延长 + 一速 +40%）
+  if (char === "zjy" && attacker.spinT > 0 && attacker.atkType === 3) {
+    // 长按平A 键：P1=Space / P2=ArrowDown
+    const keyHeld = attacker === player ? !!keys["space"] : (attacker === p2 ? !!keys["arrowdown"] : false);
+    if (keyHeld) {
+      // 抵消通用 -- 自减，并给 20 帧缓冲，保证释放键后才渐停
+      attacker.spinT = Math.max(attacker.spinT, 20);
+      attacker.atkT  = Math.max(attacker.atkT, 20);
+      attacker.zjySpinBoost = true;   // 给 drawZjy 读，用于旋转动画提速
+    } else {
+      attacker.zjySpinBoost = false;
+    }
     const dx2 = target.x - attacker.x;
     if (Math.abs(dx2) < 150) {
       const nowTick = performance.now();
-      if (nowTick - (attacker.spinLastTick || 0) >= 100) {  // 每 100ms 一次（避免过猛）
+      // 提速后 tick 从 100ms 压到 72ms（约等于 1/1.4）
+      const tickInterval = attacker.zjySpinBoost ? 72 : 100;
+      if (nowTick - (attacker.spinLastTick || 0) >= tickInterval) {
         const mul = rageDamageMul(attacker);
         applyDamageTo(target, Math.ceil(40 * mul));
         attacker.spinLastTick = nowTick;
         spawnZjyHitParticles(target.x, target.y - 60, attacker.facing, 6);
       }
     }
+  } else if (char === "zjy") {
+    attacker.zjySpinBoost = false;
   }
 
   // 张鸡块 5A 小拳拳：前推 + 拖拽 + 每 6 帧一次 tick 伤害（与哆啦共用 punchRushT 字段）
@@ -3769,7 +3783,9 @@ function drawZjy(state, attacking, tint) {
   // 3A 蹲转扫腿：在脚下加一道横向旋转的红色虚影 + 地面尘环
   if ((state.spinT || 0) > 0 && state.atkType === 3) {
     const cx = state.x, cy = state.y;
-    const phase = (now / 60) % (Math.PI * 2);  // 快速旋转
+    // 长按加速：一速 +40% → 旋转周期 / 1.4
+    const phaseSpeed = state.zjySpinBoost ? 1.4 : 1.0;
+    const phase = ((now / 60) * phaseSpeed) % (Math.PI * 2);
     ctx.save();
     // 拖影扫腿（4-6 道弧线，残影叠加）
     for (let i = 0; i < 5; i++) {
@@ -3814,6 +3830,20 @@ function drawZjy(state, attacking, tint) {
       }
     }
     ctx.restore();
+
+    // 长按加速提示：头顶闪一条 "+40% 一速"
+    if (state.zjySpinBoost) {
+      const pulse = 0.6 + Math.sin(now / 60) * 0.4;
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.font = "900 13px -apple-system, 'PingFang SC', sans-serif";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#000";
+      ctx.strokeText("+40% 一速", state.x, state.y - 135);
+      ctx.fillStyle = `rgba(255,${180 + pulse * 60},${40 + pulse * 40},${pulse})`;
+      ctx.fillText("+40% 一速", state.x, state.y - 135);
+      ctx.restore();
+    }
   }
 }
 
