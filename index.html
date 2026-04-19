@@ -1860,8 +1860,8 @@ function zjyFinishSmash(caster) {
   // caster 是 p2 → target = player
   const target = caster === player ? dummy : player;
   const mul = rageDamageMul(caster);
-  // 起飞速度 = 8 + presses × 0.9，封顶 -22
-  const launchVy = -Math.min(22, 8 + presses * 0.9);
+  // 起飞速度 = 12 + presses × 1.6，封顶 -40 → 峰值能飞过画布顶很远，落地总耗时约 2-3s
+  const launchVy = -Math.min(40, 12 + presses * 1.6);
   if (!isInSubstitute(target) && typeof target.vy === "number") {
     target.vy = launchVy;
     target.onGround = false;
@@ -3316,7 +3316,8 @@ function castZjySkill(idx, caster, target) {
     caster.atkT = Math.max(caster.atkT || 0, 24);
     const stacks = caster.rageStacks || 0;
     // 起飞速度：基础 -9，每层红温 -1.5，封顶 -22
-    const launchVy = -Math.min(22, 9 + stacks * 1.5);
+    // 红温越多飞越高；0 层 -14，4 层 -34，理论封顶 -40
+    const launchVy = -Math.min(40, 14 + stacks * 5);
     // 伤害：基础 400 + 每层 150，再乘 mul（mul 里已含红温倍率 + 可能的耶 buff）
     const dealt = Math.ceil((400 + stacks * 150) * mul);
     if (!isInSubstitute(target)) {
