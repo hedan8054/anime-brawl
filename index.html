@@ -1527,6 +1527,7 @@ function isShieldActive() {
 
 // ─────────── 替身术：被控时双击平A 解除所有控制，冷却 10s ───────────
 const SUBSTITUTE_COOLDOWN = 10000;
+const SUBSTITUTE_DURATION = 1500;   // 解控后无敌帧持续时间
 const SUBSTITUTE_TAP_WINDOW = 500;  // 0.5s 内连按两次视为双击
 const SUBSTITUTE_MIN_GAP = 60;      // 过滤浏览器 keyrepeat（>=60ms 才算真人再按一次）
 
@@ -1546,6 +1547,16 @@ function isP2Controlled() {
 // 记录一次"被控时按平A"。返回 true 表示本次双击成功解控
 function registerSubstituteTap(entity, side) {
   const now = performance.now();
+  // 时空暂停期间禁用替身——这是哆啦A梦时停的设计意图：被冻住就是被冻住
+  const timeStopped = side === "p1" ? now < p1FrozenUntil : now < timeFrozenUntil;
+  if (timeStopped) {
+    damageTexts.push({
+      x: entity.x, y: entity.y - 130,
+      vx: 0, vy: -1.6, life: 30, maxLife: 30,
+      text: "时空暂停 无法替身", color: "#ff8866", size: 14, crit: false,
+    });
+    return false;
+  }
   if (now < (entity.substituteReady || 0)) {
     // 冷却中：弹一条提示，告诉玩家替身还没恢复
     damageTexts.push({
@@ -1572,7 +1583,7 @@ function registerSubstituteTap(entity, side) {
   entity.iceFrozenUntil = 0;
   if (side === "p1") p1FrozenUntil = 0;
   else timeFrozenUntil = 0;
-  entity.invincibleUntil = Math.max(entity.invincibleUntil || 0, now + 500);
+  entity.invincibleUntil = Math.max(entity.invincibleUntil || 0, now + SUBSTITUTE_DURATION);
   entity.substituteReady = now + SUBSTITUTE_COOLDOWN;
   entity.substituteTaps = [];
   spawnSubstituteVFX(entity);
@@ -1604,11 +1615,19 @@ function drawSubstituteHint(entity, side) {
   const controlled = side === "p1" ? isP1Controlled() : isP2Controlled();
   if (!controlled) return;
   const now = performance.now();
+  const timeStopped = side === "p1" ? now < p1FrozenUntil : now < timeFrozenUntil;
   const onCd = now < (entity.substituteReady || 0);
-  const text = onCd
-    ? `替身 CD ${((entity.substituteReady - now) / 1000).toFixed(1)}s`
-    : (side === "p1" ? "双击 Space 替身!" : "双击 ↓ 替身!");
-  const color = onCd ? "#aaaaaa" : "#ffdd66";
+  let text, color;
+  if (timeStopped) {
+    text = "时空暂停 不可解控";
+    color = "#ff8866";
+  } else if (onCd) {
+    text = `替身 CD ${((entity.substituteReady - now) / 1000).toFixed(1)}s`;
+    color = "#aaaaaa";
+  } else {
+    text = side === "p1" ? "双击 Space 替身!" : "双击 ↓ 替身!";
+    color = "#ffdd66";
+  }
   ctx.save();
   ctx.textAlign = "center";
   ctx.font = "900 13px -apple-system, 'PingFang SC', sans-serif";
@@ -6015,7 +6034,7 @@ document.querySelectorAll("#coverSelect .kof-cell").forEach(el => {
     el.classList.add("selected");
     updateKofPortrait(side, char);
     // 联机: 广播自己的选择给对方
-    if (typeof netMode !== "undefined" && netMode) netSend({ type: "pick", side, char });
+    if (typeof netMode !== "undefined" && netMode) netSendReliable({ type: "pick", side, char });
   });
 });
 
@@ -6033,7 +6052,7 @@ document.getElementById("btnConfirmPick").addEventListener("click", () => {
   // 联机模式: 只有房主能开打，并同时广播给客户端
   if (typeof netMode !== "undefined" && netMode === "client") return;
   if (typeof netMode !== "undefined" && netMode === "host") {
-    netSend({ type: "start", p1: pickedP1, p2: pickedP2 });
+    netSendReliable({ type: "start", p1: pickedP1, p2: pickedP2 }, 5, 80);
   }
   startPVPMatch(pickedP1, pickedP2);
   hideCover();
@@ -6050,7 +6069,7 @@ document.getElementById("btnBackCover").addEventListener("click", () => {
 document.getElementById("btnRematch").addEventListener("click", () => {
   if (typeof netMode !== "undefined" && netMode === "client") return;
   if (typeof netMode !== "undefined" && netMode === "host") {
-    netSend({ type: "start", p1: pickedP1, p2: pickedP2 });
+    netSendReliable({ type: "start", p1: pickedP1, p2: pickedP2 }, 5, 80);
     startPVPMatch(pickedP1, pickedP2);
     return;
   }
@@ -6059,7 +6078,7 @@ document.getElementById("btnRematch").addEventListener("click", () => {
 document.getElementById("btnBackMenu").addEventListener("click", () => {
   matchEnded = false;
   if (typeof netMode !== "undefined" && netMode) {
-    netSend({ type: "menu" });
+    netSendReliable({ type: "menu" }, 3, 60);
     netCleanup();
   }
   document.getElementById("matchOverlay").classList.add("hidden");
@@ -6139,7 +6158,11 @@ var netConn = null;       // DataConnection
 let netPeer = null;       // PeerJS Peer 实例
 let netPeerId = null;     // 本机 peer id
 let netBroadcastLast = 0; // 上次广播/发送时刻
-const NET_SEND_RATE_MS = 33; // ~30Hz 状态同步，权衡带宽和流畅度
+const NET_SEND_RATE_MS = 50;      // 20Hz 状态同步（降频 + 客户端位置插值抵消）
+const NET_INPUT_RATE_MS = 33;     // 30Hz 输入上行（输入包很小不心疼，低延迟为王）
+let netLastAppliedStateT = 0;     // 乱序去重：丢弃比这更早的状态包
+let netLastStartAt = 0, netLastStartP1 = null, netLastStartP2 = null;  // start 消息去重
+let netLastInputT = 0;            // 输入包乱序去重
 let netCurClientInput = { left:false, right:false, up:false, attack:false, s0:false, s1:false, s2:false, s3:false };
 let netPrevClientInput = { ...netCurClientInput };
 let netPrevMatchEnded = false;
@@ -6237,7 +6260,8 @@ async function netJoinRoom(code) {
     return;
   }
   console.log("[netJoin] initPeer done; myId=", netPeerId, "connecting to", code);
-  netConn = netPeer.connect(code, { reliable: true });
+  // reliable:false = 不重传不保序，避免网络抖动时队头阻塞（游戏状态"最新的就够"）
+  netConn = netPeer.connect(code, { reliable: false });
   console.log("[netJoin] connect() returned, waiting open...");
   netSetupConn();
 }
@@ -6248,7 +6272,7 @@ function netSetupConn() {
     console.log("[netSetupConn] DataConnection OPEN");
     netSetStatus("已连接！进入选角...", "ok");
     netSetIndicator("● 已连接 (" + (netMode === "host" ? "房主" : "加入者") + ")", "#66ff99");
-    netSend({ type: "hello", role: netMode, pick: (netMode === "host" ? pickedP1 : pickedP2) });
+    netSendReliable({ type: "hello", role: netMode, pick: (netMode === "host" ? pickedP1 : pickedP2) }, 3, 80);
     setTimeout(netGotoSelect, 400);
   });
   netConn.on("data", netOnPacket);
@@ -6267,6 +6291,10 @@ function netSend(obj) {
   if (netConn && netConn.open) {
     try { netConn.send(obj); } catch(e) { console.warn("send fail", e); }
   }
+}
+// 控制消息 (hello/pick/start/menu) 重发防丢：reliable:false 下单包丢失代价小，多发几次即可
+function netSendReliable(obj, times=3, intervalMs=80) {
+  for (let i = 0; i < times; i++) setTimeout(() => netSend(obj), i * intervalMs);
 }
 
 function netGotoSelect() {
@@ -6317,6 +6345,11 @@ function netOnPacket(data) {
       netApplyPickVisual();
       break;
     case "start":
+      // 重发防丢：1 秒内多次 start 视为重复，忽略
+      if (performance.now() - (netLastStartAt || 0) < 1000 &&
+          netLastStartP1 === data.p1 && netLastStartP2 === data.p2) break;
+      netLastStartAt = performance.now();
+      netLastStartP1 = data.p1; netLastStartP2 = data.p2;
       pickedP1 = data.p1; pickedP2 = data.p2;
       document.getElementById("coverSelect").classList.add("hidden");
       document.getElementById("coverMain").classList.remove("hidden");
@@ -6325,6 +6358,9 @@ function netOnPacket(data) {
       netSetIndicator("● " + (netMode === "host" ? "房主" : "加入者") + " · 联机中", "#66ff99");
       break;
     case "input":
+      // 乱序去重：reliable:false 下旧 input 可能后到，直接扔掉
+      if (typeof data.t === "number" && data.t <= (netLastInputT || 0)) break;
+      netLastInputT = data.t || 0;
       netCurClientInput = {
         left: !!data.left, right: !!data.right, up: !!data.up, attack: !!data.attack,
         s0: !!data.s0, s1: !!data.s1, s2: !!data.s2, s3: !!data.s3,
@@ -6436,9 +6472,17 @@ const NET_TIMER_FIELDS = new Set([
 function netPackEntity(o) {
   const r = {};
   for (const k of NET_ENTITY_FIELDS) if (k in o) r[k] = o[k];
-  if (o.skills) r._skills = o.skills.map(s => ({ ready: s.ready, cd: s.cd, name: s.name, key: s.key, icon: s.icon }));
+  // skills: 只传 ready 数组（cd/name/icon 客户端本地已有 config，不重复传）
+  if (o.skills) r._skR = o.skills.map(s => s.ready);
   return r;
 }
+
+// 精简各类数组：只留客户端渲染必需字段
+function netPackProjectile(p) { return { x:p.x, y:p.y, vx:p.vx, life:p.life, rot:p.rot, owner:p.owner }; }
+function netPackClone(c)      { return { x:c.x, y:c.y, facing:c.facing, life:c.life, atkT:c.atkT }; }
+function netPackRasen(r)      { return { x:r.x, y:r.y, vx:r.vx, vy:r.vy, life:r.life, radius:r.radius, owner:r.owner }; }
+function netPackFog(f)        { return { x:f.x, y:f.y, radius:f.radius, maxRadius:f.maxRadius, life:f.life, maxLife:f.maxLife, owner:f.owner }; }
+function netPackDoor(d)       { return { x:d.x, y:d.y, bornAt:d.bornAt, life:d.life }; }
 
 function netSerializeState() {
   const now = performance.now();
@@ -6447,12 +6491,12 @@ function netSerializeState() {
     hostNow: now,
     player: netPackEntity(player),
     p2: netPackEntity(p2),
-    projectiles: projectiles.slice(),
-    clones: clones.slice(),
-    damageTexts: damageTexts.slice(),
-    rasenBalls: rasenBalls.slice(),
-    fogClouds: fogClouds.map(f => { const c = {...f}; c.hit = []; return c; }),
-    doors: doors.slice(),
+    projectiles: projectiles.map(netPackProjectile),
+    clones:      clones.map(netPackClone),
+    // damageTexts 不同步：纯视觉，HP 条已反馈；省带宽
+    rasenBalls:  rasenBalls.map(netPackRasen),
+    fogClouds:   fogClouds.map(netPackFog),
+    doors:       doors.map(netPackDoor),
     timeFrozenUntil, p1FrozenUntil, shieldActiveUntil, p2ShieldUntil,
     matchEnded, winner, p1Wins, p2Wins,
     camX, hitStopT, shakeT,
@@ -6463,6 +6507,10 @@ function netSerializeState() {
 
 function netApplyState(data) {
   if (!data.player || !data.p2) return;
+  // 乱序去重：reliable:false 下包可能颠倒，老的直接扔
+  if (data.hostNow <= netLastAppliedStateT) return;
+  netLastAppliedStateT = data.hostNow;
+
   const recvNow = performance.now();
   const offset = recvNow - data.hostNow;
 
@@ -6479,16 +6527,31 @@ function netApplyState(data) {
   // 更新局前 / 局后切换状态（用于客户端显示胜利覆盖）
   const prevMatchEnded = matchEnded;
 
+  // 客户端位置插值：x/y 做 0.5 lerp 缓冲 20Hz 跳帧
+  const prevPX = player.x, prevPY = player.y, prevP2X = p2.x, prevP2Y = p2.y;
+
   // 角色属性
   Object.assign(player, data.player);
   Object.assign(p2, data.p2);
-  if (data.player._skills) {
-    player.skills = data.player._skills.map(s => ({ ...s }));
+
+  // 插值抹平位置跳变（只在与上帧差距较小时插值，大跳视为瞬移 - 不插值）
+  if (netMode === "client") {
+    if (Math.abs(player.x - prevPX) < 80)  player.x = prevPX * 0.5 + player.x * 0.5;
+    if (Math.abs(player.y - prevPY) < 80)  player.y = prevPY * 0.5 + player.y * 0.5;
+    if (Math.abs(p2.x - prevP2X) < 80)     p2.x = prevP2X * 0.5 + p2.x * 0.5;
+    if (Math.abs(p2.y - prevP2Y) < 80)     p2.y = prevP2Y * 0.5 + p2.y * 0.5;
   }
-  if (data.p2._skills) {
-    p2.skills = data.p2._skills.map(s => ({ ...s }));
+
+  // skills 技能 CD：精简成 _skR（只 ready 数组，其他字段用本地 config 补齐）
+  if (data.player._skR) {
+    const cfg = skillConfigs[player.char] || [];
+    player.skills = data.player._skR.map((ready, i) => ({ ...cfg[i], ready }));
   }
-  // skills 是单独的数组（用于 P1 技能栏显示 CD）
+  if (data.p2._skR) {
+    const cfg = skillConfigs[p2.char] || [];
+    p2.skills = data.p2._skR.map((ready, i) => ({ ...cfg[i], ready }));
+  }
+  // P1 技能栏（本地 skills 数组）
   if (data.skillsReady && skills && skills.length) {
     for (let i = 0; i < skills.length && i < data.skillsReady.length; i++) {
       skills[i].ready = data.skillsReady[i];
@@ -6498,12 +6561,13 @@ function netApplyState(data) {
   if (data.gameMode === "pvp") dummy = p2;
 
   // 数组 (就地替换，避免 draw 引用失效)
-  projectiles.length = 0; projectiles.push(...data.projectiles);
-  clones.length = 0;      clones.push(...data.clones);
-  damageTexts.length = 0; damageTexts.push(...data.damageTexts);
-  rasenBalls.length = 0;  rasenBalls.push(...data.rasenBalls);
-  fogClouds.length = 0;   fogClouds.push(...data.fogClouds.map(f => ({ ...f, hit: new Set(f.hit || []) })));
-  doors.length = 0;       doors.push(...data.doors);
+  projectiles.length = 0; if (data.projectiles) projectiles.push(...data.projectiles);
+  clones.length = 0;      if (data.clones)      clones.push(...data.clones);
+  // damageTexts 不同步，保持客户端空（HP 条足够反馈）
+  damageTexts.length = 0;
+  rasenBalls.length = 0;  if (data.rasenBalls)  rasenBalls.push(...data.rasenBalls);
+  fogClouds.length = 0;   if (data.fogClouds)   fogClouds.push(...data.fogClouds.map(f => ({ ...f, hit: new Set() })));
+  doors.length = 0;       if (data.doors)       doors.push(...data.doors);
 
   // 全局定时器 (绝对时间 → 加偏移)
   timeFrozenUntil   = data.timeFrozenUntil   === 0 ? 0 : data.timeFrozenUntil   + offset;
@@ -6585,15 +6649,16 @@ function netBroadcastState() {
   netSend(netSerializeState());
 }
 
-// 客户端: 每帧把本地键位打包发给房主
+// 客户端: 每帧把本地键位打包发给房主 (30Hz，输入包很小不心疼频率)
 let netInputSendLast = 0;
 function netSendClientInput() {
   if (!netConn || !netConn.open) return;
   const now = performance.now();
-  if (now - netInputSendLast < NET_SEND_RATE_MS) return;
+  if (now - netInputSendLast < NET_INPUT_RATE_MS) return;
   netInputSendLast = now;
   netSend({
     type: "input",
+    t: now,  // 时间戳，用于接收方去重
     left:   !!keys["a"],
     right:  !!keys["d"],
     up:     !!keys["w"],
