@@ -990,11 +990,42 @@
     font-size: 12px;
     letter-spacing: 1px;
   }
+
+  /* 训练模式开关（只在训练模式显示） */
+  #btnNoCooldown {
+    display: none;
+    position: fixed;
+    top: 40px;
+    right: 10px;
+    z-index: 100;
+    padding: 7px 14px;
+    background: rgba(90, 90, 255, 0.28);
+    border: 1.5px solid #9a8aff;
+    color: #e8e8ff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, border-color .15s;
+  }
+  #btnNoCooldown:hover { background: rgba(120, 110, 255, 0.45); }
+  #btnNoCooldown.on {
+    background: rgba(255, 217, 85, 0.55);
+    border-color: #ffd91f;
+    color: #1a1040;
+  }
+  body.training-mode #btnNoCooldown { display: block; }
 </style>
 </head>
 <body>
   <!-- 联机状态指示器（常驻右上角）-->
   <div id="netIndicator">● 未连接</div>
+
+  <!-- 训练模式：无冷却开关（只在训练模式可见） -->
+  <button id="btnNoCooldown">⚡ 无 冷 却: 关</button>
 
   <!-- 手机触屏控件（仅触屏设备显示）
        左下 T 字形方向键 + 右下王者荣耀风半圆形技能布局 -->
@@ -2214,6 +2245,9 @@ let p1Wins = 0;
 let p2Wins = 0;
 const WINS_TO_WIN = 2;
 let roundTimeoutId = null;  // 局间过渡定时器
+
+// 训练模式无冷却开关
+let noCooldown = false;
 
 // 回合时钟：开局 3 秒倒计时 + 60 秒战斗
 let roundStartAt = 0;             // 本局 resetRound 的绝对时刻 (performance.now)
@@ -4911,6 +4945,11 @@ function update() {
 
   // 60 秒时限到 → 按血量判胜 / 平局
   checkRoundTimeUp();
+
+  // 训练模式无冷却：每帧把 skills[].ready 清零，让玩家可以连按
+  if (noCooldown && gameMode === "training" && skills && skills.length) {
+    for (const s of skills) s.ready = 0;
+  }
 
   // P1 状态衰减（被 P2 技能压制：倒地/眩晕）
   if (player.stunT > 0) player.stunT--;
@@ -7858,6 +7897,18 @@ document.getElementById("btnTraining").addEventListener("click", () => {
   refreshAvatarDisplay();
   hideCover();
 });
+
+// 训练模式"无冷却"开关
+const _btnNC = document.getElementById("btnNoCooldown");
+if (_btnNC) {
+  _btnNC.addEventListener("click", () => {
+    noCooldown = !noCooldown;
+    _btnNC.classList.toggle("on", noCooldown);
+    _btnNC.textContent = noCooldown ? "⚡ 无 冷 却: 开" : "⚡ 无 冷 却: 关";
+    // 开启瞬间立刻清 CD，给即时反馈
+    if (noCooldown && skills) skills.forEach(s => s.ready = 0);
+  });
+}
 
 // ===== 左上角角色切换 =====
 const avatarBtn = document.getElementById("avatarBtn");
