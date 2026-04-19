@@ -3205,35 +3205,52 @@ function castZjySkill(idx, caster, target) {
   const now = performance.now();
   const mul = rageDamageMul(caster);
   if (idx === 0) {
-    // J 我就不！——前方音波，命中则目标后续 5s 输出 -20%
+    // J 我就不！——前方音波，半个地图都听得见。命中则目标后续 5s 输出 -20%
     caster.atkT = Math.max(caster.atkT || 0, 18);
+    const J_RANGE = W_WORLD / 2;   // 半地图（=1000px）
     const dx = target.x - caster.x;
-    if (Math.sign(dx) === caster.facing && Math.abs(dx) < 260) {
+    if (Math.sign(dx) === caster.facing && Math.abs(dx) < J_RANGE) {
       target.soundDebuffUntil = now + 5000;
-      target.shakeT = 10;
+      target.shakeT = 14;
       damageTexts.push({
         x: target.x, y: target.y - 140,
         vx: 0, vy: -2.0, life: 55, maxLife: 55,
         text: "我 就 不!", color: "#ff4422", size: 22, crit: true,
       });
     }
-    // 音波：三层同心扇形弧 + 射线粒子（朝 facing 方向）
-    for (let ring = 0; ring < 3; ring++) {
-      const ringR = 30 + ring * 18;
-      for (let i = 0; i < 10; i++) {
-        const a = -Math.PI / 3 + (i / 9) * (Math.PI * 2 / 3);  // 前方扇形
+    // 音波：5 层扇形射线，飞速更快、寿命更长，覆盖半地图视觉
+    // 每层弧角变小（聚焦） + 速度递增，构成"声音传播"的层叠感
+    for (let ring = 0; ring < 5; ring++) {
+      const speedBase = 8 + ring * 5;        // 8/13/18/23/28 px/帧
+      const lifeBase  = 60 + ring * 14;      // 60/74/88/102/116 帧（足够飞越半地图）
+      const arcSpread = (Math.PI / 2.4) * (1 - ring * 0.12);  // 弧度逐层收紧
+      const count = 14;
+      for (let i = 0; i < count; i++) {
+        const a = (-arcSpread / 2) + (i / (count - 1)) * arcSpread;
         particles.push({
-          x: caster.x + caster.facing * 20,
+          x: caster.x + caster.facing * 24,
           y: caster.y - 50,
-          vx: caster.facing * Math.cos(a) * (3 + ring * 1.4),
-          vy: Math.sin(a) * 2.4,
-          life: 24 + ring * 6,
-          color: ring === 0 ? "#ffee66" : (ring === 1 ? "#ff8844" : "#ff4422"),
-          size: 3 + Math.random() * 2,
+          vx: caster.facing * Math.cos(a) * speedBase,
+          vy: Math.sin(a) * speedBase * 0.35,   // 椭圆扁平
+          life: lifeBase,
+          color: ring === 0 ? "#ffee66" : (ring === 1 ? "#ffaa44" : (ring === 2 ? "#ff8833" : (ring === 3 ? "#ff5522" : "#ff2200"))),
+          size: 5 + Math.random() * 3,
         });
       }
     }
+    // 起手脚下震动圈
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      particles.push({
+        x: caster.x + Math.cos(a) * 14,
+        y: caster.y - 4 + Math.sin(a) * 4,
+        vx: Math.cos(a) * 2,
+        vy: Math.sin(a) * 0.6 - 0.5,
+        life: 22, color: i % 2 ? "#ff8844" : "#ffdd66", size: 3,
+      });
+    }
     hitStopT = Math.max(hitStopT, 3);
+    shakeT = 8; shakeStrength = 4;
   } else if (idx === 1) {
     // K 我去你的！——锁定目标 2s，期间按平A 每按一次造成小段伤害；
     // 2s 结束时按累计按数把目标打上天 + 额外起飞伤害
