@@ -567,6 +567,7 @@
   .kof-cell.naruto-bg svg { background: #d96518; }
   .kof-cell.doraemon-bg svg { background: #1d7db8; }
   .kof-cell.xueking-bg svg { background: #5aa8d8; }
+  .kof-cell.zjy-bg svg { background: #b32020; }
   .kof-cell-name {
     font-size: 11px;
     letter-spacing: 2px;
@@ -747,6 +748,7 @@
   .avatar-card.naruto-bg svg { background: #d96518; }
   .avatar-card.doraemon-bg svg { background: #1d7db8; }
   .avatar-card.xueking-bg svg { background: #5aa8d8; }
+  .avatar-card.zjy-bg svg { background: #b32020; }
   .avatar-card span {
     font-size: 12px;
     letter-spacing: 2px;
@@ -1140,6 +1142,24 @@
               <span class="kof-cell-name">雪 王</span>
               <span class="kof-cursor"></span>
             </button>
+            <button class="kof-cell zjy-bg" data-char="zjy">
+              <svg viewBox="0 0 40 40">
+                <!-- 火焰头发 -->
+                <polygon points="8,12 11,2 14,10 17,0 20,8 23,0 26,10 29,2 32,12" fill="#ff5a30" stroke="#7a1a08" stroke-width="0.6"/>
+                <!-- 脸 -->
+                <ellipse cx="20" cy="22" rx="11" ry="11" fill="#ffd2b3"/>
+                <!-- 怒目 -->
+                <path d="M14 19 L18 21" stroke="#111" stroke-width="1.6" fill="none"/>
+                <path d="M22 21 L26 19" stroke="#111" stroke-width="1.6" fill="none"/>
+                <!-- 牙咬 -->
+                <rect x="17" y="27" width="6" height="2" fill="#fff" stroke="#111" stroke-width="0.5"/>
+                <!-- 红温火星 -->
+                <circle cx="6" cy="20" r="1.4" fill="#ff5a30"/>
+                <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
+              </svg>
+              <span class="kof-cell-name">红 温</span>
+              <span class="kof-cursor"></span>
+            </button>
           </div>
           <div class="kof-ready">● R E A D Y</div>
         </div>
@@ -1200,6 +1220,19 @@
                 <path d="M8 20 L4 18 L6 28 L10 26 Z" fill="#c9204a"/>
               </svg>
               <span class="kof-cell-name">雪 王</span>
+              <span class="kof-cursor"></span>
+            </button>
+            <button class="kof-cell zjy-bg" data-char="zjy">
+              <svg viewBox="0 0 40 40">
+                <polygon points="8,12 11,2 14,10 17,0 20,8 23,0 26,10 29,2 32,12" fill="#ff5a30" stroke="#7a1a08" stroke-width="0.6"/>
+                <ellipse cx="20" cy="22" rx="11" ry="11" fill="#ffd2b3"/>
+                <path d="M14 19 L18 21" stroke="#111" stroke-width="1.6" fill="none"/>
+                <path d="M22 21 L26 19" stroke="#111" stroke-width="1.6" fill="none"/>
+                <rect x="17" y="27" width="6" height="2" fill="#fff" stroke="#111" stroke-width="0.5"/>
+                <circle cx="6" cy="20" r="1.4" fill="#ff5a30"/>
+                <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
+              </svg>
+              <span class="kof-cell-name">红 温</span>
               <span class="kof-cursor"></span>
             </button>
           </div>
@@ -1268,6 +1301,18 @@
             <path d="M8 20 L4 18 L6 28 L10 26 Z" fill="#c9204a"/>
           </svg>
           <span>雪 王</span>
+        </button>
+        <button class="avatar-card zjy-bg" data-char="zjy">
+          <svg viewBox="0 0 40 40">
+            <polygon points="8,12 11,2 14,10 17,0 20,8 23,0 26,10 29,2 32,12" fill="#ff5a30" stroke="#7a1a08" stroke-width="0.6"/>
+            <ellipse cx="20" cy="22" rx="11" ry="11" fill="#ffd2b3"/>
+            <path d="M14 19 L18 21" stroke="#111" stroke-width="1.6" fill="none"/>
+            <path d="M22 21 L26 19" stroke="#111" stroke-width="1.6" fill="none"/>
+            <rect x="17" y="27" width="6" height="2" fill="#fff" stroke="#111" stroke-width="0.5"/>
+            <circle cx="6" cy="20" r="1.4" fill="#ff5a30"/>
+            <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
+          </svg>
+          <span>红 温</span>
         </button>
       </div>
     </div>
@@ -1351,6 +1396,13 @@ const skillConfigs = {
     { name: "冰门穿梭", key: "l", cd: 10000, icon: "🧊" },
     { name: "冰甲",     key: "u", cd: 10000, icon: "🛡" },
   ],
+  // 红温（zjy）：技能先放占位，后面再细化（用户说"技能我等会儿再想"）
+  zjy: [
+    { name: "怒拳",     key: "j", cd: 4000,  icon: "👊" },
+    { name: "暴怒踢",   key: "k", cd: 5000,  icon: "🦵" },
+    { name: "红温斩",   key: "l", cd: 7000,  icon: "🔥" },
+    { name: "怒火爆发", key: "u", cd: 20000, icon: "💢" },
+  ],
 };
 
 const keys = {};
@@ -1375,17 +1427,20 @@ addEventListener("keydown", e => {
 
 function handleP2Attack() {
   if (matchEnded) return;
+  if (roundCountdownActive()) return;  // 开局 3-2-1 禁操作
   if (p2.atkT > 0) return;
   if (p2.stunT > 0 || p2.downT > 0) return;
   if (performance.now() < timeFrozenUntil) return;
   if (performance.now() < (p2.iceFrozenUntil || 0)) return;
   if (p2.char === "doraemon") handleDoraemonAttack(p2);
   else if (p2.char === "xueking") handleSnowkingAttack(p2);
+  else if (p2.char === "zjy") handleZjyAttack(p2);
   else handleNarutoAttack(p2);
 }
 
 function handleP2SkillKey(idx) {
   if (matchEnded || gameMode !== "pvp") return;
+  if (roundCountdownActive()) return;  // 开局 3-2-1 禁操作
   if (performance.now() < timeFrozenUntil) return;
   if (performance.now() < (p2.iceFrozenUntil || 0)) return;
   const s = p2.skills[idx];
@@ -1470,6 +1525,10 @@ function castP2Skill(idx) {
     castP2NarutoSkill(idx);
     return;
   }
+  if (p2.char === "zjy") {
+    castZjySkill(idx, p2, player);
+    return;
+  }
   if (idx === 0) {
     // P2 任意门
     const offset = 80;
@@ -1546,7 +1605,8 @@ addEventListener("keydown", e => {
   const p1Blocked = matchEnded
                     || performance.now() < p1FrozenUntil
                     || player.downT > 0 || player.stunT > 0
-                    || performance.now() < (player.iceFrozenUntil || 0);
+                    || performance.now() < (player.iceFrozenUntil || 0)
+                    || roundCountdownActive();  // 开局 3-2-1 禁操作
   if (!keys[k] && !p1Blocked) {
     if (k === "space") {
       if (inAerial()) fireManualAerialShot();
@@ -1659,6 +1719,9 @@ const player = {
   shieldExpiry: 0,       // 护盾到期时刻
   substituteReady: 0,    // 替身术：下次可用时刻（冷却到期时间戳）
   substituteTaps: [],    // 替身术：被控时最近平A 按键时间戳（双击判定用）
+  rageStacks: 0,         // 红温（zjy）：被打概率叠层，最高 4
+  rageGainFlash: 0,      // 红温叠层时刻闪光（用于 VFX）
+  rageBurstUntil: 0,     // 怒火爆发期间所有伤害额外加成
 };
 
 const LONG_PRESS_THRESHOLD = 20; // 超过即进入飞天模式
@@ -1699,6 +1762,49 @@ function isP2Controlled() {
 // 替身状态中（解控后 1.5s）：渲染时身体半透明
 function isInSubstitute(entity) {
   return performance.now() < (entity.substituteUntil || 0);
+}
+
+// ─────────── 红温（zjy）：受击概率叠层，最高 4 层；每层 +25% 伤害 ───────────
+const RAGE_MAX = 4;
+const RAGE_GAIN_CHANCE = 0.30;     // 受击 30% 概率叠 1 层
+const RAGE_DMG_PER_STACK = 0.25;   // 每层 +25% 伤害（4 层 = 2.0×）
+const RAGE_BURST_BONUS = 0.30;     // "怒火爆发" 期间额外 +30%
+
+// 仅 zjy 角色才会叠层。返回是否叠到了
+function tryGainRage(entity) {
+  if (!entity || entity.char !== "zjy") return false;
+  if ((entity.rageStacks || 0) >= RAGE_MAX) return false;
+  if (Math.random() >= RAGE_GAIN_CHANCE) return false;
+  entity.rageStacks = (entity.rageStacks || 0) + 1;
+  entity.rageGainFlash = 28;  // 半秒闪光
+  // 上层飘字 + 火星
+  damageTexts.push({
+    x: entity.x, y: entity.y - 130,
+    vx: 0, vy: -2.5, life: 50, maxLife: 50,
+    text: `红温 +1 → ${entity.rageStacks}/${RAGE_MAX}`,
+    color: "#ff5a30", size: 18, crit: true,
+  });
+  for (let i = 0; i < 16; i++) {
+    const a = Math.random() * Math.PI * 2;
+    particles.push({
+      x: entity.x + (Math.random() - 0.5) * 30,
+      y: entity.y - 50 + (Math.random() - 0.5) * 20,
+      vx: Math.cos(a) * (2 + Math.random() * 3),
+      vy: Math.sin(a) * 2 - 2 - Math.random() * 2,
+      life: 28 + Math.random() * 14,
+      color: i % 2 ? "#ff5a30" : "#ffaa44",
+      size: 3 + Math.random() * 2,
+    });
+  }
+  return true;
+}
+
+// 攻击者的红温伤害倍率（普攻和技能都用）
+function rageDamageMul(attacker) {
+  if (!attacker || attacker.char !== "zjy") return 1;
+  const base = 1 + (attacker.rageStacks || 0) * RAGE_DMG_PER_STACK;
+  const burst = performance.now() < (attacker.rageBurstUntil || 0) ? RAGE_BURST_BONUS : 0;
+  return base + burst;
 }
 
 // 记录一次"被控时按平A"。返回 true 表示本次双击成功解控
@@ -1848,6 +1954,8 @@ function damagePlayer(amount) {
   player.hitFlash = 10;
   document.getElementById("hp1").style.width = (player.hp / player.maxHp * 100) + "%";
   document.getElementById("hpnum1").textContent = `${player.hp} / ${player.maxHp}`;
+  // 红温：仅 zjy 受击才有叠层机会
+  if (final > 0) tryGainRage(player);
   if (player.hp === 0) checkMatchEnd();
   return final;
 }
@@ -1895,6 +2003,8 @@ const p2 = {
   shieldAmount: 0, shieldExpiry: 0,
   // 替身术
   substituteReady: 0, substituteTaps: [],
+  // 红温
+  rageStacks: 0, rageGainFlash: 0, rageBurstUntil: 0,
 };
 
 // dummy 是共用引用，训练=baseDummy / PVP=p2
@@ -1921,17 +2031,37 @@ const doors = [];           // 任意门特效
 
 // 胜负（三局两胜）
 let matchEnded = false;     // 当局结束
-let winner = null;          // 本局胜者 "p1" / "p2"
+let winner = null;          // 本局胜者 "p1" / "p2" / "draw"
 let p1Wins = 0;
 let p2Wins = 0;
 const WINS_TO_WIN = 2;
 let roundTimeoutId = null;  // 局间过渡定时器
+
+// 回合时钟：开局 3 秒倒计时 + 60 秒战斗
+let roundStartAt = 0;             // 本局 resetRound 的绝对时刻 (performance.now)
+const ROUND_COUNTDOWN_MS = 3000;  // 开局 3-2-1-FIGHT! 时长
+const ROUND_FIGHT_MS = 60000;     // 战斗时限 60 秒
+
+function roundCountdownActive() {
+  if (!roundStartAt) return false;
+  return performance.now() < roundStartAt + ROUND_COUNTDOWN_MS;
+}
+function roundTimeRemain() {
+  if (!roundStartAt) return ROUND_FIGHT_MS;
+  const elapsed = performance.now() - (roundStartAt + ROUND_COUNTDOWN_MS);
+  return Math.max(0, ROUND_FIGHT_MS - elapsed);
+}
+function roundTimeIsUp() {
+  if (!roundStartAt) return false;
+  return performance.now() >= roundStartAt + ROUND_COUNTDOWN_MS + ROUND_FIGHT_MS;
+}
 
 function handleNormalAttack() {
   if (player.atkT > 0) return;
   if (inAerial()) return;
   if (selectedChar === "doraemon") handleDoraemonAttack(player);
   else if (selectedChar === "xueking") handleSnowkingAttack(player);
+  else if (selectedChar === "zjy") handleZjyAttack(player);
   else handleNarutoAttack(player);
 }
 
@@ -2105,9 +2235,39 @@ function updateEntityCombat(attacker, target, char) {
           }
         }
       }
+    } else if (char === "zjy") {
+      // 红温 4 段拳脚：基础伤害会被 rageDamageMul 乘上红温叠层
+      if (attacker.atkType === 1 && Math.abs(dx) < 110 && sameSide) {
+        // 1A 直拳
+        dmg = 400; hit = true;
+        target.shakeT = 10;
+      } else if (attacker.atkType === 2 && Math.abs(dx) < 110 && sameSide) {
+        // 2A 勾拳
+        dmg = 550; hit = true;
+        target.shakeT = 12;
+      } else if (attacker.atkType === 3 && Math.abs(dx) < 120 && sameSide) {
+        // 3A 上勾拳：挑飞+短眩晕
+        dmg = 700; hit = true;
+        if (typeof target.vy === "number" && !isInSubstitute(target)) {
+          target.vy = -11;
+          target.onGround = false;
+        }
+        if (!isInSubstitute(target)) target.stunT = Math.max(target.stunT || 0, 60);
+        target.shakeT = 16;
+      } else if (attacker.atkType === 4 && Math.abs(dx) < 130 && sameSide) {
+        // 4A 重击：击退+倒地
+        dmg = 1000; hit = true;
+        if (!isInSubstitute(target)) {
+          target.downT = Math.max(target.downT || 0, 30);
+          target.x += attacker.facing * 24;
+        }
+        target.shakeT = 22;
+      }
     }
     if (hit) {
-      applyDamageTo(target, dmg);
+      // 红温伤害倍率（非 zjy 则恒为 1）
+      const mul = rageDamageMul(attacker);
+      applyDamageTo(target, Math.ceil(dmg * mul));
       attacker.atkHit = true;
       hitStopT = Math.max(hitStopT, 4);
       shakeT = 12;
@@ -2229,10 +2389,38 @@ function handleDoraemonAttack(e = player) {
   else if (e === p2) updateP2ComboIndicator();
 }
 
+// 红温：4 段拳脚连招（基础值，红温加成在 updateEntityCombat 里乘）
+//   1A 直拳 / 2A 勾拳 / 3A 上勾拳（挑飞+眩晕） / 4A 重击（击退+倒地）
+function handleZjyAttack(e = player) {
+  const stage = e.comboStage || 0;
+  e.atkType = stage + 1;
+  e.atkHit = false;
+  if (stage === 0) {
+    e.atkT = 22;
+    e.spearT = 22;      // 复用 spearT 作为"1A 向前一刺"的前冲标记
+    e.x += e.facing * 40;
+  } else if (stage === 1) {
+    e.atkT = 24;
+    e.spearT = 24;
+    e.x += e.facing * 30;
+  } else if (stage === 2) {
+    e.atkT = 28;
+  } else {
+    e.atkT = 32;
+    e.x += e.facing * 16;
+  }
+  e.x = Math.max(40, Math.min(W_WORLD - 40, e.x));
+  e.comboStage = (stage + 1) % 4;
+  e.comboWindow = 54;
+  if (e === player) updateComboIndicator();
+  else if (e === p2) updateP2ComboIndicator();
+}
+
 const COMBO_NAMES = {
   naruto:   ["1A 突刺", "2A 上勾", "3A 后翻"],
   doraemon: ["1A 石矛", "2A 回旋", "3A 小拳拳", "4A 电击枪", "5A 穿门连击"],
   xueking:  ["1A 前刺", "2A 上挑", "3A 横斩", "4A 天降"],
+  zjy:      ["1A 直拳", "2A 勾拳", "3A 上勾拳", "4A 重击"],
 };
 
 function updateComboIndicator() {
@@ -2291,6 +2479,10 @@ function castSkill(idx) {
   }
   if (selectedChar === "xueking") {
     castSnowkingSkill(idx, player, dummy, false);
+    return;
+  }
+  if (selectedChar === "zjy") {
+    castZjySkill(idx, player, dummy);
     return;
   }
   if (idx === 0) {
@@ -2811,6 +3003,109 @@ function castSnowkingSkill(idx, caster, target, isP2) {
         life: 40, color: "#e0e8f0", size: 3,
       });
     }
+  }
+}
+
+// 红温（zjy）占位技能：先做简单有感觉的 4 个，后续再调
+// 伤害均走 rageDamageMul 乘红温倍率
+function castZjySkill(idx, caster, target) {
+  const now = performance.now();
+  const mul = rageDamageMul(caster);
+  if (idx === 0) {
+    // J 怒拳：前冲挥拳，150px 内造成 400×mul 伤害，短击退
+    caster.atkT = Math.max(caster.atkT || 0, 20);
+    caster.x += caster.facing * 30;
+    caster.x = Math.max(40, Math.min(W_WORLD - 40, caster.x));
+    const dx = target.x - caster.x;
+    if (Math.sign(dx) === caster.facing && Math.abs(dx) < 150) {
+      const dealt = Math.ceil(400 * mul);
+      if (target === player) damagePlayer(dealt);
+      else damageDummy(dealt);
+      if (!isInSubstitute(target)) target.x += caster.facing * 18;
+      target.shakeT = 14;
+      hitStopT = Math.max(hitStopT, 4);
+      spawnHitImpact(target.x - caster.facing * 16, target.y - 60, 38);
+    }
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2;
+      particles.push({
+        x: caster.x + caster.facing * 36, y: caster.y - 50,
+        vx: Math.cos(a) * 4 + caster.facing * 3,
+        vy: Math.sin(a) * 3 - 1,
+        life: 22 + Math.random() * 10,
+        color: i % 2 ? "#ff5a30" : "#ffbb33", size: 3 + Math.random() * 2,
+      });
+    }
+  } else if (idx === 1) {
+    // K 暴怒踢：正面 120px 内 500×mul 伤害 + 短眩晕
+    caster.atkT = Math.max(caster.atkT || 0, 22);
+    const dx = target.x - caster.x;
+    if (Math.sign(dx) === caster.facing && Math.abs(dx) < 120) {
+      const dealt = Math.ceil(500 * mul);
+      if (target === player) damagePlayer(dealt);
+      else damageDummy(dealt);
+      if (!isInSubstitute(target)) target.stunT = Math.max(target.stunT || 0, 30);
+      target.shakeT = 16;
+      hitStopT = Math.max(hitStopT, 5);
+      spawnHitImpact(target.x - caster.facing * 10, target.y - 60, 46);
+    }
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      particles.push({
+        x: caster.x + caster.facing * 40, y: caster.y - 50,
+        vx: Math.cos(a) * 5, vy: Math.sin(a) * 3 - 1,
+        life: 28, color: "#ff8833", size: 3 + Math.random() * 2,
+      });
+    }
+  } else if (idx === 2) {
+    // L 红温斩：中距离火焰斩，200px 内 700×mul 伤害 + 击退
+    caster.atkT = Math.max(caster.atkT || 0, 28);
+    const dx = target.x - caster.x;
+    if (Math.sign(dx) === caster.facing && Math.abs(dx) < 200) {
+      const dealt = Math.ceil(700 * mul);
+      if (target === player) damagePlayer(dealt);
+      else damageDummy(dealt);
+      if (!isInSubstitute(target)) target.x += caster.facing * 26;
+      target.shakeT = 20;
+      hitStopT = Math.max(hitStopT, 6);
+      spawnHitImpact(target.x - caster.facing * 16, target.y - 60, 56);
+    }
+    for (let i = 0; i < 32; i++) {
+      const t = i / 32;
+      particles.push({
+        x: caster.x + caster.facing * (20 + t * 180),
+        y: caster.y - 50 + (Math.random() - 0.5) * 40,
+        vx: caster.facing * (2 + Math.random() * 2),
+        vy: (Math.random() - 0.5) * 2 - 1,
+        life: 24 + Math.random() * 14,
+        color: i % 3 === 0 ? "#ffee66" : (i % 3 === 1 ? "#ff6633" : "#ff3311"),
+        size: 3 + Math.random() * 3,
+      });
+    }
+  } else if (idx === 3) {
+    // U 怒火爆发：立即叠满 4 层红温 + 5s 内额外 +30% 伤害
+    caster.rageStacks = RAGE_MAX;
+    caster.rageGainFlash = 40;
+    caster.rageBurstUntil = now + 5000;
+    damageTexts.push({
+      x: caster.x, y: caster.y - 150,
+      vx: 0, vy: -2.6, life: 60, maxLife: 60,
+      text: "怒 火 爆 发!", color: "#ff3322", size: 28, crit: true,
+    });
+    for (let i = 0; i < 40; i++) {
+      const a = (i / 40) * Math.PI * 2;
+      const r = 30 + Math.random() * 20;
+      particles.push({
+        x: caster.x + Math.cos(a) * r,
+        y: caster.y - 50 + Math.sin(a) * r,
+        vx: Math.cos(a) * 5,
+        vy: Math.sin(a) * 3 - 3,
+        life: 36 + Math.random() * 20,
+        color: i % 2 ? "#ff3322" : "#ffaa33",
+        size: 4 + Math.random() * 3,
+      });
+    }
+    hitStopT = Math.max(hitStopT, 6);
   }
 }
 
@@ -3468,6 +3763,8 @@ function damageDummy(amount) {
   document.getElementById("hpnum2").textContent = `${dummy.hp} / ${dummy.maxHp}`;
   spawnParticles(dummy.x, dummy.y - 50, "#f55", 14);
   spawnDamageText(dummy.x + (Math.random() - 0.5) * 30, dummy.y - 90, amount);
+  // 红温：仅当 dummy 是 PVP 的 zjy 才有机会叠层（训练木桩没有 char 字段）
+  if (amount > 0 && !dummy.isDummy) tryGainRage(dummy);
   // 仅训练模式：木桩血归零自动回满
   if (dummy.hp === 0 && dummy.isDummy) setTimeout(() => {
     dummy.hp = dummy.maxHp;
@@ -3491,15 +3788,34 @@ function checkMatchEnd() {
   }
 }
 
+// 60 秒时限到，按血量判胜 / 平局
+function checkRoundTimeUp() {
+  if (matchEnded || gameMode !== "pvp") return;
+  if (!roundTimeIsUp()) return;
+  matchEnded = true;
+  if (player.hp > p2.hp)      { winner = "p1"; p1Wins++; }
+  else if (p2.hp > player.hp) { winner = "p2"; p2Wins++; }
+  else                         { winner = "draw"; /* 平局不加胜场 */ }
+  updateWinPips();
+  if (p1Wins >= WINS_TO_WIN || p2Wins >= WINS_TO_WIN) showSeriesEnd();
+  else showRoundEnd();
+}
+
 function showRoundEnd() {
   const overlay = document.getElementById("matchOverlay");
   const title = document.getElementById("matchTitle");
   const sub = document.getElementById("matchSub");
   const buttons = document.querySelector('.match-buttons');
   buttons.style.display = 'none';   // 局间不出按钮
-  title.textContent = winner === "p1" ? "P1 拿 下 本 局" : "P2 拿 下 本 局";
-  sub.textContent = `比 分 ${p1Wins} : ${p2Wins}　·　3 秒 后 进 入 下 一 局`;
-  overlay.className = "overlay " + (winner === "p1" ? "win-p1" : "win-p2");
+  if (winner === "draw") {
+    title.textContent = "D R A W";
+    sub.textContent = `时 间 到 · 平 局 · 比 分 ${p1Wins} : ${p2Wins}　·　3 秒 后 下 一 局`;
+    overlay.className = "overlay";  // 中性色（不偏向 p1/p2）
+  } else {
+    title.textContent = winner === "p1" ? "P1 拿 下 本 局" : "P2 拿 下 本 局";
+    sub.textContent = `比 分 ${p1Wins} : ${p2Wins}　·　3 秒 后 进 入 下 一 局`;
+    overlay.className = "overlay " + (winner === "p1" ? "win-p1" : "win-p2");
+  }
   overlay.classList.remove("hidden");
   clearTimeout(roundTimeoutId);
   roundTimeoutId = setTimeout(() => {
@@ -3516,7 +3832,11 @@ function showSeriesEnd() {
   const buttons = document.querySelector('.match-buttons');
   buttons.style.display = '';
   const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : "雪 王";
-  if (winner === "p1") {
+  if (winner === "draw") {
+    title.textContent = "D R A W";
+    sub.textContent = `平 局　·　${p1Wins} : ${p2Wins}`;
+    overlay.className = "overlay";
+  } else if (winner === "p1") {
     title.textContent = "P1 总 决 胜!";
     sub.textContent = `${p1Wins} : ${p2Wins}　·　${nameOf(selectedChar)} 三 局 两 胜`;
     overlay.className = "overlay win-p1";
@@ -3531,6 +3851,7 @@ function showSeriesEnd() {
 function resetRound() {
   matchEnded = false;
   winner = null;
+  roundStartAt = performance.now();  // 启动开局 3-2-1 倒计时 + 60s 战斗时钟
   // 位置 + HP + 计时器归零（保留胜场数）
   // 关键：先把 maxHp 重置回初始值，抹去上一局雪王冰甲转永久 HP 的残留
   p2.maxHp = BASE_MAX_HP.p2;
@@ -3711,12 +4032,16 @@ function update() {
   if (hitStopT > 0) { hitStopT--; return; }
   if (shakeT > 0) shakeT--;
 
+  // 60 秒时限到 → 按血量判胜 / 平局
+  checkRoundTimeUp();
+
   // P1 状态衰减（被 P2 技能压制：倒地/眩晕）
   if (player.stunT > 0) player.stunT--;
   if (player.downT > 0) player.downT--;
   const p1Disabled = player.downT > 0 || player.stunT > 0
                     || performance.now() < p1FrozenUntil
-                    || performance.now() < (player.iceFrozenUntil || 0);
+                    || performance.now() < (player.iceFrozenUntil || 0)
+                    || roundCountdownActive();  // 开局 3-2-1 期间冻结
 
   // 玩家移动（被压制时禁动作，物理/重力仍生效）
   const p1SlowMul = performance.now() < (player.slowUntil || 0) ? 0.6 : 1;
@@ -3965,7 +4290,8 @@ function update() {
   if (gameMode === "pvp") {
     // 被时空暂停或被眩晕/倒地时禁止操作
     const frozen = isOpponentFrozen() || p2.stunT > 0 || p2.downT > 0
-                   || performance.now() < (p2.iceFrozenUntil || 0);
+                   || performance.now() < (p2.iceFrozenUntil || 0)
+                   || roundCountdownActive();  // 开局 3-2-1 期间冻结 P2
     if (!frozen) {
       const p2SlowMul = performance.now() < (p2.slowUntil || 0) ? 0.6 : 1;
       if (keys["arrowleft"])  { p2.vx = -4 * p2SlowMul; p2.facing = -1; }
@@ -5651,6 +5977,68 @@ function draw() {
   });
   ctx.globalAlpha = 1;
   ctx.restore();
+  // 屏幕层 HUD：开局 3-2-1-FIGHT 倒计时 + 60s 时限条
+  drawRoundClockUI();
+}
+
+// 顶部剩余秒数 + 中央 3/2/1/FIGHT! 倒计时大字
+function drawRoundClockUI() {
+  if (gameMode !== "pvp") return;
+  if (!roundStartAt) return;
+
+  const now = performance.now();
+  const elapsed = now - roundStartAt;
+
+  // 顶部时间条：只在战斗阶段显示（倒计时结束后）
+  if (elapsed >= ROUND_COUNTDOWN_MS && !matchEnded) {
+    const remain = Math.max(0, Math.ceil(roundTimeRemain() / 1000));
+    ctx.save();
+    ctx.font = `900 34px "Menlo", monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#000";
+    ctx.strokeText(String(remain).padStart(2, "0"), W / 2, 10);
+    ctx.fillStyle = remain <= 10 ? "#ff5566" : "#ffdd55";
+    ctx.fillText(String(remain).padStart(2, "0"), W / 2, 10);
+    ctx.restore();
+  }
+
+  // 开局 3/2/1/FIGHT! 大字（中央）
+  if (elapsed < ROUND_COUNTDOWN_MS + 600) {  // FIGHT 再展示 0.6s
+    let text = "", color = "#ffdd55", scale = 1, alpha = 1;
+    if (elapsed < 1000)       { text = "3"; }
+    else if (elapsed < 2000)  { text = "2"; }
+    else if (elapsed < 3000)  { text = "1"; }
+    else                      { text = "FIGHT!"; color = "#ff3355"; }
+    // 每个数字前 150ms 从大到 1x 弹出，后 150ms 淡出到 0.6
+    const phase = elapsed % 1000;
+    if (elapsed < ROUND_COUNTDOWN_MS) {
+      if (phase < 150)      scale = 2.0 - (phase / 150) * 1.0;  // 2→1
+      else if (phase > 800) alpha = 1 - (phase - 800) / 200;   // 淡出
+    } else {
+      const p = elapsed - ROUND_COUNTDOWN_MS;
+      if (p < 150)      scale = 0.4 + (p / 150) * 0.8;   // 0.4→1.2
+      else if (p < 300) scale = 1.2 - ((p - 150) / 150) * 0.2;  // 1.2→1
+      else              alpha = 1 - (p - 300) / 300;     // 淡出
+    }
+    if (alpha > 0.05) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(W / 2, H / 2 - 40);
+      ctx.scale(scale, scale);
+      const fontSize = (text === "FIGHT!") ? 88 : 120;
+      ctx.font = `900 ${fontSize}px "Impact", "PingFang SC", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = "#000";
+      ctx.strokeText(text, 0, 0);
+      ctx.fillStyle = color;
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+    }
+  }
 }
 
 function drawNinja(x, y, facing, attacking, tint, state) {
@@ -6688,6 +7076,7 @@ function netSerializeState() {
     matchEnded, winner, p1Wins, p2Wins,
     camX, hitStopT, shakeT,
     gameMode,
+    roundStartAt,   // 客户端用于 3-2-1 倒计时 + 60s 时限显示
     skillsReady: skills.map(s => s.ready),
   };
 }
@@ -6770,6 +7159,10 @@ function netApplyState(data) {
   hitStopT = data.hitStopT;
   shakeT = data.shakeT;
   gameMode = data.gameMode;
+  // 回合时钟（绝对时间戳）→ 加偏移换到客户端时钟
+  if (typeof data.roundStartAt === "number") {
+    roundStartAt = data.roundStartAt === 0 ? 0 : data.roundStartAt + offset;
+  }
 
   // HP 条 + 胜场圆点
   document.getElementById("hp1").style.width = (player.hp / player.maxHp * 100) + "%";
@@ -6791,11 +7184,18 @@ function netApplyState(data) {
       const title = document.getElementById("matchTitle");
       const sub = document.getElementById("matchSub");
       const buttons = document.querySelector('.match-buttons');
-      if (p1Wins >= WINS_TO_WIN || p2Wins >= WINS_TO_WIN) {
+      const isDraw = winner === "draw";
+      const isSeriesEnd = (p1Wins >= WINS_TO_WIN || p2Wins >= WINS_TO_WIN);
+      if (isSeriesEnd) {
         // 总决胜：客户端只看不能按
-        title.textContent = winner === "p1" ? "P1 总 决 胜!" : "P2 总 决 胜!";
-        sub.textContent = `${p1Wins} : ${p2Wins}　·　等 待 房 主 决 定`;
-        overlay.className = "overlay " + (winner === "p1" ? "win-p1" : "win-p2");
+        title.textContent = isDraw ? "D R A W" : (winner === "p1" ? "P1 总 决 胜!" : "P2 总 决 胜!");
+        sub.textContent = isDraw ? `平 局　·　${p1Wins} : ${p2Wins}` : `${p1Wins} : ${p2Wins}　·　等 待 房 主 决 定`;
+        overlay.className = "overlay" + (isDraw ? "" : (winner === "p1" ? " win-p1" : " win-p2"));
+        buttons.style.display = 'none';
+      } else if (isDraw) {
+        title.textContent = "D R A W";
+        sub.textContent = `时 间 到 · 平 局 · 比 分 ${p1Wins} : ${p2Wins}　·　3 秒 后 下 一 局`;
+        overlay.className = "overlay";
         buttons.style.display = 'none';
       } else {
         title.textContent = winner === "p1" ? "P1 拿 下 本 局" : "P2 拿 下 本 局";
