@@ -1157,7 +1157,7 @@
                 <circle cx="6" cy="20" r="1.4" fill="#ff5a30"/>
                 <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
               </svg>
-              <span class="kof-cell-name">红 温</span>
+              <span class="kof-cell-name">张 鸡 块</span>
               <span class="kof-cursor"></span>
             </button>
           </div>
@@ -1232,7 +1232,7 @@
                 <circle cx="6" cy="20" r="1.4" fill="#ff5a30"/>
                 <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
               </svg>
-              <span class="kof-cell-name">红 温</span>
+              <span class="kof-cell-name">张 鸡 块</span>
               <span class="kof-cursor"></span>
             </button>
           </div>
@@ -1312,7 +1312,7 @@
             <circle cx="6" cy="20" r="1.4" fill="#ff5a30"/>
             <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
           </svg>
-          <span>红 温</span>
+          <span>张 鸡 块</span>
         </button>
       </div>
     </div>
@@ -1351,7 +1351,7 @@
     　｜
     <b style="color:#ffdd66">被控时双击平A=替身(CD10s)</b>
     　｜
-    <b style="color:#ff7a44">红温：受击叠层 → 4 层 ×2 伤害</b>
+    <b style="color:#ff7a44">张鸡块：受击叠层红温 → 4 层 ×2 伤害</b>
   </div>
 
   <!-- 胜负结算 -->
@@ -3442,8 +3442,8 @@ function drawZjy(state, attacking, tint) {
   const now = performance.now();
   const stacks = state.rageStacks || 0;
 
-  // 脸色：0=正常，1=微红，2=明显红，3=很红，4=爆红
-  const facePalette = ["#ffd8b8", "#ffb090", "#ff8266", "#f25a3a", "#d93020"];
+  // 脸色：0=小麦色正常，1=微红，2=明显红，3=很红，4=爆红
+  const facePalette = ["#c89674", "#d8816a", "#e06854", "#db4430", "#b82018"];
   const faceColor = tint || facePalette[Math.min(stacks, 4)];
   const shirt = "#3f7fd8";
   const shirtDk = "#2a5aaa";
@@ -3558,29 +3558,35 @@ function drawZjy(state, attacking, tint) {
   ctx.arc(0, 22, 5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+  // 后臂（对称；拳头和前手一样大）
   ctx.fillStyle = shirt;
   ctx.fillRect(-11, -30, 6, 12);
   ctx.fillStyle = faceColor;
   ctx.fillRect(-11, -18, 6, 8);
+  ctx.beginPath();
+  ctx.arc(-8, -8, 5, 0, Math.PI * 2);  // 后拳（半径 5，和前手相等）
+  ctx.fill();
 
   ctx.fillStyle = faceColor;
   ctx.beginPath();
   ctx.arc(0, -42, 10, 0, Math.PI * 2);
   ctx.fill();
 
-  // 黑发：圆乎乎的"锅盖头"（小学生短发，刻意避开任何尖刺感）
+  // 黑发：寸头——只是头顶薄薄一层，平直收边在眉毛以上，绝不垂下来
+  // 头中心 y=-42 半径 10，眉毛大约在 y=-46；寸头底边压在 y=-48，留 2px 安全距
   ctx.fillStyle = hair;
   ctx.beginPath();
-  // 上半圆头盖 + 平直额前刘海
-  ctx.arc(0, -44, 11.5, Math.PI, 0);
-  ctx.lineTo(11, -39);   // 右耳上方
-  ctx.lineTo(7,  -38);   // 鬓角
-  ctx.lineTo(5,  -40);   // 刘海下沿（横平直）
-  ctx.lineTo(-5, -40);
-  ctx.lineTo(-7, -38);
-  ctx.lineTo(-11, -39);
+  ctx.moveTo(-9.5, -48);
+  ctx.quadraticCurveTo(-7, -52.5, 0, -52.5);   // 左侧弧起
+  ctx.quadraticCurveTo(7, -52.5, 9.5, -48);    // 右侧弧落
+  ctx.lineTo(-9.5, -48);                       // 平直收底（绝不低于 y=-48）
   ctx.closePath();
   ctx.fill();
+  // 头顶几个"碎发"点（像素颗粒感，暗示寸头的短茬）
+  ctx.fillStyle = hair;
+  for (let i = -6; i <= 6; i += 3) {
+    ctx.fillRect(i, -53, 1, 1);
+  }
 
   ctx.fillStyle = "#111";
   const eyeTilt = stacks * 0.4;
@@ -4069,7 +4075,7 @@ function showSeriesEnd() {
   const sub = document.getElementById("matchSub");
   const buttons = document.querySelector('.match-buttons');
   buttons.style.display = '';
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "红 温";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "张 鸡 块";
   if (winner === "draw") {
     title.textContent = "D R A W";
     sub.textContent = `平 局　·　${p1Wins} : ${p2Wins}`;
@@ -4208,7 +4214,7 @@ function updateWinPips() {
   };
   const p1NameEl = document.querySelector('.hpbar.left .name > span');
   const p2NameEl = document.querySelector('.hpbar.right .name > span');
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "红 温";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "张 鸡 块";
   const p1Name = nameOf(selectedChar);
   if (gameMode === "pvp") {
     p1NameEl.innerHTML = p1Name + pipsHtml(p1Wins);
@@ -6852,8 +6858,8 @@ function updateKofPortrait(side, char) {
   // 清掉除了四个角标的旧内容
   [...wrap.querySelectorAll("svg")].forEach(n => n.remove());
   wrap.insertAdjacentHTML("afterbegin", buildKofPortraitSVG(char));
-  const enName = char === "naruto" ? "NARUTO" : char === "xueking" ? "SNOW KING" : char === "zjy" ? "RED FURY" : "DORAEMON";
-  const cnName = char === "naruto" ? "鸣 人" : char === "xueking" ? "雪 王" : char === "zjy" ? "红 温" : "哆 啦 A 梦";
+  const enName = char === "naruto" ? "NARUTO" : char === "xueking" ? "SNOW KING" : char === "zjy" ? "ZHANG JIKUAI" : "DORAEMON";
+  const cnName = char === "naruto" ? "鸣 人" : char === "xueking" ? "雪 王" : char === "zjy" ? "张 鸡 块" : "哆 啦 A 梦";
   document.getElementById(side === "p1" ? "kofNameEnP1" : "kofNameEnP2").textContent = enName;
   document.getElementById(side === "p1" ? "kofNameCnP1" : "kofNameCnP2").textContent = cnName;
 }
