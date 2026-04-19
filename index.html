@@ -1733,6 +1733,8 @@ const player = {
   smashPresses: 0,       // 狂按窗口内已按次数
   smashTargetIsP2: false,// 锁定的目标（true=打 p2，false=打 player）
   zjyYeahBuffUntil: 0,   // 张鸡块 U「耶!」伤害 +100% 结束时刻
+  zjyComboUsed: false,   // 同按 2·3·4 合体技：本回合是否已触发
+  zjyComboBasicBuff: false, // 合体技后：本回合普攻 +300%
 };
 
 const LONG_PRESS_THRESHOLD = 20; // 超过即进入飞天模式
@@ -1819,6 +1821,63 @@ function rageDamageMul(attacker) {
   return base + burst + yeah;
 }
 
+// 张鸡块"普攻专属"额外倍率（合体技后 +300% = ×4）
+function zjyBasicBonusMul(attacker) {
+  if (!attacker || attacker.char !== "zjy") return 1;
+  return attacker.zjyComboBasicBuff ? 4.0 : 1.0;
+}
+
+// 检测同按 2·3·4 合体技；触发后本回合无法再用 2/3/4
+function checkZjyComboKeys(caster) {
+  if (caster.char !== "zjy" || caster.zjyComboUsed) return;
+  let k1, k2, k3;
+  if (caster === player) {
+    const ks = currentP1Keys();
+    k1 = ks[1]; k2 = ks[2]; k3 = ks[3];
+  } else if (caster === p2) {
+    k1 = P2_SKILL_KEYS[1]; k2 = P2_SKILL_KEYS[2]; k3 = P2_SKILL_KEYS[3];
+  } else return;
+  if (keys[k1] && keys[k2] && keys[k3]) triggerZjyCombo(caster);
+}
+
+function triggerZjyCombo(caster) {
+  caster.zjyComboUsed = true;
+  caster.zjyComboBasicBuff = true;
+  // 把 2/3/4 技能 ready 推到无穷远（cd-mask 渲染会识别此为"废"）
+  if (caster === player) {
+    for (let i = 1; i <= 3; i++) if (skills[i]) skills[i].ready = Infinity;
+  } else {
+    for (let i = 1; i <= 3; i++) if (caster.skills && caster.skills[i]) caster.skills[i].ready = Infinity;
+  }
+  // 大爆发飘字
+  damageTexts.push({
+    x: caster.x, y: caster.y - 200,
+    vx: 0, vy: -2.4, life: 110, maxLife: 110,
+    text: "2·3·4 合体技!", color: "#ff2200", size: 28, crit: true,
+  });
+  damageTexts.push({
+    x: caster.x, y: caster.y - 165,
+    vx: 0, vy: -2.0, life: 110, maxLife: 110,
+    text: "普攻 +300%   2/3/4 本回合废", color: "#ffaa33", size: 18, crit: true,
+  });
+  // 大爆发粒子
+  for (let i = 0; i < 70; i++) {
+    const a = (i / 70) * Math.PI * 2;
+    const r = 25 + Math.random() * 35;
+    particles.push({
+      x: caster.x + Math.cos(a) * r,
+      y: caster.y - 50 + Math.sin(a) * r,
+      vx: Math.cos(a) * 6 + (Math.random() - 0.5) * 2,
+      vy: Math.sin(a) * 4 - 3,
+      life: 50 + Math.random() * 30,
+      color: i % 3 === 0 ? "#ff2200" : (i % 3 === 1 ? "#ffaa33" : "#ffee66"),
+      size: 4 + Math.random() * 3,
+    });
+  }
+  hitStopT = Math.max(hitStopT, 10);
+  shakeT = 24; shakeStrength = 14;
+}
+
 // 张鸡块「我去你的!」处于狂按窗口中
 function isZjySmashing(entity) {
   return entity && entity.char === "zjy" && performance.now() < (entity.smashUntil || 0);
@@ -1828,7 +1887,8 @@ function isZjySmashing(entity) {
 function zjySmashBeat(caster) {
   const target = (caster === player) ? dummy : player;
   caster.smashPresses = (caster.smashPresses || 0) + 1;
-  const mul = rageDamageMul(caster);
+  // K 窗口内的 Space 按击算"普攻"，吃合体技 +300% 加成
+  const mul = rageDamageMul(caster) * zjyBasicBonusMul(caster);
   const dmg = Math.ceil(120 * mul);
   if (target === player) damagePlayer(dmg);
   else damageDummy(dmg);
@@ -2126,6 +2186,7 @@ const p2 = {
   // 张鸡块技能
   soundDebuffUntil: 0, smashUntil: 0, smashPresses: 0, smashTargetIsP2: false,
   zjyYeahBuffUntil: 0,
+  zjyComboUsed: false, zjyComboBasicBuff: false,
 };
 
 // dummy 是共用引用，训练=baseDummy / PVP=p2
@@ -2393,8 +2454,8 @@ function updateEntityCombat(attacker, target, char) {
       }
     }
     if (hit) {
-      // 红温伤害倍率（非 zjy 则恒为 1）
-      const mul = rageDamageMul(attacker);
+      // 红温伤害倍率（非 zjy 则恒为 1）+ 张鸡块"合体技后普攻 +300%"
+      const mul = rageDamageMul(attacker) * zjyBasicBonusMul(attacker);
       applyDamageTo(target, Math.ceil(dmg * mul));
       attacker.atkHit = true;
       hitStopT = Math.max(hitStopT, 4);
@@ -2446,7 +2507,7 @@ function updateEntityCombat(attacker, target, char) {
       // 提速后 tick 从 100ms 压到 72ms（约等于 1/1.4）
       const tickInterval = attacker.zjySpinBoost ? 72 : 100;
       if (nowTick - (attacker.spinLastTick || 0) >= tickInterval) {
-        const mul = rageDamageMul(attacker);
+        const mul = rageDamageMul(attacker) * zjyBasicBonusMul(attacker);
         applyDamageTo(target, Math.ceil(40 * mul));
         attacker.spinLastTick = nowTick;
         spawnZjyHitParticles(target.x, target.y - 60, attacker.facing, 6);
@@ -2469,7 +2530,7 @@ function updateEntityCombat(attacker, target, char) {
         target.x = Math.max(100, Math.min(W_WORLD - 100, target.x));
       }
       if (attacker.punchRushT % 6 === 0) {
-        const mul = rageDamageMul(attacker);
+        const mul = rageDamageMul(attacker) * zjyBasicBonusMul(attacker);
         applyDamageTo(target, Math.ceil(100 * mul));
         hitStopT = Math.max(hitStopT, 2);
         shakeT = 6; shakeStrength = 4;
@@ -4509,6 +4570,7 @@ function resetRound() {
   p2.substituteReady = 0; p2.substituteTaps = []; p2.substituteUntil = 0;
   p2.rageStacks = 0; p2.rageGainFlash = 0; p2.rageBurstUntil = 0;
   p2.soundDebuffUntil = 0; p2.smashUntil = 0; p2.smashPresses = 0; p2.zjyYeahBuffUntil = 0;
+  p2.zjyComboUsed = false; p2.zjyComboBasicBuff = false;
   p2.icecreamEnd = 0; p2.icecreamNextTick = 0;
   p2.iceGate1 = null; p2.iceGate2 = null; p2.iceGateCooldown = 0;
   p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
@@ -4534,6 +4596,7 @@ function resetRound() {
   player.substituteReady = 0; player.substituteTaps = []; player.substituteUntil = 0;
   player.rageStacks = 0; player.rageGainFlash = 0; player.rageBurstUntil = 0;
   player.soundDebuffUntil = 0; player.smashUntil = 0; player.smashPresses = 0; player.zjyYeahBuffUntil = 0;
+  player.zjyComboUsed = false; player.zjyComboBasicBuff = false;
   player.icecreamEnd = 0; player.icecreamNextTick = 0;
   player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
   player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
@@ -4808,6 +4871,10 @@ function update() {
     }
   }
 
+  // 张鸡块同按 2·3·4 合体技检测（每帧轮询）
+  checkZjyComboKeys(player);
+  if (gameMode === "pvp") checkZjyComboKeys(p2);
+
   // 统一战斗管线：P1 打 dummy；PVP 时 P2 也打 player
   updateEntityCombat(player, dummy, selectedChar);
   if (gameMode === "pvp") {
@@ -5056,13 +5123,14 @@ function update() {
     if (!s) return;
     const remain = s.ready - now;
     const mask = el.querySelector(".cd-mask");
-    if (remain > 0) {
-      el.classList.add("cooling");
-      el.classList.remove("ready");
+    if (s.ready === Infinity) {
+      el.classList.add("cooling"); el.classList.remove("ready");
+      mask.textContent = "废";
+    } else if (remain > 0) {
+      el.classList.add("cooling"); el.classList.remove("ready");
       mask.textContent = (remain / 1000).toFixed(1);
     } else {
-      el.classList.remove("cooling");
-      el.classList.add("ready");
+      el.classList.remove("cooling"); el.classList.add("ready");
       mask.textContent = "";
     }
   });
@@ -5073,13 +5141,14 @@ function update() {
       if (!s) return;
       const remain = s.ready - now;
       const mask = el.querySelector(".cd-mask");
-      if (remain > 0) {
-        el.classList.add("cooling");
-        el.classList.remove("ready");
+      if (s.ready === Infinity) {
+        el.classList.add("cooling"); el.classList.remove("ready");
+        mask.textContent = "废";
+      } else if (remain > 0) {
+        el.classList.add("cooling"); el.classList.remove("ready");
         mask.textContent = (remain / 1000).toFixed(1);
       } else {
-        el.classList.remove("cooling");
-        el.classList.add("ready");
+        el.classList.remove("cooling"); el.classList.add("ready");
         mask.textContent = "";
       }
     });
