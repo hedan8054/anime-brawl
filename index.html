@@ -284,57 +284,95 @@
   .tc-btn { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   @media (pointer: coarse), (hover: none) {
     #touchControls { display: block; }
-    .tc-left, .tc-right {
-      position: fixed;
-      bottom: 14px;
-      z-index: 200;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      pointer-events: auto;
-    }
-    .tc-left  { left: 12px; }
-    .tc-right { right: 12px; }
-    .tc-row { display: flex; gap: 8px; align-items: center; }
     .tc-btn {
-      width: 52px; height: 52px; border-radius: 50%;
+      border-radius: 50%;
       background: rgba(255,255,255,0.16);
       border: 2px solid rgba(255,255,255,0.35);
-      color: #fff; font-size: 17px; font-weight: 700;
+      color: #fff; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       font-family: inherit;
       padding: 0;
       transition: transform .05s ease, background .05s ease;
+      position: absolute;
     }
     .tc-btn:active, .tc-btn.tc-held {
       background: rgba(255,217,85,0.55);
       transform: scale(0.92);
     }
+
+    /* 左下 T 字形方向键 ↑ / ← → */
+    .tc-left {
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      width: 168px;
+      height: 168px;
+      z-index: 200;
+      pointer-events: none;   /* 容器不接收 pointer，只有子按钮接收 */
+    }
+    .tc-left .tc-btn { pointer-events: auto; }
+    .tc-move {
+      width: 56px; height: 56px;
+      font-size: 22px;
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.38);
+    }
+    .tc-move-up    { left: 56px; bottom: 84px; }   /* ↑ 居中上 */
+    .tc-move-left  { left: 6px;  bottom: 14px; }   /* ← 左下 */
+    .tc-move-right { left: 106px; bottom: 14px; }  /* → 右下 */
+
+    /* 右下王者荣耀风半圆形技能布局
+       普攻大按钮在最右下 (中心 right:62 bottom:62, 半径 40)
+       4 个技能按 180° / 150° / 120° / 90° 环绕，半径 100 */
+    .tc-right {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: 230px;
+      height: 230px;
+      z-index: 200;
+      pointer-events: none;
+    }
+    .tc-right .tc-btn { pointer-events: auto; }
+
     .tc-attack {
-      width: 70px; height: 70px; font-size: 26px;
-      background: rgba(255,80,80,0.32);
-      border-color: #ff8080;
-      margin-top: 4px;
+      width: 80px; height: 80px;
+      right: 22px; bottom: 22px;
+      font-size: 26px;
+      background: rgba(255,80,80,0.36);
+      border-color: #ff9090;
+      color: #fff;
+      letter-spacing: 0;
     }
     .tc-attack:active, .tc-attack.tc-held { background: rgba(255,80,80,0.75); }
+
     .tc-skill {
-      background: rgba(120,90,255,0.28);
+      width: 56px; height: 56px;
+      background: rgba(120,90,255,0.3);
       border-color: #9a8aff;
-      font-size: 13px;
+      font-size: 22px;
     }
-    .tc-skill:active, .tc-skill.tc-held { background: rgba(255,217,85,0.55); }
-    .tc-skill .tc-k { font-size: 11px; opacity: .7; line-height: 1; margin-bottom: 2px; }
-    .tc-skill .tc-ico { font-size: 20px; line-height: 1; }
-    /* 触屏设备上隐藏键盘提示、标题、左上角切换、P2 技能栏 */
-    #hint, h1, #charSwitcher, .hud-col-p2 { display: none !important; }
-    .battle-hud { margin-top: 4px; gap: 6px; }
-    #skillbar { gap: 6px; }
-    #skillbar .skill { width: 48px; height: 48px; }
-    #skillbar .skill .icon { font-size: 18px; }
-    #skillbar .skill .label { font-size: 9px; }
-    body { min-height: 100vh; padding: 4px; }
-    #stage { width: 96vw; max-height: 60vh; }
+    .tc-skill:active, .tc-skill.tc-held { background: rgba(255,217,85,0.6); }
+    /* 按钮内只显示技能 icon，数字 "技n" 不显示（桌面端调试时显示在 aria-label） */
+    .tc-skill .tc-k { display: none; }
+    .tc-skill .tc-ico { font-size: 26px; line-height: 1; }
+
+    /* 半圆定位（从普攻中心 62,62 半径 98 算出的左下外边距）*/
+    .tc-skill-1 { right: 132px; bottom: 34px; }   /* 180° 正左 */
+    .tc-skill-2 { right: 118px; bottom: 83px; }   /* 150° 左上 */
+    .tc-skill-3 { right: 83px;  bottom: 118px; }  /* 120° 偏上 */
+    .tc-skill-4 { right: 34px;  bottom: 132px; }  /* 90° 正上 */
+
+    /* 触屏设备隐藏键盘/桌面专属 UI：标题/提示/P1P2 技能栏/切换 */
+    #hint, h1, #charSwitcher, .battle-hud { display: none !important; }
+
+    body { min-height: 100vh; padding: 4px; align-items: center; }
+    #stage { width: 98vw; max-height: 86vh; }
+    .hpbar { width: 38%; height: 18px; top: 8px; }
+    .hpbar.left { left: 10px; }
+    .hpbar.right { right: 10px; }
+    .hpbar .name { font-size: 11px; padding: 0 6px; }
+    .hpbar .hpnum { font-size: 10px; }
   }
 
   /* ===== 竖屏提示 ===== */
@@ -956,33 +994,20 @@
   <!-- 联机状态指示器（常驻右上角）-->
   <div id="netIndicator">● 未连接</div>
 
-  <!-- 手机触屏控件（仅触屏设备显示） -->
+  <!-- 手机触屏控件（仅触屏设备显示）
+       左下 T 字形方向键 + 右下王者荣耀风半圆形技能布局 -->
   <div id="touchControls">
     <div class="tc-left">
-      <button class="tc-btn" data-tk="w" aria-label="跳">↑</button>
-      <div class="tc-row">
-        <button class="tc-btn" data-tk="a" aria-label="左">←</button>
-        <button class="tc-btn" data-tk="d" aria-label="右">→</button>
-      </div>
+      <button class="tc-btn tc-move tc-move-up"    data-tk="w" aria-label="跳">↑</button>
+      <button class="tc-btn tc-move tc-move-left"  data-tk="a" aria-label="左">←</button>
+      <button class="tc-btn tc-move tc-move-right" data-tk="d" aria-label="右">→</button>
     </div>
     <div class="tc-right">
-      <div class="tc-row">
-        <button class="tc-btn tc-skill" data-tk="j" aria-label="技能 1">
-          <span class="tc-k">技1</span><span class="tc-ico" id="tcIco0">🔪</span>
-        </button>
-        <button class="tc-btn tc-skill" data-tk="k" aria-label="技能 2">
-          <span class="tc-k">技2</span><span class="tc-ico" id="tcIco1">💕</span>
-        </button>
-      </div>
-      <div class="tc-row">
-        <button class="tc-btn tc-skill" data-tk="l" aria-label="技能 3">
-          <span class="tc-k">技3</span><span class="tc-ico" id="tcIco2">🌀</span>
-        </button>
-        <button class="tc-btn tc-skill" data-tk="u" aria-label="技能 4">
-          <span class="tc-k">技4</span><span class="tc-ico" id="tcIco3">👥</span>
-        </button>
-      </div>
-      <button class="tc-btn tc-attack" data-tk="space" aria-label="普攻">⚔</button>
+      <button class="tc-btn tc-skill tc-skill-1" data-tk="j" aria-label="技能 1"><span class="tc-ico" id="tcIco0">🔪</span></button>
+      <button class="tc-btn tc-skill tc-skill-2" data-tk="k" aria-label="技能 2"><span class="tc-ico" id="tcIco1">💕</span></button>
+      <button class="tc-btn tc-skill tc-skill-3" data-tk="l" aria-label="技能 3"><span class="tc-ico" id="tcIco2">🌀</span></button>
+      <button class="tc-btn tc-skill tc-skill-4" data-tk="u" aria-label="技能 4"><span class="tc-ico" id="tcIco3">👥</span></button>
+      <button class="tc-btn tc-attack" data-tk="space" aria-label="普攻">攻</button>
     </div>
   </div>
 
@@ -1533,7 +1558,9 @@ addEventListener("keydown", e => {
       else if (idx !== -1) handleSkillIndex(idx);
     }
   }
-  if (!p1Blocked) keys[k] = true;
+  // keys[] 始终跟随物理按键，不再受 blocked 门控——这样解控后仍按住的方向键能立刻生效
+  // （动作触发自身已经在上面的 `!p1Blocked` 门里控住了，不会在控制期误触）
+  keys[k] = true;
 });
 addEventListener("keyup", e => {
   const k = e.key === " " ? "space" : e.key.toLowerCase();
@@ -2014,14 +2041,14 @@ function updateEntityCombat(attacker, target, char) {
       if (attacker.atkType === 1 && Math.abs(dx) < 180 && sameSide) { dmg = 600; hit = true; }
       else if (attacker.atkType === 4 && Math.abs(dx) < W / 2 && sameSide) {
         dmg = 1000; hit = true;
-        target.downT = Math.max(target.downT || 0, 30);
+        if (!isInSubstitute(target)) target.downT = Math.max(target.downT || 0, 30);
       }
     } else if (char === "xueking") {
       if (attacker.atkType === 1 && Math.abs(dx) < 140 && sameSide) {
         // 1A 前刺
         dmg = 500; hit = true;
         target.shakeT = 12;
-        target.x += attacker.facing * 10;
+        if (!isInSubstitute(target)) target.x += attacker.facing * 10;
       } else if (attacker.atkType === 2 && Math.abs(dx) < 130 && sameSide) {
         // 2A 上挑：挑飞 + 眩晕 1.5s
         dmg = 600; hit = true;
@@ -2034,8 +2061,10 @@ function updateEntityCombat(attacker, target, char) {
       } else if (attacker.atkType === 3 && Math.abs(dx) < 140 && sameSide) {
         // 3A 横斩：倒地 0.75s + 击退
         dmg = 700; hit = true;
-        target.downT = Math.max(target.downT || 0, 45);
-        target.x += attacker.facing * 22;
+        if (!isInSubstitute(target)) {
+          target.downT = Math.max(target.downT || 0, 45);
+          target.x += attacker.facing * 22;
+        }
         target.shakeT = 18;
       } else if (attacker.atkType === 4 && attacker.onGround && Math.abs(dx) < 90) {
         // 4A 天降：落地瞬间命中（霸体下落由 skyDropT 保护）
@@ -2114,8 +2143,11 @@ function updateEntityCombat(attacker, target, char) {
     const dx3 = target.x - attacker.x;
     const inReach = Math.sign(dx3) === attacker.facing && Math.abs(dx3) < 150;
     if (inReach) {
-      target.x += attacker.facing * 2.2;
-      target.x = Math.max(100, Math.min(W_WORLD - 100,target.x));
+      // 替身状态下不被带走（applyDamageTo 内部也已经通过 invincibleUntil 过滤掉伤害）
+      if (!isInSubstitute(target)) {
+        target.x += attacker.facing * 2.2;
+        target.x = Math.max(100, Math.min(W_WORLD - 100,target.x));
+      }
       if (attacker.punchRushT % 6 === 0) {
         applyDamageTo(target, 120);
         hitStopT = Math.max(hitStopT, 2);
