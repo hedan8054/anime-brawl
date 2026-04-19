@@ -39,6 +39,7 @@
     opacity: 0;
     pointer-events: none;
   }
+  .cover-content.hidden { display: none; }
   .cover-orb {
     position: absolute;
     width: 480px;
@@ -603,8 +604,8 @@
   #btnBackMenu:hover { background: rgba(180, 180, 180, 0.2); }
   #stage {
     position: relative;
-    width: 960px;
-    height: 480px;
+    width: min(92vw, 1440px);
+    aspect-ratio: 1440 / 480;
     background: linear-gradient(180deg, #2a1a5e 0%, #120a2e 70%, #3a1a1a 100%);
     border: 2px solid #5a3aff;
     border-radius: 8px;
@@ -622,12 +623,12 @@
     height: 40px;
     background: linear-gradient(180deg, transparent, rgba(0,0,0,0.4));
   }
-  canvas { display: block; }
+  canvas { display: block; width: 100%; height: 100%; }
   .hpbar {
     position: absolute;
     top: 14px;
-    width: 320px;
-    height: 22px;
+    width: 460px;
+    height: 24px;
     background: rgba(0,0,0,0.5);
     border: 2px solid #fff;
     border-radius: 4px;
@@ -641,6 +642,16 @@
     background-size: 300px 100%;
     background-position: left;
     transition: width 0.3s;
+  }
+  .hpbar .shield {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(180deg, #f4f7fa 0%, #c8d0d8 55%, #8a95a3 100%);
+    box-shadow: inset 0 0 6px rgba(255,255,255,0.6), 0 0 8px rgba(224,232,240,0.6);
+    border-left: 1.5px solid rgba(255,255,255,0.9);
+    transition: width 0.25s, left 0.25s;
+    display: none;
   }
   .hpbar .name {
     position: absolute;
@@ -660,11 +671,45 @@
     color: #fff;
     font-variant-numeric: tabular-nums;
   }
-  #skillbar {
+  .battle-hud {
     margin-top: 18px;
+    width: min(92vw, 1440px);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .hud-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .combo-ind {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #ffdd55;
+    height: 20px;
+    min-width: 200px;
+    text-align: center;
+  }
+  .combo-ind-p2 { color: #7fd8ff; }
+  /* 训练模式隐藏 P2 HUD */
+  body.training-mode .hud-col-p2 { display: none; }
+
+  #skillbar, #skillbar2 {
     display: flex;
     gap: 14px;
   }
+  /* P2 技能栏用蓝色边框区分 */
+  #skillbar2 .skill {
+    border-color: #4cc8ff;
+    box-shadow: 0 0 14px rgba(76, 200, 255, 0.4);
+  }
+  #skillbar2 .skill.ready {
+    box-shadow: 0 0 14px rgba(76, 200, 255, 0.6);
+  }
+  #skillbar2 .skill .key { color: #7fd8ff; }
   .skill {
     position: relative;
     width: 88px;
@@ -949,22 +994,35 @@
 
   <h1>动 漫 战 斗</h1>
   <div id="stage">
-    <canvas id="canvas" width="960" height="480"></canvas>
-    <div class="hpbar left"><div class="fill" id="hp1" style="width:100%"></div><div class="name"><span>鸣 人</span><span class="hpnum" id="hpnum1">10000 / 10000</span></div></div>
-    <div class="hpbar right"><div class="fill" id="hp2" style="width:100%"></div><div class="name"><span>木 桩</span><span class="hpnum" id="hpnum2">20000 / 20000</span></div></div>
+    <canvas id="canvas" width="1440" height="480"></canvas>
+    <div class="hpbar left"><div class="fill" id="hp1" style="width:100%"></div><div class="shield" id="shield1"></div><div class="name"><span>鸣 人</span><span class="hpnum" id="hpnum1">10000 / 10000</span></div></div>
+    <div class="hpbar right"><div class="fill" id="hp2" style="width:100%"></div><div class="shield" id="shield2"></div><div class="name"><span>木 桩</span><span class="hpnum" id="hpnum2">20000 / 20000</span></div></div>
   </div>
-  <div id="skillbar">
-    <div class="skill ready" data-skill="0"><span class="key">J</span><span class="icon">🔪</span><span class="label">苦无</span><div class="cd-mask"></div></div>
-    <div class="skill ready" data-skill="1"><span class="key">K</span><span class="icon">💕</span><span class="label">色诱之术</span><div class="cd-mask"></div></div>
-    <div class="skill ready" data-skill="2"><span class="key">L</span><span class="icon">🌀</span><span class="label">螺旋丸</span><div class="cd-mask"></div></div>
-    <div class="skill ready" data-skill="3"><span class="key">U</span><span class="icon">👥</span><span class="label">影分身</span><div class="cd-mask"></div></div>
+  <div class="battle-hud">
+    <div class="hud-col">
+      <div id="skillbar">
+        <div class="skill ready" data-skill="0"><span class="key">J</span><span class="icon">🔪</span><span class="label">苦无</span><div class="cd-mask"></div></div>
+        <div class="skill ready" data-skill="1"><span class="key">K</span><span class="icon">💕</span><span class="label">色诱之术</span><div class="cd-mask"></div></div>
+        <div class="skill ready" data-skill="2"><span class="key">L</span><span class="icon">🌀</span><span class="label">螺旋丸</span><div class="cd-mask"></div></div>
+        <div class="skill ready" data-skill="3"><span class="key">U</span><span class="icon">👥</span><span class="label">影分身</span><div class="cd-mask"></div></div>
+      </div>
+      <div id="combo-indicator" class="combo-ind"></div>
+    </div>
+    <div class="hud-col hud-col-p2" id="p2HudCol">
+      <div id="skillbar2">
+        <div class="skill ready" data-skill="0"><span class="key">J</span><span class="icon">🔪</span><span class="label">苦无</span><div class="cd-mask"></div></div>
+        <div class="skill ready" data-skill="1"><span class="key">K</span><span class="icon">💕</span><span class="label">色诱之术</span><div class="cd-mask"></div></div>
+        <div class="skill ready" data-skill="2"><span class="key">I</span><span class="icon">🌀</span><span class="label">螺旋丸</span><div class="cd-mask"></div></div>
+        <div class="skill ready" data-skill="3"><span class="key">L</span><span class="icon">👥</span><span class="label">影分身</span><div class="cd-mask"></div></div>
+      </div>
+      <div id="combo-indicator2" class="combo-ind combo-ind-p2"></div>
+    </div>
   </div>
   <div id="hint">
     <b style="color:#ff8a30">P1</b>: A/D 移 · W 跳 · Space 平A · J K L U 技能
     　｜
     <b style="color:#4cc8ff">P2</b>: ← → 移 · ↑ 跳 · ↓ 普攻 · <b>1/2/3/4 技能</b>（PVP）
   </div>
-  <div id="combo-indicator" style="margin-top:8px;font-size:14px;letter-spacing:2px;color:#ffdd55;height:20px;"></div>
 
   <!-- 胜负结算 -->
   <div id="matchOverlay" class="overlay hidden">
@@ -981,7 +1039,11 @@
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const W = canvas.width, H = canvas.height;
+const W = canvas.width, H = canvas.height;   // 屏幕视口尺寸
+const W_WORLD = 2000;                         // 世界（地图）宽度
+let camX = 0;                                 // 摄像机 x 偏移（世界坐标，屏幕左边对应的世界 x）
+// 基础最大生命（每局开始重置用，避免雪王冰甲转永久 HP 残留到下一局）
+const BASE_MAX_HP = { player: 10000, p2: 10000, dummy: 20000 };
 const GROUND = 400;
 const GRAVITY = 0.55;
 
@@ -1001,9 +1063,9 @@ const skillConfigs = {
     { name: "铜锣烧防御",key: "u", cd: 10000, icon: "🥮" },
   ],
   xueking: [
-    { name: "丢冰淇淋", key: "j", cd: 2000,  icon: "🍦" },
+    { name: "丢冰淇淋", key: "j", cd: 5000,  icon: "🍦" },
     { name: "下冰雹",   key: "k", cd: 5000,  icon: "❄" },
-    { name: "飞天",     key: "l", cd: 10000, icon: "🕊" },
+    { name: "冰门穿梭", key: "l", cd: 10000, icon: "🧊" },
     { name: "冰甲",     key: "u", cd: 10000, icon: "🛡" },
   ],
 };
@@ -1025,6 +1087,7 @@ function handleP2Attack() {
   if (p2.atkT > 0) return;
   if (p2.stunT > 0 || p2.downT > 0) return;
   if (performance.now() < timeFrozenUntil) return;
+  if (performance.now() < (p2.iceFrozenUntil || 0)) return;
   if (p2.char === "doraemon") handleDoraemonAttack(p2);
   else if (p2.char === "xueking") handleSnowkingAttack(p2);
   else handleNarutoAttack(p2);
@@ -1033,6 +1096,7 @@ function handleP2Attack() {
 function handleP2SkillKey(idx) {
   if (matchEnded || gameMode !== "pvp") return;
   if (performance.now() < timeFrozenUntil) return;
+  if (performance.now() < (p2.iceFrozenUntil || 0)) return;
   const s = p2.skills[idx];
   if (!s) return;
   const now = performance.now();
@@ -1041,9 +1105,78 @@ function handleP2SkillKey(idx) {
   castP2Skill(idx);
 }
 
+// P2 鸣人技能（镜像 P1 鸣人，带 owner="p2" 用于 PVP 归属）
+function castP2NarutoSkill(idx) {
+  const now = performance.now();
+  if (idx === 0) {
+    // 苦无（正统飞镖）
+    projectiles.push({
+      x: p2.x + p2.facing * 30,
+      y: p2.y - 50,
+      vx: p2.facing * 12,
+      life: 80,
+      rot: 0,
+      damage: 1000,
+      owner: "p2",
+    });
+    spawnParticles(p2.x + p2.facing * 30, p2.y - 50, "#7cf", 6);
+  } else if (idx === 1) {
+    // 色诱之术：p2 身前一团粉色云雾 2s
+    fogClouds.push({
+      x: p2.x, y: p2.y - 40,
+      radius: 60,
+      maxRadius: 120,
+      life: 120,
+      maxLife: 120,
+      hit: new Set(),
+      owner: "p2",
+    });
+    for (let i = 0; i < 24; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const dist = Math.random() * 60;
+      particles.push({
+        x: p2.x + Math.cos(ang) * dist,
+        y: (p2.y - 40) + Math.sin(ang) * dist * 0.6,
+        vx: Math.cos(ang) * 1.5,
+        vy: Math.sin(ang) * 0.8 - 0.5,
+        life: 40 + Math.random() * 20,
+        color: "#ffaacc",
+        size: 10 + Math.random() * 8,
+        smoke: true,
+      });
+    }
+  } else if (idx === 2) {
+    // 螺旋丸（直接前推版，P2 无长按充能）
+    p2.rasenThrowT = 14;
+    rasenBalls.push({
+      x: p2.x + p2.facing * 44,
+      y: p2.y - 50,
+      vx: p2.facing * 7,
+      vy: 0,
+      size: 8,
+      travel: 0,
+      maxTravel: 450,
+      scale: 1,
+      owner: "p2",
+    });
+    spawnParticles(p2.x + p2.facing * 44, p2.y - 50, "#4cf", 10);
+  } else if (idx === 3) {
+    // 影分身（P2 简化版）：4s 攻击力 +40% + 烟雾特效；不生成实体分身避免改太多
+    p2.sealT = 24;
+    p2.narutoBuffUntil = now + 4000;
+    for (const side of [-1, 1]) {
+      spawnSmoke(p2.x + side * 40, p2.y - 40, 10);
+    }
+  }
+}
+
 function castP2Skill(idx) {
   if (p2.char === "xueking") {
     castSnowkingSkill(idx, p2, player, true);
+    return;
+  }
+  if (p2.char === "naruto") {
+    castP2NarutoSkill(idx);
     return;
   }
   if (idx === 0) {
@@ -1054,7 +1187,7 @@ function castP2Skill(idx) {
     if (Math.abs(p2.x - toX) < 40) {
       toX = onLeft ? player.x - offset : player.x + offset;
     }
-    toX = Math.max(40, Math.min(W - 40, toX));
+    toX = Math.max(40, Math.min(W_WORLD - 40,toX));
     const fromX = p2.x;
     doors.push({ x: fromX, y: p2.y, bornAt: performance.now(), life: 400 });
     doors.push({ x: toX,   y: p2.y, bornAt: performance.now(), life: 400 });
@@ -1111,7 +1244,10 @@ function castP2Skill(idx) {
 addEventListener("keydown", e => {
   const k = e.key === " " ? "space" : e.key.toLowerCase();
   if (k === "space") e.preventDefault();
-  const p1Blocked = matchEnded || performance.now() < p1FrozenUntil || player.downT > 0 || player.stunT > 0;
+  const p1Blocked = matchEnded
+                    || performance.now() < p1FrozenUntil
+                    || player.downT > 0 || player.stunT > 0
+                    || performance.now() < (player.iceFrozenUntil || 0);
   if (!keys[k] && !p1Blocked) {
     if (k === "space") {
       if (inAerial()) fireManualAerialShot();
@@ -1140,8 +1276,9 @@ function applyCharacter(name) {
   // 更新 skills 数据
   skills.length = 0;
   cfg.forEach(c => skills.push({ ...c, ready: 0 }));
-  // 更新技能栏 UI
-  document.querySelectorAll(".skill").forEach((el, i) => {
+  // 更新 P1 技能栏 UI（scope 到 #skillbar，避免溢出到 P2 栏越界 cfg[4]）
+  document.querySelectorAll("#skillbar .skill").forEach((el, i) => {
+    if (!cfg[i]) return;
     el.querySelector(".icon").textContent = cfg[i].icon;
     el.querySelector(".label").textContent = cfg[i].name;
   });
@@ -1161,6 +1298,7 @@ function applyCharacter(name) {
   player.atkType = 0;
   player.arcT = 0;
   player.arcHit = false;
+  player.skyDropT = 0;
   player.flashlightStart = 0;
   player.flashlightEnd = 0;
   clones.length = 0;
@@ -1208,6 +1346,9 @@ const player = {
   arcT: 0,               // 雪王挥舞雪仗动画
   arcHit: false,         // 本次挥杖是否已命中
   hitFlash: 0,           // 受击闪白（与 p2/dummy 对齐）
+  iceFrozenUntil: 0,     // 被雪王 4A 冻住的结束时刻
+  shieldAmount: 0,       // 雪王冰甲护盾值（可吸伤）
+  shieldExpiry: 0,       // 护盾到期时刻
 };
 
 const LONG_PRESS_THRESHOLD = 20; // 超过即进入飞天模式
@@ -1230,6 +1371,31 @@ function isShieldActive() {
 function damagePlayer(amount) {
   if (matchEnded) return 0;
   if (performance.now() < player.invincibleUntil) return 0;
+  // 攻击方（P2）状态修正
+  if (gameMode === "pvp") {
+    const tNow = performance.now();
+    if (tNow < (p2.narutoBuffUntil || 0)) amount = Math.ceil(amount * 1.4); // 影分身 buff
+    if (tNow < (p2.dmgDebuffUntil || 0))  amount = Math.max(1, Math.ceil(amount * 0.7)); // 冰雹降伤
+  }
+  // 雪王冰甲护盾优先吸收
+  if (player.shieldAmount > 0 && performance.now() < player.shieldExpiry) {
+    const absorbed = Math.min(player.shieldAmount, amount);
+    player.shieldAmount -= absorbed;
+    amount -= absorbed;
+    damageTexts.push({
+      x: player.x + (Math.random() - 0.5) * 20, y: player.y - 100,
+      vx: 0, vy: -2.2, life: 40, maxLife: 40,
+      text: `-${absorbed} 盾`, color: "#e0e8f0", size: 16, crit: false,
+    });
+    if (player.shieldAmount <= 0) {
+      // 盾被打破 → 取消延期转换
+      player.shieldAmount = 0;
+      player.shieldExpiry = 0;
+      spawnParticles(player.x, player.y - 60, "#e0e8f0", 18);
+    }
+    refreshShieldBar(player, "p1");
+    if (amount <= 0) return absorbed;
+  }
   let final = amount;
   if (isShieldActive()) {
     final = Math.max(1, Math.ceil(amount * 0.1)); // 减 90%
@@ -1295,7 +1461,8 @@ const p2 = {
   rasenCharging: false, rasenThrowT: 0, sealT: 0,
   aerialStart: 0,
   // 雪王
-  arcT: 0, arcHit: false,
+  arcT: 0, arcHit: false, iceFrozenUntil: 0,
+  shieldAmount: 0, shieldExpiry: 0,
 };
 
 // dummy 是共用引用，训练=baseDummy / PVP=p2
@@ -1336,14 +1503,57 @@ function handleNormalAttack() {
   else handleNarutoAttack(player);
 }
 
-// 雪王：挥舞雪仗（单段弧形横扫，1 次命中判定）
+// 雪王：挥舞雪仗 4 段连招
+//   1A 向前一刺
+//   2A 向上挑飞 + 眩晕 1.5s
+//   3A 向前横斩 + 倒地
+//   4A 从敌方头顶落下 + 50% 几率冻结 1s
 function handleSnowkingAttack(e) {
-  e.atkType = 1;
-  e.atkT = 26;
-  e.arcT = 26;
-  e.arcHit = false;
-  e.comboStage = 0;
-  e.comboWindow = 0;
+  const stage = e.comboStage || 0;
+  e.atkType = stage + 1;
+  e.atkHit = false;
+  const target = (e === player) ? dummy : player;
+
+  if (stage === 0) {
+    // 1A 前刺
+    e.atkT = 22;
+    e.arcT = 22;
+    e.x += e.facing * 60;
+  } else if (stage === 1) {
+    // 2A 上挑（挑飞 + 眩晕）
+    e.atkT = 24;
+    e.arcT = 24;
+  } else if (stage === 2) {
+    // 3A 横斩（倒地）
+    e.atkT = 28;
+    e.arcT = 28;
+  } else {
+    // 4A 天降奇兵：传送到目标头顶后下落
+    e.atkT = 60;
+    e.skyDropT = 60;
+    e.arcT = 0;
+    e.x = Math.max(40, Math.min(W_WORLD - 40,target.x));
+    e.y = Math.max(80, target.y - 200);
+    e.vy = 0;
+    e.onGround = false;
+    e.facing = target.x >= e.x ? 1 : -1;
+    spawnSmoke(e.x, e.y - 20, 10);
+    for (let i = 0; i < 10; i++) {
+      particles.push({
+        x: e.x + (Math.random() - 0.5) * 20,
+        y: e.y - 20 + (Math.random() - 0.5) * 20,
+        vx: (Math.random() - 0.5) * 3,
+        vy: -Math.random() * 2,
+        life: 30, color: "#c8f0ff", size: 3,
+      });
+    }
+  }
+
+  e.x = Math.max(40, Math.min(W_WORLD - 40,e.x));
+  e.comboStage = (stage + 1) % 4;
+  e.comboWindow = 54;
+  if (e === player) updateComboIndicator();
+  else if (e === p2) updateP2ComboIndicator();
 }
 
 function handleNarutoAttack(e = player) {
@@ -1371,7 +1581,7 @@ function handleNarutoAttack(e = player) {
     });
     spawnParticles(e.x, e.y - 40, "#9df", 10);
   }
-  e.x = Math.max(40, Math.min(W - 40, e.x));
+  e.x = Math.max(40, Math.min(W_WORLD - 40,e.x));
   e.comboStage = (stage + 1) % 3;
   if (e === player) {
     updateComboIndicator();
@@ -1402,11 +1612,64 @@ function updateEntityCombat(attacker, target, char) {
         target.downT = Math.max(target.downT || 0, 30);
       }
     } else if (char === "xueking") {
-      // 雪王挥舞雪仗：弧形扫击，范围 130，单次 700 伤害 + 轻微击退
-      if (attacker.atkType === 1 && Math.abs(dx) < 130 && sameSide) {
+      if (attacker.atkType === 1 && Math.abs(dx) < 140 && sameSide) {
+        // 1A 前刺
+        dmg = 500; hit = true;
+        target.shakeT = 12;
+        target.x += attacker.facing * 10;
+      } else if (attacker.atkType === 2 && Math.abs(dx) < 130 && sameSide) {
+        // 2A 上挑：挑飞 + 眩晕 1.5s
+        dmg = 600; hit = true;
+        if (typeof target.vy === "number") {
+          target.vy = -12;
+          target.onGround = false;
+        }
+        target.stunT = Math.max(target.stunT || 0, 90);
+        target.shakeT = 16;
+      } else if (attacker.atkType === 3 && Math.abs(dx) < 140 && sameSide) {
+        // 3A 横斩：倒地 0.75s + 击退
         dmg = 700; hit = true;
-        target.shakeT = 14;
-        target.x += attacker.facing * 12;
+        target.downT = Math.max(target.downT || 0, 45);
+        target.x += attacker.facing * 22;
+        target.shakeT = 18;
+      } else if (attacker.atkType === 4 && attacker.onGround && Math.abs(dx) < 90) {
+        // 4A 天降：落地瞬间命中（霸体下落由 skyDropT 保护）
+        dmg = 1200; hit = true;
+        target.shakeT = 24;
+        // 落地冲击波粒子
+        for (let i = 0; i < 16; i++) {
+          const a = (i / 16) * Math.PI * 2;
+          particles.push({
+            x: attacker.x + Math.cos(a) * 8,
+            y: attacker.y - 4,
+            vx: Math.cos(a) * 5,
+            vy: Math.sin(a) * 2 - 2,
+            life: 30, color: "#c8f0ff", size: 3,
+          });
+        }
+        // 50% 几率冰封 1s（仅作用于目标，不影响全局时空暂停）
+        if (Math.random() < 0.5) {
+          const freezeEnd = performance.now() + 1000;
+          target.iceFrozenUntil = Math.max(target.iceFrozenUntil || 0, freezeEnd);
+          target.stunT = Math.max(target.stunT || 0, 60);
+          target.vx = 0;
+          damageTexts.push({
+            x: target.x, y: target.y - 140,
+            vx: 0, vy: -2, life: 60, maxLife: 60,
+            text: "冰 封!", color: "#c8f0ff", size: 24, crit: true,
+          });
+          // 结冰碎屑（外扩+上飞）
+          for (let i = 0; i < 20; i++) {
+            const a = Math.random() * Math.PI * 2;
+            particles.push({
+              x: target.x + Math.cos(a) * 10,
+              y: target.y - 60 + Math.sin(a) * 10,
+              vx: Math.cos(a) * 2,
+              vy: Math.sin(a) * 1 - 2,
+              life: 50, color: "#c8f0ff", size: 3,
+            });
+          }
+        }
       }
     }
     if (hit) {
@@ -1442,12 +1705,12 @@ function updateEntityCombat(attacker, target, char) {
   if (char === "doraemon" && attacker.punchRushT > 0) {
     attacker.punchRushT--;
     attacker.x += attacker.facing * 2.6;
-    attacker.x = Math.max(40, Math.min(W - 40, attacker.x));
+    attacker.x = Math.max(40, Math.min(W_WORLD - 40,attacker.x));
     const dx3 = target.x - attacker.x;
     const inReach = Math.sign(dx3) === attacker.facing && Math.abs(dx3) < 150;
     if (inReach) {
       target.x += attacker.facing * 2.2;
-      target.x = Math.max(100, Math.min(W - 100, target.x));
+      target.x = Math.max(100, Math.min(W_WORLD - 100,target.x));
       if (attacker.punchRushT % 6 === 0) {
         applyDamageTo(target, 120);
         hitStopT = Math.max(hitStopT, 2);
@@ -1473,6 +1736,7 @@ function updateEntityCombat(attacker, target, char) {
   if (attacker.spinT  > 0) attacker.spinT--;
   if (attacker.flipT  > 0) attacker.flipT--;
   if (attacker.arcT   > 0) attacker.arcT--;
+  if (attacker.skyDropT > 0) attacker.skyDropT--;
 
   // 连招窗口
   if (attacker.comboWindow > 0) {
@@ -1480,6 +1744,7 @@ function updateEntityCombat(attacker, target, char) {
     if (attacker.comboWindow === 0) {
       attacker.comboStage = 0;
       if (attacker === player) updateComboIndicator();
+      else if (attacker === p2) updateP2ComboIndicator();
     }
   }
 }
@@ -1508,7 +1773,7 @@ function handleDoraemonAttack(e = player) {
     const offset = 80;
     const fromX = e.x;
     const behindX = e.x < target.x ? target.x + offset : target.x - offset;
-    const newX = Math.max(40, Math.min(W - 40, behindX));
+    const newX = Math.max(40, Math.min(W_WORLD - 40,behindX));
     doors.push({ x: fromX, y: e.y, bornAt: performance.now(), life: 400 });
     doors.push({ x: newX, y: e.y, bornAt: performance.now(), life: 400 });
     e.x = newX;
@@ -1520,20 +1785,35 @@ function handleDoraemonAttack(e = player) {
     e.punchRushT = 48;
   }
 
-  e.x = Math.max(40, Math.min(W - 40, e.x));
+  e.x = Math.max(40, Math.min(W_WORLD - 40,e.x));
   e.comboStage = (stage + 1) % 5;
   e.comboWindow = 54;
   if (e === player) updateComboIndicator();
+  else if (e === p2) updateP2ComboIndicator();
 }
+
+const COMBO_NAMES = {
+  naruto:   ["1A 突刺", "2A 上勾", "3A 后翻"],
+  doraemon: ["1A 石矛", "2A 回旋", "3A 小拳拳", "4A 电击枪", "5A 穿门连击"],
+  xueking:  ["1A 前刺", "2A 上挑", "3A 横斩", "4A 天降"],
+};
 
 function updateComboIndicator() {
   const el = document.getElementById("combo-indicator");
-  const next = player.comboStage;
-  const narutoNames = ["1A 突刺", "2A 上勾", "3A 后翻"];
-  const doraNames   = ["1A 石矛", "2A 回旋", "3A 小拳拳", "4A 电击枪", "5A 穿门连击"];
-  const names = selectedChar === "doraemon" ? doraNames : narutoNames;
-  if (player.comboWindow > 0 && next > 0) {
-    el.innerHTML = `连招：下一段 <b style="color:#fff">${names[next]}</b>`;
+  const names = COMBO_NAMES[selectedChar] || COMBO_NAMES.naruto;
+  if (player.comboWindow > 0 && player.comboStage > 0) {
+    el.innerHTML = `连招：下一段 <b style="color:#fff">${names[player.comboStage]}</b>`;
+  } else {
+    el.innerHTML = "";
+  }
+}
+
+function updateP2ComboIndicator() {
+  const el = document.getElementById("combo-indicator2");
+  if (!el) return;
+  const names = COMBO_NAMES[p2.char] || COMBO_NAMES.naruto;
+  if (p2.comboWindow > 0 && p2.comboStage > 0) {
+    el.innerHTML = `连招：下一段 <b style="color:#fff">${names[p2.comboStage]}</b>`;
   } else {
     el.innerHTML = "";
   }
@@ -1830,6 +2110,180 @@ function drawRasenOrb(x, y, radius) {
   }
 }
 
+// 护盾 UI：灰白护盾条贴在 HP 右侧
+function refreshShieldBar(entity, sideKey) {
+  const hpId = sideKey === "p2" ? "hp2" : "hp1";
+  const shId = sideKey === "p2" ? "shield2" : "shield1";
+  const numId = sideKey === "p2" ? "hpnum2" : "hpnum1";
+  const hpPct = Math.max(0, entity.hp / entity.maxHp * 100);
+  const shPct = ((entity.shieldAmount || 0) / entity.maxHp * 100);
+  document.getElementById(hpId).style.width = hpPct + "%";
+  const sh = document.getElementById(shId);
+  sh.style.left  = hpPct + "%";
+  sh.style.width = shPct + "%";
+  sh.style.display = (entity.shieldAmount || 0) > 0 ? "" : "none";
+  document.getElementById(numId).textContent =
+    (entity.shieldAmount || 0) > 0
+      ? `${entity.hp} / ${entity.maxHp}　+${entity.shieldAmount}🛡`
+      : `${entity.hp} / ${entity.maxHp}`;
+}
+
+// 每帧检查护盾是否到期：未破 → 剩余值转永久最大 HP
+function checkShieldExpiry(entity, sideKey) {
+  const hpId = sideKey === "p2" ? "hp2" : "hp1";
+  const numId = sideKey === "p2" ? "hpnum2" : "hpnum1";
+  if (!entity.shieldExpiry || entity.shieldAmount <= 0) return;
+  if (performance.now() < entity.shieldExpiry) return;
+  // 到期 & 未破：转永久生命
+  const gained = entity.shieldAmount;
+  entity.maxHp += gained;
+  entity.hp    += gained;
+  entity.shieldAmount = 0;
+  entity.shieldExpiry = 0;
+  // 视觉 + 飘字
+  spawnParticles(entity.x, entity.y - 50, "#ffffff", 20);
+  damageTexts.push({
+    x: entity.x, y: entity.y - 130,
+    vx: 0, vy: -2.2, life: 70, maxLife: 70,
+    text: `+${gained} 最大生命`, color: "#e0f2fe", size: 22, crit: true,
+  });
+  refreshShieldBar(entity, sideKey);
+  document.getElementById(hpId).style.width = (entity.hp / entity.maxHp * 100) + "%";
+  document.getElementById(numId).textContent = `${entity.hp} / ${entity.maxHp}`;
+}
+
+// 冰淇淋命中回血（满血转护盾；护盾上限 1000，到期继续走冰甲转永久逻辑）
+function applyIcecreamHeal(entity, sideKey, heal) {
+  const missing = entity.maxHp - entity.hp;
+  const hpHeal = Math.min(missing, heal);
+  const shieldGain = heal - hpHeal;
+  if (hpHeal > 0) {
+    entity.hp += hpHeal;
+    damageTexts.push({
+      x: entity.x + (Math.random() - 0.5) * 20, y: entity.y - 110,
+      vx: 0, vy: -2.2, life: 40, maxLife: 40,
+      text: `+${hpHeal}`, color: "#66ff99", size: 16, crit: false,
+    });
+  }
+  if (shieldGain > 0) {
+    const SHIELD_CAP = 1000;
+    const canGain = Math.max(0, SHIELD_CAP - (entity.shieldAmount || 0));
+    const added = Math.min(canGain, shieldGain);
+    if (added > 0) {
+      entity.shieldAmount = (entity.shieldAmount || 0) + added;
+      // 首次攒护盾 / 到期已过 → 续约 5s；已有护盾则保留原 expiry 不压缩时间
+      if (!entity.shieldExpiry || performance.now() >= entity.shieldExpiry) {
+        entity.shieldExpiry = performance.now() + 5000;
+      }
+      damageTexts.push({
+        x: entity.x + (Math.random() - 0.5) * 20, y: entity.y - 92,
+        vx: 0, vy: -2.2, life: 40, maxLife: 40,
+        text: `+${added} 盾`, color: "#e0e8f0", size: 16, crit: false,
+      });
+    }
+  }
+  const hpId = sideKey === "p2" ? "hp2" : "hp1";
+  document.getElementById(hpId).style.width = (entity.hp / entity.maxHp * 100) + "%";
+  refreshShieldBar(entity, sideKey);
+}
+
+// 雪王·冰门穿梭：检测施法者是否走进门，触发传送 + 对敌 200 伤害
+function updateSnowkingIceGate(caster, target, isP2) {
+  const g1 = caster.iceGate1, g2 = caster.iceGate2;
+  if (!g1) return;
+  const now = performance.now();
+  // 过期清理
+  if (now >= g1.expiry || (g2 && now >= g2.expiry)) {
+    if (g1 && now >= g1.expiry) caster.iceGate1 = null;
+    if (g2 && now >= g2.expiry) caster.iceGate2 = null;
+    if (caster.iceGate1 && !caster.iceGate2 && caster.iceGate1.expiry === Infinity) {
+      // 只剩放了 1 扇没第 2 扇，保留等下次触发（这种情况不会进来，因为 1 号是 Infinity）
+    }
+    return;
+  }
+  if (!g2) return;  // 只有 1 扇门时不触发
+  if (now < (caster.iceGateCooldown || 0)) return;
+
+  const near = (gate) =>
+    Math.abs(caster.x - gate.x) < 30 && Math.abs(caster.y - gate.y) < 90;
+
+  let from = null, to = null;
+  if (near(g1)) { from = g1; to = g2; }
+  else if (near(g2)) { from = g2; to = g1; }
+  if (!from) return;
+
+  // 传送
+  caster.x = to.x;
+  caster.y = to.y;
+  caster.vy = 0;
+  caster.iceGateCooldown = now + 500;  // 防止立即穿回
+  // 对敌造成 200 伤害
+  if (isP2) damagePlayer(200);
+  else damageDummy(200);
+  // 视觉：两端粒子 + 烟
+  spawnParticles(from.x, from.y - 30, "#a0e8ff", 14);
+  spawnParticles(to.x,   to.y   - 30, "#a0e8ff", 14);
+  spawnSmoke(from.x, from.y - 30, 6);
+  spawnSmoke(to.x,   to.y   - 30, 6);
+  damageTexts.push({
+    x: target.x, y: target.y - 130,
+    vx: 0, vy: -2.2, life: 50, maxLife: 50,
+    text: "穿 梭!", color: "#c8f0ff", size: 18, crit: false,
+  });
+}
+
+// 雪王·冰淇淋连射：持续 2s，每 100ms 发 1 个（共 20 颗），命中回血
+function updateSnowkingIcecream(caster, target, isP2) {
+  if (!caster.icecreamEnd || performance.now() >= caster.icecreamEnd) return;
+  const now = performance.now();
+  if (now < (caster.icecreamNextTick || 0)) return;
+  caster.icecreamNextTick = now + 100;
+  // 朝目标方向锁定 facing
+  caster.facing = target.x >= caster.x ? 1 : -1;
+  // 略微散射角度
+  const spreadVy = -3 + (Math.random() - 0.5) * 3;
+  projectiles.push({
+    x: caster.x + caster.facing * 26,
+    y: caster.y - 60,
+    vx: caster.facing * (8 + Math.random() * 2),
+    vy: spreadVy,
+    life: 100,
+    rot: Math.random() * Math.PI,
+    damage: 180,         // 单颗伤害低（20 颗若全中 3600）
+    heal: 80,            // 命中回施法者 80 HP/护盾
+    owner: isP2 ? "p2" : "p1",
+    casterId: isP2 ? "p2" : "p1",  // 用于命中时找到施法者
+    kind: "icecream",
+    gravity: 0.28,
+  });
+  spawnParticles(caster.x + caster.facing * 28, caster.y - 50, "#ffe6f0", 3);
+}
+
+// 雪王·冰雹暴风：持续 3s，落点自动跟随敌方角色，每 150ms 砸 1 颗
+function updateSnowkingHailStorm(caster, target, isP2) {
+  if (!caster.hailStormEnd || performance.now() >= caster.hailStormEnd) return;
+  const now = performance.now();
+  // 落点平滑追踪目标位置（lerp），避免瞬移跳变
+  const targetX = Math.max(60, Math.min(W_WORLD - 60, target.x));
+  caster.hailStormX += (targetX - caster.hailStormX) * 0.18;
+  // 每 150ms 落 1 颗冰雹
+  if (now >= (caster.hailNextTick || 0)) {
+    caster.hailNextTick = now + 150;
+    projectiles.push({
+      x: caster.hailStormX + (Math.random() - 0.5) * 90,
+      y: -20 - Math.random() * 30,
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: 14 + Math.random() * 3,
+      life: 180,
+      rot: Math.random() * Math.PI,
+      damage: 140,
+      owner: isP2 ? "p2" : "p1",
+      kind: "hail",
+      debuff: true,   // 命中施加减速 + 降伤
+    });
+  }
+}
+
 // 雪王·飞天物理 & 自动冰雹（每 500ms 砸 1 颗）
 function updateSnowkingFly(caster, target, isP2) {
   if (!caster.flyUntil || performance.now() >= caster.flyUntil) return;
@@ -1842,7 +2296,7 @@ function updateSnowkingFly(caster, target, isP2) {
     projectiles.push({
       x: target.x + (Math.random() - 0.5) * 40,
       y: -30,
-      vx: 0, vy: 7 + Math.random() * 2,
+      vx: 0, vy: 14 + Math.random() * 3,
       life: 180,
       rot: Math.random() * Math.PI,
       damage: 250,
@@ -1857,56 +2311,59 @@ function updateSnowkingFly(caster, target, isP2) {
 function castSnowkingSkill(idx, caster, target, isP2) {
   const now = performance.now();
   if (idx === 0) {
-    // J 丢冰淇淋：抛物投射，命中 900 伤害
-    projectiles.push({
-      x: caster.x + caster.facing * 26,
-      y: caster.y - 60,
-      vx: caster.facing * 9,
-      vy: -4,
-      life: 100,
-      rot: 0,
-      damage: 900,
-      owner: isP2 ? "p2" : "p1",
-      kind: "icecream",
-      gravity: 0.28,
-    });
-    spawnParticles(caster.x + caster.facing * 30, caster.y - 50, "#a0e8ff", 6);
+    // J 冰淇淋连射：持续 2s 每 100ms 发 1 个（共 20 个），命中回血；满血则转护盾
+    caster.icecreamEnd = now + 2000;
+    caster.icecreamNextTick = now;
+    spawnParticles(caster.x + caster.facing * 30, caster.y - 50, "#a0e8ff", 8);
   } else if (idx === 1) {
-    // K 下冰雹：从天而降 6 颗冰晶，砸向目标 x 周围
-    const baseX = target.x;
-    for (let i = 0; i < 6; i++) {
-      projectiles.push({
-        x: baseX + (i - 2.5) * 36 + (Math.random() - 0.5) * 20,
-        y: -30 - i * 14,
-        vx: 0,
-        vy: 7 + Math.random() * 2,
-        life: 180,
-        rot: Math.random() * Math.PI,
-        damage: 250,
-        owner: isP2 ? "p2" : "p1",
-        kind: "hail",
+    // K 冰雹暴风：持续 3 秒，方向键可平移落点，命中敌人施加 40% 减速 + 30% 降伤 1.5s
+    caster.hailStormEnd = now + 3000;
+    caster.hailStormX = target.x;
+    caster.hailNextTick = now + 60;
+    // 起手光环
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      particles.push({
+        x: caster.x + Math.cos(a) * 28,
+        y: caster.y - 40 + Math.sin(a) * 14,
+        vx: Math.cos(a) * 2, vy: Math.sin(a) * 0.8 - 1.5,
+        life: 36, color: "#a0e8ff", size: 3,
       });
     }
   } else if (idx === 2) {
-    // L 飞天：持续 3s 漂浮 + 每 0.5s 自动召唤 1 颗冰雹
-    caster.flyUntil = now + 3000;
-    caster.flyNextHail = now + 100;
-    caster.vy = -12;
-    caster.onGround = false;
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2;
-      particles.push({
-        x: caster.x + Math.cos(a) * 30,
-        y: caster.y - 20 + Math.sin(a) * 10,
-        vx: Math.cos(a) * 2,
-        vy: Math.sin(a) * 1 - 2,
-        life: 40, color: "#a0e8ff", size: 3,
-      });
+    // L 冰门穿梭：
+    //   第 1 次按：在当前位置立起 1 号冰门（不消耗 CD）
+    //   第 2 次按：再立 2 号冰门，两扇门共享 3s 寿命；穿梭时对敌人造成 200 伤害
+    const bothActive = caster.iceGate1 && caster.iceGate2
+                       && now < caster.iceGate1.expiry && now < caster.iceGate2.expiry;
+    const oneActive  = !bothActive && caster.iceGate1 && now < caster.iceGate1.expiry;
+
+    if (!oneActive && !bothActive) {
+      // 放第一扇门，不占 CD
+      caster.iceGate1 = { x: caster.x, y: caster.y, expiry: Infinity };
+      caster.iceGate2 = null;
+      caster.iceGateCooldown = 0;
+      // 撤回 cast 入口刚扣掉的 CD
+      const s = isP2 ? p2.skills[2] : skills[2];
+      if (s) s.ready = 0;
+      if (!isP2) flashSkill(2, false);
+      spawnParticles(caster.x, caster.y - 40, "#a0e8ff", 14);
+      spawnSmoke(caster.x, caster.y - 30, 4);
+    } else if (oneActive) {
+      // 放第二扇门 → 启动 3s 共同寿命；CD 正常进入（上层已设置）
+      const until = now + 3000;
+      caster.iceGate1.expiry = until;
+      caster.iceGate2 = { x: caster.x, y: caster.y, expiry: until };
+      spawnParticles(caster.x, caster.y - 40, "#a0e8ff", 14);
+      spawnSmoke(caster.x, caster.y - 30, 4);
+    } else {
+      // 两扇门都在：本次按键忽略（且 CD 被消耗，避免连点刷新）
     }
   } else if (idx === 3) {
-    // U 冰甲：5s 受到伤害 -90%（复用护盾机制）
-    if (isP2) p2ShieldUntil = now + 5000;
-    else shieldActiveUntil = now + 5000;
+    // U 冰甲：1000 灰白护盾持续 5s。若到期未破，剩余值转为永久最大生命
+    caster.shieldAmount = 1000;
+    caster.shieldExpiry = now + 5000;
+    refreshShieldBar(caster, isP2 ? "p2" : "p1");
     for (let i = 0; i < 22; i++) {
       const a = (i / 22) * Math.PI * 2;
       particles.push({
@@ -1914,7 +2371,7 @@ function castSnowkingSkill(idx, caster, target, isP2) {
         y: caster.y - 40 + Math.sin(a) * 40,
         vx: Math.cos(a) * 1.5,
         vy: Math.sin(a) * 1.5 - 0.8,
-        life: 40, color: "#c8f0ff", size: 3,
+        life: 40, color: "#e0e8f0", size: 3,
       });
     }
   }
@@ -1932,7 +2389,7 @@ function castDoraemonSkill(idx) {
     if (Math.abs(player.x - toX) < 40) {
       toX = playerOnLeft ? dummy.x - offset : dummy.x + offset;
     }
-    toX = Math.max(40, Math.min(W - 40, toX));
+    toX = Math.max(40, Math.min(W_WORLD - 40,toX));
     // 双门瞬时出现 + 立即瞬移
     doors.push({ x: fromX, y: player.y, bornAt: performance.now(), life: 400 });
     doors.push({ x: toX,   y: player.y, bornAt: performance.now(), life: 400 });
@@ -2532,6 +2989,28 @@ function spawnSmoke(x, y, n) {
 
 function damageDummy(amount) {
   if (matchEnded) return;
+  // 攻击方（P1）状态修正：冰雹降伤 -30%
+  if (performance.now() < (player.dmgDebuffUntil || 0)) {
+    amount = Math.max(1, Math.ceil(amount * 0.7));
+  }
+  // 雪王冰甲护盾优先吸收（dummy 也可能是 p2）
+  if (dummy.shieldAmount > 0 && performance.now() < dummy.shieldExpiry) {
+    const absorbed = Math.min(dummy.shieldAmount, amount);
+    dummy.shieldAmount -= absorbed;
+    amount -= absorbed;
+    damageTexts.push({
+      x: dummy.x + (Math.random() - 0.5) * 20, y: dummy.y - 100,
+      vx: 0, vy: -2.2, life: 40, maxLife: 40,
+      text: `-${absorbed} 盾`, color: "#e0e8f0", size: 16, crit: false,
+    });
+    if (dummy.shieldAmount <= 0) {
+      dummy.shieldAmount = 0;
+      dummy.shieldExpiry = 0;
+      spawnParticles(dummy.x, dummy.y - 60, "#e0e8f0", 18);
+    }
+    refreshShieldBar(dummy, "p2");
+    if (amount <= 0) return;
+  }
   // PVP 时目标如果有无敌/盾，也走减伤流程
   if (!dummy.isDummy) {
     if (performance.now() < dummy.invincibleUntil) return;
@@ -2616,13 +3095,24 @@ function resetRound() {
   matchEnded = false;
   winner = null;
   // 位置 + HP + 计时器归零（保留胜场数）
+  // 关键：先把 maxHp 重置回初始值，抹去上一局雪王冰甲转永久 HP 的残留
+  p2.maxHp = BASE_MAX_HP.p2;
+  player.maxHp = BASE_MAX_HP.player;
+  baseDummy.maxHp = BASE_MAX_HP.dummy;
   p2.hp = p2.maxHp;
-  p2.x = 760; p2.y = GROUND; p2.vx = 0; p2.vy = 0;
+  p2.x = 1200; p2.y = GROUND; p2.vx = 0; p2.vy = 0;
   p2.facing = -1;
   p2.atkT = 0; p2.atkHit = false; p2.atkType = 0;
   p2.stunT = 0; p2.downT = 0; p2.hitFlash = 0;
   p2.invincibleUntil = 0; p2.flashlightStart = 0; p2.flashlightEnd = 0;
-  p2.arcT = 0; p2.arcHit = false; p2.flyUntil = 0; p2.flyNextHail = 0;
+  p2.arcT = 0; p2.arcHit = false; p2.skyDropT = 0; p2.flyUntil = 0; p2.flyNextHail = 0;
+  p2.iceFrozenUntil = 0;
+  p2.shieldAmount = 0; p2.shieldExpiry = 0;
+  p2.icecreamEnd = 0; p2.icecreamNextTick = 0;
+  p2.iceGate1 = null; p2.iceGate2 = null; p2.iceGateCooldown = 0;
+  p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
+  p2.slowUntil = 0; p2.dmgDebuffUntil = 0;
+  p2.narutoBuffUntil = 0; p2.sealT = 0; p2.rasenThrowT = 0;
   p2.skills = skillConfigs[p2.char].map(c => ({ ...c, ready: 0 }));
   p2ShieldUntil = 0;
   p1FrozenUntil = 0;
@@ -2637,9 +3127,21 @@ function resetRound() {
   player.rasenCharging = false; player.rasenThrowT = 0;
   player.aerialStart = 0; player.sealT = 0;
   player.flashlightStart = 0; player.flashlightEnd = 0;
-  player.arcT = 0; player.arcHit = false; player.flyUntil = 0; player.flyNextHail = 0;
+  player.arcT = 0; player.arcHit = false; player.skyDropT = 0; player.flyUntil = 0; player.flyNextHail = 0;
+  player.iceFrozenUntil = 0;
+  player.shieldAmount = 0; player.shieldExpiry = 0;
+  player.icecreamEnd = 0; player.icecreamNextTick = 0;
+  player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
+  player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
+  player.slowUntil = 0; player.dmgDebuffUntil = 0;
   player.comboStage = 0; player.comboWindow = 0;
+  p2.comboStage = 0; p2.comboWindow = 0;
+  updateComboIndicator();
+  updateP2ComboIndicator();
   skills.forEach(s => s.ready = 0);
+  // 摄像机直接吸附到起始中点，避免开局镜头横扫
+  const startMid = (player.x + (p2 ? p2.x : dummy.x)) / 2;
+  camX = Math.max(0, Math.min(W_WORLD - W, startMid - W / 2));
   clones.length = 0;
   rasenBalls.length = 0;
   projectiles.length = 0;
@@ -2649,14 +3151,38 @@ function resetRound() {
   document.getElementById("hpnum1").textContent = `${player.maxHp} / ${player.maxHp}`;
   document.getElementById("hp2").style.width = "100%";
   document.getElementById("hpnum2").textContent = `${p2.maxHp} / ${p2.maxHp}`;
+  // 清护盾条
+  const sh1 = document.getElementById("shield1");
+  const sh2 = document.getElementById("shield2");
+  if (sh1) sh1.style.display = "none";
+  if (sh2) sh2.style.display = "none";
 }
 
 function updateSkillBarKeys() {
-  const labels = gameMode === "pvp" ? ["1","2","3","4"] : ["J","K","L","U"];
-  document.querySelectorAll(".skill").forEach((el, i) => {
+  // P1 栏：按当前角色 config 刷 icon/label/key
+  const p1Labels = gameMode === "pvp" ? ["1","2","3","4"] : ["J","K","L","U"];
+  const p1Cfg = skillConfigs[selectedChar] || skillConfigs.naruto;
+  document.querySelectorAll("#skillbar .skill").forEach((el, i) => {
     const keyEl = el.querySelector(".key");
-    if (keyEl) keyEl.textContent = labels[i];
+    const iconEl = el.querySelector(".icon");
+    const labelEl = el.querySelector(".label");
+    if (keyEl) keyEl.textContent = p1Labels[i];
+    if (iconEl && p1Cfg[i]) iconEl.textContent = p1Cfg[i].icon;
+    if (labelEl && p1Cfg[i]) labelEl.textContent = p1Cfg[i].name;
   });
+  // P2 栏：PVP 时按 p2.char 刷 icon/label，键位固定 JKIL
+  const p2Labels = ["J","K","I","L"];
+  const p2Cfg = skillConfigs[p2.char] || skillConfigs.doraemon;
+  document.querySelectorAll("#skillbar2 .skill").forEach((el, i) => {
+    const keyEl = el.querySelector(".key");
+    const iconEl = el.querySelector(".icon");
+    const labelEl = el.querySelector(".label");
+    if (keyEl) keyEl.textContent = p2Labels[i];
+    if (iconEl && p2Cfg[i]) iconEl.textContent = p2Cfg[i].icon;
+    if (labelEl && p2Cfg[i]) labelEl.textContent = p2Cfg[i].name;
+  });
+  // 训练模式隐藏 P2 HUD
+  document.body.classList.toggle("training-mode", gameMode !== "pvp");
 }
 
 function updateHint() {
@@ -2724,7 +3250,8 @@ function spawnParticles(x, y, color, n) {
 }
 
 function flashSkill(idx, success) {
-  const el = document.querySelectorAll(".skill")[idx];
+  const el = document.querySelectorAll("#skillbar .skill")[idx];
+  if (!el) return;
   if (success) {
     el.classList.remove("flash");
     void el.offsetWidth;
@@ -2744,17 +3271,20 @@ function update() {
   // P1 状态衰减（被 P2 技能压制：倒地/眩晕）
   if (player.stunT > 0) player.stunT--;
   if (player.downT > 0) player.downT--;
-  const p1Disabled = player.downT > 0 || player.stunT > 0;
+  const p1Disabled = player.downT > 0 || player.stunT > 0
+                    || performance.now() < p1FrozenUntil
+                    || performance.now() < (player.iceFrozenUntil || 0);
 
   // 玩家移动（被压制时禁动作，物理/重力仍生效）
-  const speed = inAerial() ? 5 : 4;
+  const p1SlowMul = performance.now() < (player.slowUntil || 0) ? 0.6 : 1;
+  const speed = (inAerial() ? 5 : 4) * p1SlowMul;
   if (p1Disabled) {
     player.vx = 0;
     // 中断螺旋丸冲刺
     if (player.rasenDashT > 0) player.rasenDashT = 0;
   } else if (player.rasenDashT > 0) {
     // 螺旋丸前冲（锁定方向）
-    player.vx = player.facing * 5.5;
+    player.vx = player.facing * 5.5 * p1SlowMul;
     player.rasenDashT--;
     if (keys["a"]) player.facing = -1;
     else if (keys["d"]) player.facing = 1;
@@ -2787,12 +3317,28 @@ function update() {
   updateSnowkingFly(player, dummy, false);
   if (gameMode === "pvp") updateSnowkingFly(p2, player, true);
 
+  // 雪王·冰淇淋连射（2s 每 100ms 发 1 个）
+  updateSnowkingIcecream(player, dummy, false);
+  if (gameMode === "pvp") updateSnowkingIcecream(p2, player, true);
+
+  // 雪王·冰门穿梭
+  updateSnowkingIceGate(player, dummy, false);
+  if (gameMode === "pvp") updateSnowkingIceGate(p2, player, true);
+
+  // 雪王·冰雹暴风（3s 持续下冰）
+  updateSnowkingHailStorm(player, dummy, false);
+  if (gameMode === "pvp") updateSnowkingHailStorm(p2, player, true);
+
+  // 雪王·冰甲护盾：到期未破则转永久最大 HP
+  checkShieldExpiry(player, "p1");
+  if (gameMode === "pvp") checkShieldExpiry(p2, "p2");
+
   if (player.y >= GROUND) {
     player.y = GROUND;
     player.vy = 0;
     player.onGround = true;
   }
-  player.x = Math.max(30, Math.min(W - 30, player.x));
+  player.x = Math.max(30, Math.min(W_WORLD - 30,player.x));
 
   // 走路相位
   if (Math.abs(player.vx) > 0.1 && player.onGround) {
@@ -2829,19 +3375,21 @@ function update() {
     b.y += b.vy;
     b.travel += Math.hypot(b.vx, b.vy);
     b.size = Math.min(30, 8 + b.travel * 0.05);
-    // 命中木桩
-    const dx = dummy.x - b.x;
-    const dy = (dummy.y - 50) - b.y;
+    // 按 owner 路由目标：P2 发的打 player，否则打 dummy（默认）
+    const tgt = b.owner === "p2" ? player : dummy;
+    const dx = tgt.x - b.x;
+    const dy = (tgt.y - 50) - b.y;
     if (Math.abs(dx) < b.size + 28 && Math.abs(dy) < 60) {
       const base = 1500 + b.travel * 8;
       const dmg = Math.max(1, Math.round(base * (b.scale || 1)));
-      damageDummy(dmg);
+      if (b.owner === "p2") damagePlayer(dmg);
+      else damageDummy(dmg);
       spawnRasenExplosion(b.x, b.y);
       rasenBalls.splice(i, 1);
       continue;
     }
     // 触地/越界/超距
-    if (b.y > GROUND - 8 || b.x < 0 || b.x > W || b.travel > b.maxTravel) {
+    if (b.y > GROUND - 8 || b.x < 0 || b.x > W_WORLD || b.travel > b.maxTravel) {
       spawnRasenExplosion(b.x, b.y);
       rasenBalls.splice(i, 1);
     }
@@ -2866,6 +3414,12 @@ function update() {
     if (p.owner === "p2" && Math.abs(p.x - player.x) < 32 && Math.abs(p.y - (player.y - 50)) < 56) {
       damagePlayer(p.damage || 10);
       spawnHitImpact(p.x, p.y, 28);
+      if (p.debuff) {
+        const nowD = performance.now();
+        player.slowUntil = Math.max(player.slowUntil || 0, nowD + 1500);
+        player.dmgDebuffUntil = Math.max(player.dmgDebuffUntil || 0, nowD + 1500);
+      }
+      if (p.heal) applyIcecreamHeal(p2, "p2", p.heal);  // P2 发的冰淇淋 → 回 P2
       projectiles.splice(i, 1);
       continue;
     }
@@ -2873,6 +3427,12 @@ function update() {
     if (p.owner !== "p2" && Math.abs(p.x - dummy.x) < 40 && Math.abs(p.y - (dummy.y - 50)) < 60) {
       damageDummy(p.damage || 10);
       if (p.kind === "icecream" || p.kind === "hail") spawnHitImpact(p.x, p.y, 28);
+      if (p.debuff) {
+        const nowD = performance.now();
+        dummy.slowUntil = Math.max(dummy.slowUntil || 0, nowD + 1500);
+        dummy.dmgDebuffUntil = Math.max(dummy.dmgDebuffUntil || 0, nowD + 1500);
+      }
+      if (p.heal) applyIcecreamHeal(player, "p1", p.heal); // P1 发的冰淇淋 → 回 P1
       projectiles.splice(i, 1);
       continue;
     }
@@ -2888,7 +3448,7 @@ function update() {
       projectiles.splice(i, 1);
       continue;
     }
-    if (p.life <= 0 || p.x < 0 || p.x > W) projectiles.splice(i, 1);
+    if (p.life <= 0 || p.x < 0 || p.x > W_WORLD) projectiles.splice(i, 1);
   }
 
   // 影分身（持续 5s，两侧跟随，同步攻击 50% 伤害）
@@ -2961,10 +3521,12 @@ function update() {
   // === PVP: 玩家 2 操作 / 物理 / 攻击 ===
   if (gameMode === "pvp") {
     // 被时空暂停或被眩晕/倒地时禁止操作
-    const frozen = isOpponentFrozen() || p2.stunT > 0 || p2.downT > 0;
+    const frozen = isOpponentFrozen() || p2.stunT > 0 || p2.downT > 0
+                   || performance.now() < (p2.iceFrozenUntil || 0);
     if (!frozen) {
-      if (keys["arrowleft"])  { p2.vx = -4; p2.facing = -1; }
-      else if (keys["arrowright"]) { p2.vx = 4; p2.facing = 1; }
+      const p2SlowMul = performance.now() < (p2.slowUntil || 0) ? 0.6 : 1;
+      if (keys["arrowleft"])  { p2.vx = -4 * p2SlowMul; p2.facing = -1; }
+      else if (keys["arrowright"]) { p2.vx = 4 * p2SlowMul; p2.facing = 1; }
       else p2.vx = 0;
       if (keys["arrowup"] && p2.onGround) {
         p2.vy = -14;
@@ -2977,7 +3539,7 @@ function update() {
     p2.y += p2.vy;
     p2.vy += GRAVITY;
     if (p2.y >= GROUND) { p2.y = GROUND; p2.vy = 0; p2.onGround = true; }
-    p2.x = Math.max(30, Math.min(W - 30, p2.x));
+    p2.x = Math.max(30, Math.min(W_WORLD - 30,p2.x));
     if (Math.abs(p2.vx) > 0.1 && p2.onGround) p2.walkT += 0.22;
     if (!p2.wasOnGround && p2.onGround) p2.landT = 8;
     if (p2.landT > 0) p2.landT--;
@@ -3042,25 +3604,33 @@ function update() {
         smoke: true,
       });
     }
-    // 木桩碰到 → 眩晕 + CD 惩罚 + 伤害 500（一次性）
-    const dx = dummy.x - f.x;
-    const dy = (dummy.y - 50) - f.y;
+    // 按 owner 路由：P2 的色诱命中 player，其余命中 dummy
+    const tgt = f.owner === "p2" ? player : dummy;
+    const tgtKey = f.owner === "p2" ? "player" : "dummy";
+    const dx = tgt.x - f.x;
+    const dy = (tgt.y - 50) - f.y;
     if (Math.abs(dx) < f.radius && Math.abs(dy) < f.radius * 0.8) {
-      const stunFrames = clones.length > 0 ? 120 : 60;  // 有影分身时眩晕 +1s
-      dummy.stunT = Math.max(dummy.stunT, stunFrames);
-      if (!f.hit.has("dummy")) {
-        dummy.cdPenalty += 2000;
-        damageDummy(500);
-        f.hit.add("dummy");
+      const stunFrames = (f.owner !== "p2" && clones.length > 0) ? 120 : 60;
+      tgt.stunT = Math.max(tgt.stunT || 0, stunFrames);
+      if (!f.hit.has(tgtKey)) {
+        if (f.owner === "p2") {
+          damagePlayer(500);
+        } else {
+          dummy.cdPenalty += 2000;
+          damageDummy(500);
+        }
+        f.hit.add(tgtKey);
       }
     }
     if (f.life <= 0) fogClouds.splice(i, 1);
   }
 
-  // CD 显示
+  // CD 显示 — P1
   const now = performance.now();
-  document.querySelectorAll(".skill").forEach((el, idx) => {
-    const remain = skills[idx].ready - now;
+  document.querySelectorAll("#skillbar .skill").forEach((el, idx) => {
+    const s = skills[idx];
+    if (!s) return;
+    const remain = s.ready - now;
     const mask = el.querySelector(".cd-mask");
     if (remain > 0) {
       el.classList.add("cooling");
@@ -3072,6 +3642,45 @@ function update() {
       mask.textContent = "";
     }
   });
+  // CD 显示 — P2（PVP 时）
+  if (gameMode === "pvp") {
+    document.querySelectorAll("#skillbar2 .skill").forEach((el, idx) => {
+      const s = p2.skills[idx];
+      if (!s) return;
+      const remain = s.ready - now;
+      const mask = el.querySelector(".cd-mask");
+      if (remain > 0) {
+        el.classList.add("cooling");
+        el.classList.remove("ready");
+        mask.textContent = (remain / 1000).toFixed(1);
+      } else {
+        el.classList.remove("cooling");
+        el.classList.add("ready");
+        mask.textContent = "";
+      }
+    });
+  }
+
+  // 角色拴绳：PVP 时两人最大间距不能超过画面宽 - 200
+  if (gameMode === "pvp") {
+    const MAX_SEP = W - 200;
+    const sep = p2.x - player.x;
+    if (sep > MAX_SEP) {
+      const over = sep - MAX_SEP;
+      player.x += over / 2;
+      p2.x     -= over / 2;
+    } else if (sep < -MAX_SEP) {
+      const over = -sep - MAX_SEP;
+      player.x -= over / 2;
+      p2.x     += over / 2;
+    }
+  }
+
+  // 摄像机：跟随 player 与 dummy(=p2) 的中点，缓动 lerp 到目标位置
+  const midX = (player.x + dummy.x) / 2;
+  const targetCamX = Math.max(0, Math.min(W_WORLD - W, midX - W / 2));
+  camX += (targetCamX - camX) * 0.12;
+  camX = Math.max(0, Math.min(W_WORLD - W, camX));
 }
 
 // 通用：绘制某个角色的普攻连招特效（石矛/回旋/电击枪/小拳拳）
@@ -3384,50 +3993,97 @@ function drawSlashVFX(state) {
 // 通用：绘制雪王挥杖弧光（冰蓝新月）
 function drawFrostArcVFX(state) {
   if (!state.arcT || state.arcT <= 0) return;
-  const total = 26;
-  const prog = 1 - state.arcT / total; // 0→1
+  const atk = state.atkType || 1;
+  const total = atk === 1 ? 22 : atk === 2 ? 24 : 28;
+  const prog = 1 - state.arcT / total;
+
   ctx.save();
   ctx.translate(state.x, state.y - 48);
   ctx.scale(state.facing, 1);
-  // 弧角：从上挥到前下
-  const startA = -Math.PI * 0.7;
-  const endA = Math.PI * 0.3;
+
+  // 1A 前刺：冰锥直线向前突出 + 轻微前后拉
+  if (atk === 1) {
+    const reach = 40 + prog * 60; // 40→100
+    const alpha = 0.5 + Math.min(0.5, prog * 1.5);
+    ctx.shadowColor = "#7dd3fc";
+    ctx.shadowBlur = 14;
+    // 主刺体
+    ctx.fillStyle = `rgba(200,240,255,${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(12, -6);
+    ctx.lineTo(reach, -2);
+    ctx.lineTo(reach + 10, 0);
+    ctx.lineTo(reach, 2);
+    ctx.lineTo(12, 6);
+    ctx.closePath();
+    ctx.fill();
+    // 白芯
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(14, -2);
+    ctx.lineTo(reach - 2, -0.5);
+    ctx.lineTo(reach - 2, 0.5);
+    ctx.lineTo(14, 2);
+    ctx.closePath();
+    ctx.fill();
+    // 速度线
+    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.7})`;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 0;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(reach + 4 + i * 6, -8 + i * 6);
+      ctx.lineTo(reach + 16 + i * 6, -8 + i * 6);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+
+  // 2A 上挑：弧线从身前下方扫到身前上方
+  // 3A 横斩：大弧从后上扫到前下（沿用老配置）
+  let startA, endA, radius = 70, originX = 10;
+  if (atk === 2) { startA = Math.PI * 0.25; endA = -Math.PI * 0.8; radius = 66; originX = 15; }
+  else           { startA = -Math.PI * 0.7; endA = Math.PI * 0.3;  radius = 74; originX = 10; }
   const a0 = startA + (endA - startA) * Math.max(0, prog - 0.15);
   const a1 = startA + (endA - startA) * Math.min(1, prog + 0.25);
+  const lo = Math.min(a0, a1);
+  const hi = Math.max(a0, a1);
 
-  // 主新月
-  ctx.strokeStyle = "#c8f0ff";
+  // 主新月：3A 走纯白，其他走冰蓝
+  const isWhite = atk === 3;
+  ctx.strokeStyle = isWhite ? "#ffffff" : (atk === 2 ? "#e0f2fe" : "#c8f0ff");
   ctx.lineWidth = 7;
-  ctx.shadowColor = "#7dd3fc";
-  ctx.shadowBlur = 18;
+  ctx.shadowColor = isWhite ? "#ffffff" : "#7dd3fc";
+  ctx.shadowBlur = isWhite ? 22 : 18;
   ctx.beginPath();
-  ctx.arc(10, 0, 70, a0, a1);
+  ctx.arc(originX, 0, radius, lo, hi);
   ctx.stroke();
-  // 内白芯
-  ctx.strokeStyle = "#ffffff";
+  // 内芯（3A 用淡金白，其他用纯白）
+  ctx.strokeStyle = isWhite ? "rgba(255,255,255,0.9)" : "#ffffff";
   ctx.lineWidth = 3;
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = isWhite ? 14 : 10;
   ctx.beginPath();
-  ctx.arc(10, 0, 70, a0, a1);
+  ctx.arc(originX, 0, radius, lo, hi);
   ctx.stroke();
-  // 尾迹羽丝
-  ctx.strokeStyle = "rgba(160,232,255,0.55)";
+  // 尾迹
+  ctx.strokeStyle = isWhite ? "rgba(255,255,255,0.55)" : "rgba(160,232,255,0.55)";
   ctx.lineWidth = 1.5;
   ctx.shadowBlur = 0;
   for (let i = 0; i < 3; i++) {
     ctx.globalAlpha = 0.6 - i * 0.15;
     ctx.beginPath();
-    ctx.arc(10, 0, 62 - i * 6, a0 - 0.05, a1 + 0.05);
+    ctx.arc(originX, 0, radius - 6 - i * 6, lo - 0.05, hi + 0.05);
     ctx.stroke();
   }
-  // 弧顶冰晶碎片（2 小菱）
+  // 弧顶冰晶碎片（3A 用白）
   ctx.globalAlpha = 1;
   for (let i = 0; i < 2; i++) {
     const a = a0 + (a1 - a0) * (0.3 + i * 0.4);
-    const cx = 10 + Math.cos(a) * 70;
-    const cy = Math.sin(a) * 70;
-    ctx.fillStyle = "#c8f0ff";
-    ctx.shadowColor = "#7dd3fc";
+    const cx = originX + Math.cos(a) * radius;
+    const cy = Math.sin(a) * radius;
+    ctx.fillStyle = isWhite ? "#ffffff" : "#c8f0ff";
+    ctx.shadowColor = isWhite ? "#ffffff" : "#7dd3fc";
     ctx.shadowBlur = 8;
     ctx.save();
     ctx.translate(cx, cy);
@@ -3444,16 +4100,206 @@ function drawFrostArcVFX(state) {
   ctx.restore();
 }
 
-// 冰甲：沿身体画 6 片浮冰碎片 + 蓝色光环（复用 shield 计时器）
+// 冰封方块：裹在目标身上的半透明立方体 + 裂纹 + 头顶"冰封"标签
+function drawIceBlockVFX(target) {
+  const now = performance.now();
+  if (now >= (target.iceFrozenUntil || 0)) return;
+  const remain = target.iceFrozenUntil - now;
+  const alpha = Math.min(1, remain / 200);
+  const tx = target.x;
+  const ty = target.y;
+  const bw = 64;   // 冰块宽
+  const bh = 110;  // 冰块高
+  const left = tx - bw / 2;
+  const top  = ty - bh - 2;
+
+  ctx.save();
+  // 冰块主体（蓝白渐变）
+  const grad = ctx.createLinearGradient(left, top, left + bw, top + bh);
+  grad.addColorStop(0, `rgba(255,255,255,${0.55 * alpha})`);
+  grad.addColorStop(0.5, `rgba(200,240,255,${0.45 * alpha})`);
+  grad.addColorStop(1, `rgba(125,211,252,${0.55 * alpha})`);
+  ctx.fillStyle = grad;
+  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowBlur = 14;
+  ctx.beginPath();
+  // 六边形立方体轮廓（斜顶 + 直身）
+  const bevel = 10;
+  ctx.moveTo(left + bevel, top);
+  ctx.lineTo(left + bw - bevel, top);
+  ctx.lineTo(left + bw, top + bevel);
+  ctx.lineTo(left + bw, top + bh - bevel);
+  ctx.lineTo(left + bw - bevel, top + bh);
+  ctx.lineTo(left + bevel, top + bh);
+  ctx.lineTo(left, top + bh - bevel);
+  ctx.lineTo(left, top + bevel);
+  ctx.closePath();
+  ctx.fill();
+
+  // 边框
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = `rgba(224,242,254,${0.85 * alpha})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 内部切面高光（左上斜带）
+  ctx.fillStyle = `rgba(255,255,255,${0.35 * alpha})`;
+  ctx.beginPath();
+  ctx.moveTo(left + 8, top + 10);
+  ctx.lineTo(left + 22, top + 4);
+  ctx.lineTo(left + 18, top + bh - 20);
+  ctx.lineTo(left + 4, top + bh - 28);
+  ctx.closePath();
+  ctx.fill();
+
+  // 裂纹（白色折线）
+  ctx.strokeStyle = `rgba(255,255,255,${0.7 * alpha})`;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(tx - 12, top + 18);
+  ctx.lineTo(tx - 4, top + 36);
+  ctx.lineTo(tx - 10, top + 58);
+  ctx.lineTo(tx + 6, top + 78);
+  ctx.moveTo(tx + 14, top + 22);
+  ctx.lineTo(tx + 4, top + 44);
+  ctx.lineTo(tx + 16, top + 70);
+  ctx.stroke();
+
+  // 周围漂浮冰晶
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + now / 400;
+    const px = tx + Math.cos(a) * 46;
+    const py = ty - 55 + Math.sin(a) * 14;
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(a);
+    ctx.fillStyle = `rgba(200,240,255,${0.9 * alpha})`;
+    ctx.shadowColor = "#7dd3fc";
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(0, -5);
+    ctx.lineTo(3, 0);
+    ctx.lineTo(0, 5);
+    ctx.lineTo(-3, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 头顶"冰封"标签
+  const pulse = 0.7 + Math.sin(now / 120) * 0.3;
+  ctx.textAlign = "center";
+  ctx.font = "900 13px -apple-system, 'PingFang SC', sans-serif";
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#000";
+  ctx.fillStyle = `rgba(224,242,254,${pulse})`;
+  ctx.strokeText("冰 封", tx, ty - bh - 12);
+  ctx.fillText("冰 封", tx, ty - bh - 12);
+
+  ctx.restore();
+}
+
+// 雪王冰门：两扇冰蓝门框（编号 1/2）
+function drawIceGates(state) {
+  const gates = [state.iceGate1, state.iceGate2];
+  gates.forEach((g, idx) => {
+    if (!g) return;
+    const now = performance.now();
+    if (now >= g.expiry) return;
+    // 1 号门在等 2 号门放下前寿命是 Infinity → 没有 remain 条
+    const hasExpiry = g.expiry !== Infinity;
+    const remain = hasExpiry ? g.expiry - now : 999;
+    const alpha = Math.min(1, remain / 300);
+
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    // 冰门框
+    ctx.fillStyle = `rgba(125,211,252,${0.85 * alpha})`;
+    ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "#7dd3fc";
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.moveTo(-22, -96);
+    ctx.lineTo(22, -96);
+    ctx.lineTo(24, -90);
+    ctx.lineTo(24, -8);
+    ctx.lineTo(-24, -8);
+    ctx.lineTo(-24, -90);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // 内部蓝晶核
+    ctx.fillStyle = `rgba(200,240,255,${0.55 * alpha})`;
+    ctx.fillRect(-18, -88, 36, 78);
+
+    // 漩涡纹：3 个旋转冰晶
+    const t = now / 200;
+    for (let i = 0; i < 3; i++) {
+      const yy = -74 + i * 24;
+      ctx.save();
+      ctx.translate(0, yy);
+      ctx.rotate(t + i * 0.9);
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`;
+      ctx.beginPath();
+      ctx.moveTo(0, -5);
+      ctx.lineTo(4, 0);
+      ctx.lineTo(0, 5);
+      ctx.lineTo(-4, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 编号标
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.font = "900 16px -apple-system, 'PingFang SC', sans-serif";
+    ctx.textAlign = "center";
+    ctx.strokeText(idx === 0 ? "①" : "②", 0, -104);
+    ctx.fillText(idx === 0 ? "①" : "②", 0, -104);
+
+    // 寿命条（只在双门联动后展示）
+    if (hasExpiry) {
+      const total = 3000;
+      const ratio = Math.max(0, Math.min(1, remain / total));
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.fillRect(-22, -118, 44, 3);
+      ctx.fillStyle = "#c8f0ff";
+      ctx.fillRect(-22, -118, 44 * ratio, 3);
+    }
+    ctx.restore();
+  });
+}
+
+// 雪王 4A 天降下落特效：冰蓝尾迹
+function drawSkyDropVFX(state) {
+  if (!state.skyDropT || state.skyDropT <= 0) return;
+  // 持续甩尾迹粒子
+  if (state.skyDropT % 2 === 0) {
+    particles.push({
+      x: state.x + (Math.random() - 0.5) * 10,
+      y: state.y - 40 + (Math.random() - 0.5) * 20,
+      vx: (Math.random() - 0.5) * 1,
+      vy: -Math.random() * 1.5,
+      life: 22, color: "#c8f0ff", size: 3,
+    });
+  }
+}
+
+// 冰甲护盾：灰白色光环 + 6 片漂浮冰片
 function drawIceArmorVFX(state, until) {
   const now = performance.now();
-  if (now >= until) return;
+  if (!until || now >= until) return;
   const t = now / 100;
   ctx.save();
   ctx.translate(state.x, state.y - 40);
-  ctx.strokeStyle = "rgba(160,232,255,0.75)";
+  ctx.strokeStyle = "rgba(230,234,240,0.85)";
   ctx.lineWidth = 3;
-  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowColor = "#d8dee6";
   ctx.shadowBlur = 14;
   for (let k = 0; k < 3; k++) {
     ctx.globalAlpha = 0.45 + Math.sin(t + k) * 0.2;
@@ -3461,7 +4307,6 @@ function drawIceArmorVFX(state, until) {
     ctx.arc(0, 0, 46 + k * 3, 0, Math.PI * 2);
     ctx.stroke();
   }
-  // 6 片漂浮冰晶
   ctx.shadowBlur = 8;
   ctx.globalAlpha = 0.9;
   for (let i = 0; i < 6; i++) {
@@ -3471,7 +4316,9 @@ function drawIceArmorVFX(state, until) {
     ctx.save();
     ctx.translate(rx, ry);
     ctx.rotate(a);
-    ctx.fillStyle = "#c8f0ff";
+    ctx.fillStyle = "#f0f4f8";
+    ctx.strokeStyle = "#8a95a3";
+    ctx.lineWidth = 0.8;
     ctx.beginPath();
     ctx.moveTo(0, -6);
     ctx.lineTo(4, 0);
@@ -3479,8 +4326,94 @@ function drawIceArmorVFX(state, until) {
     ctx.lineTo(-4, 0);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
+  ctx.restore();
+}
+
+// 冰雹暴风云朵 + 地面落点圆圈
+function drawHailStormVFX(state) {
+  if (!state.hailStormEnd || performance.now() >= state.hailStormEnd) return;
+  const now = performance.now();
+  const remain = state.hailStormEnd - now;
+  const alpha = Math.min(1, remain / 400);
+  const cx = state.hailStormX;
+  // 云朵（头顶漂浮）
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const cloudY = 60 + Math.sin(now / 300) * 4;
+  ctx.fillStyle = "#6a7fa0";
+  for (const off of [-22, -8, 8, 22]) {
+    ctx.beginPath();
+    ctx.arc(cx + off, cloudY, 16, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#9db0cc";
+  for (const off of [-16, 0, 16]) {
+    ctx.beginPath();
+    ctx.arc(cx + off, cloudY - 6, 12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // 云底闪电光
+  ctx.strokeStyle = `rgba(200,240,255,${0.7 * alpha})`;
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 3; i++) {
+    const lx = cx - 20 + i * 20;
+    ctx.beginPath();
+    ctx.moveTo(lx, cloudY + 10);
+    ctx.lineTo(lx + 3, cloudY + 22);
+    ctx.lineTo(lx - 2, cloudY + 28);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 地面落点指示（半透明蓝圈）
+  ctx.save();
+  ctx.globalAlpha = alpha * (0.45 + Math.sin(now / 150) * 0.15);
+  ctx.strokeStyle = "#7dd3fc";
+  ctx.lineWidth = 3;
+  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.ellipse(cx, GROUND - 4, 60, 14, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  // 内环
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(cx, GROUND - 4, 44, 10, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  // 剩余时间条（紧贴云朵上方）
+  const totalMs = 3000;
+  const ratio = Math.max(0, Math.min(1, remain / totalMs));
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.fillRect(cx - 30, cloudY - 26, 60, 3);
+  ctx.fillStyle = "#c8f0ff";
+  ctx.fillRect(cx - 30, cloudY - 26, 60 * ratio, 3);
+  ctx.restore();
+}
+
+// 敌人身上 debuff 头顶标签（减速/降伤）
+function drawFrostDebuffLabel(target) {
+  const now = performance.now();
+  const slowOn = now < (target.slowUntil || 0);
+  const dmgOn  = now < (target.dmgDebuffUntil || 0);
+  if (!slowOn && !dmgOn) return;
+  const tx = target.x;
+  const ty = target.y - 150;
+  const pulse = 0.7 + Math.sin(now / 120) * 0.3;
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "900 12px -apple-system, 'PingFang SC', sans-serif";
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#000";
+  ctx.fillStyle = `rgba(160,232,255,${pulse})`;
+  const label = (slowOn && dmgOn) ? "减速 40% · 降伤 30%" : (slowOn ? "减速 40%" : "降伤 30%");
+  ctx.strokeText(label, tx, ty);
+  ctx.fillText(label, tx, ty);
   ctx.restore();
 }
 
@@ -3589,6 +4522,75 @@ function drawFlashlightVFX(state) {
   ctx.restore();
 }
 
+// PVP 模式像素草原背景：蓝天 + 像素云 + 双层草地 + 泥土
+function drawPvpGrasslandBG() {
+  // 天空渐变（浅蓝 → 深蓝）
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND - 28);
+  skyGrad.addColorStop(0, "#7ec8f7");
+  skyGrad.addColorStop(1, "#c6ecff");
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W_WORLD, GROUND - 28);
+
+  // 像素云（固定位置，按世界坐标铺满）
+  const cloudAnchors = [
+    [ 120,  68, 48], [ 340,  96, 60], [ 560,  72, 52], [ 810,  54, 56],
+    [1040, 104, 64], [1260,  72, 48], [1480,  96, 56], [1700,  60, 52],
+    [1900,  88, 50],
+  ];
+  for (const [cx, cy, size] of cloudAnchors) drawPixelCloud(cx, cy, size);
+
+  // 草地顶带（亮绿）
+  ctx.fillStyle = "#5ec045";
+  ctx.fillRect(0, GROUND - 28, W_WORLD, 16);
+
+  // 草尖（像素锯齿，固定随机种子让它每局不乱跳）
+  ctx.fillStyle = "#78d858";
+  for (let x = 0; x < W_WORLD; x += 4) {
+    const h = ((x * 37) % 17) < 8 ? 3 : 6;
+    ctx.fillRect(x, GROUND - 28 - h, 3, h);
+  }
+
+  // 草地阴影层（深绿）
+  ctx.fillStyle = "#4a9c37";
+  ctx.fillRect(0, GROUND - 12, W_WORLD, 6);
+
+  // 泥土主体
+  const dirtGrad = ctx.createLinearGradient(0, GROUND - 6, 0, H);
+  dirtGrad.addColorStop(0, "#a0663a");
+  dirtGrad.addColorStop(1, "#5a381c");
+  ctx.fillStyle = dirtGrad;
+  ctx.fillRect(0, GROUND - 6, W_WORLD, H - GROUND + 6);
+
+  // 泥土纹理：深色小点 + 浅色小点
+  ctx.fillStyle = "#3d2612";
+  for (let i = 0; i < 90; i++) {
+    const x = (i * 73) % W_WORLD;
+    const y = GROUND + 4 + ((i * 41) % (H - GROUND - 8));
+    ctx.fillRect(x, y, 3, 3);
+  }
+  ctx.fillStyle = "#c79370";
+  for (let i = 0; i < 50; i++) {
+    const x = (i * 131) % W_WORLD;
+    const y = GROUND + 2 + ((i * 61) % 28);
+    ctx.fillRect(x, y, 2, 2);
+  }
+}
+
+function drawPixelCloud(cx, cy, size) {
+  const u = 6;             // 像素单位
+  const w1 = size;          // 底层宽
+  const w2 = Math.max(u * 2, size - u * 2);
+  const w3 = Math.max(u * 2, size - u * 4);
+  // 阴影底边
+  ctx.fillStyle = "#d8e8f2";
+  ctx.fillRect(Math.round((cx - w1 / 2) / u) * u, cy + u * 2, w1, u);
+  // 主云（白）
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(Math.round((cx - w1 / 2) / u) * u, cy + u,     w1, u);
+  ctx.fillRect(Math.round((cx - w2 / 2) / u) * u, cy,         w2, u);
+  ctx.fillRect(Math.round((cx - w3 / 2) / u) * u, cy - u,     w3, u);
+}
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
   ctx.save();
@@ -3596,10 +4598,19 @@ function draw() {
     const s = shakeStrength * (shakeT / 12);
     ctx.translate((Math.random() - 0.5) * s * 2, (Math.random() - 0.5) * s * 2);
   }
+  ctx.translate(-camX, 0);   // ===== 进入世界坐标 =====
 
-  // 地面
-  ctx.fillStyle = "#1a0a2e";
-  ctx.fillRect(0, GROUND, W, H - GROUND);
+  // 背景：PVP 模式画像素草原（蓝天 + 云 + 草 + 土），训练模式保留原暗紫
+  if (gameMode === "pvp") {
+    drawPvpGrasslandBG();
+  } else {
+    ctx.fillStyle = "#1a0a2e";
+    ctx.fillRect(0, GROUND, W_WORLD, H - GROUND);
+  }
+  // 世界边界提示（左右两堵浅色墙）
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillRect(0, 0, 6, GROUND);
+  ctx.fillRect(W_WORLD - 6, 0, 6, GROUND);
   ctx.strokeStyle = "#5a3aff";
   ctx.beginPath();
   ctx.moveTo(0, GROUND);
@@ -3767,12 +4778,30 @@ function draw() {
   if (gameMode === "pvp") drawComboVFX(p2, player);
 
   // 雪王挥杖弧光
-  if (player.char === "xueking") drawFrostArcVFX(player);
-  if (gameMode === "pvp" && p2.char === "xueking") drawFrostArcVFX(p2);
+  if (player.char === "xueking") { drawFrostArcVFX(player); drawSkyDropVFX(player); }
+  if (gameMode === "pvp" && p2.char === "xueking") { drawFrostArcVFX(p2); drawSkyDropVFX(p2); }
 
-  // 雪王冰甲（P1/P2 分别挂在各自 shield 计时器上）
-  if (player.char === "xueking") drawIceArmorVFX(player, shieldActiveUntil);
-  if (gameMode === "pvp" && p2.char === "xueking") drawIceArmorVFX(p2, p2ShieldUntil);
+  // 雪王冰门
+  if (player.char === "xueking") drawIceGates(player);
+  if (gameMode === "pvp" && p2.char === "xueking") drawIceGates(p2);
+
+  // 雪王冰雹暴风云朵 + 落点指示
+  drawHailStormVFX(player);
+  if (gameMode === "pvp") drawHailStormVFX(p2);
+
+  // 敌人身上 debuff 头顶标签（减速/降伤）
+  drawFrostDebuffLabel(player);
+  if (gameMode === "pvp") drawFrostDebuffLabel(p2);
+  else if (dummy.isDummy) drawFrostDebuffLabel(dummy);
+
+  // 冰封方块（雪王 4A 触发后裹在目标身上）
+  drawIceBlockVFX(player);
+  if (gameMode === "pvp") drawIceBlockVFX(p2);
+  else if (dummy.isDummy) drawIceBlockVFX(dummy);
+
+  // 雪王冰甲护盾光环（绑定在 shieldExpiry 上；护盾破或到期都会关）
+  if (player.char === "xueking" && player.shieldAmount > 0) drawIceArmorVFX(player, player.shieldExpiry);
+  if (gameMode === "pvp" && p2.char === "xueking" && p2.shieldAmount > 0) drawIceArmorVFX(p2, p2.shieldExpiry);
 
   // 哆啦A梦手电筒（1s 前摇充能 + 2s 圆柱光束；霸体时附加光环）
   drawFlashlightVFX(player);
@@ -3859,13 +4888,15 @@ function draw() {
     ctx.textAlign = "center";
     ctx.strokeStyle = "#000";
     ctx.lineWidth = 5;
-    ctx.strokeText("TIME STOP", W / 2, 80);
-    ctx.fillText("TIME STOP", W / 2, 80);
+    // 固定在屏幕中央（抵消摄像机偏移）
+    const screenCx = W / 2 + camX;
+    ctx.strokeText("TIME STOP", screenCx, 80);
+    ctx.fillText("TIME STOP", screenCx, 80);
     const end = Math.max(timeFrozenUntil, p1FrozenUntil);
     const remainSec = Math.max(0, (end - performance.now()) / 1000);
     ctx.font = "700 16px -apple-system, 'PingFang SC', sans-serif";
-    ctx.strokeText(remainSec.toFixed(1) + "s", W / 2, 108);
-    ctx.fillText(remainSec.toFixed(1) + "s", W / 2, 108);
+    ctx.strokeText(remainSec.toFixed(1) + "s", screenCx, 108);
+    ctx.fillText(remainSec.toFixed(1) + "s", screenCx, 108);
   } else {
     if (stageEl.classList.contains("time-frozen")) stageEl.classList.remove("time-frozen");
   }
@@ -4748,6 +5779,9 @@ document.getElementById("btnBackMenu").addEventListener("click", () => {
 document.getElementById("btnTraining").addEventListener("click", () => {
   gameMode = "training";
   dummy = baseDummy;
+  // 重置 maxHp 回初始值，抹去上局雪王冰甲残留
+  player.maxHp = BASE_MAX_HP.player;
+  baseDummy.maxHp = BASE_MAX_HP.dummy;
   baseDummy.hp = baseDummy.maxHp;
   matchEnded = false;
   clearTimeout(roundTimeoutId);
