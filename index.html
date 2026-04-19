@@ -1388,7 +1388,7 @@ const skillConfigs = {
   ],
   doraemon: [
     { name: "任意门",    key: "j", cd: 0,     icon: "🚪" },
-    { name: "手电筒",    key: "k", cd: 3000,  icon: "🔦" },
+    { name: "电磁炮",    key: "k", cd: 3000,  icon: "⚡" },
     { name: "时空暂停",  key: "l", cd: 15000, icon: "⏸" },
     { name: "铜锣烧防御",key: "u", cd: 10000, icon: "🥮" },
   ],
@@ -1536,40 +1536,9 @@ function castP2Skill(idx) {
     return;
   }
   if (idx === 0) {
-    // P2 任意门
-    const offset = 80;
-    const onLeft = p2.x < player.x;
-    let toX = onLeft ? player.x + offset : player.x - offset;
-    if (Math.abs(p2.x - toX) < 40) {
-      toX = onLeft ? player.x - offset : player.x + offset;
-    }
-    toX = Math.max(40, Math.min(W_WORLD - 40,toX));
-    const fromX = p2.x;
-    doors.push({ x: fromX, y: p2.y, bornAt: performance.now(), life: 400 });
-    doors.push({ x: toX,   y: p2.y, bornAt: performance.now(), life: 400 });
-    p2.x = toX;
-    p2.facing = player.x > p2.x ? 1 : -1;
-    p2.invincibleUntil = performance.now() + 500;
-    spawnParticles(fromX, p2.y - 30, "#ff8cd9", 16);
-    spawnParticles(toX, p2.y - 30, "#ff8cd9", 16);
-    if (Math.random() < 0.05) {
-      damagePlayer(200);
-      hitStopT = Math.max(hitStopT, 5);
-      shakeT = 14; shakeStrength = 8;
-      damageTexts.push({
-        x: player.x, y: player.y - 130,
-        vx: 0, vy: -2.5, life: 70, maxLife: 70,
-        text: "幸 运!", color: "#ff66bb", size: 32, crit: true,
-      });
-      for (let i = 0; i < 16; i++) {
-        const a = (i / 16) * Math.PI * 2, v = 3 + Math.random() * 2;
-        particles.push({
-          x: player.x, y: player.y - 60,
-          vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1,
-          life: 40, color: "#ff66bb", size: 4,
-        });
-      }
-    }
+    // P2 任意门：召唤银河毁灭核弹，全屏 10000 伤害。一回合一次
+    castDoraemonNuke(p2, player);
+    if (p2.skills[0]) p2.skills[0].ready = Infinity;
   } else if (idx === 1) {
     // P2 手电筒：1s 前摇（霸体）+ 2s 圆柱光束（半屏），每 20ms 60 伤害
     const castNow = performance.now();
@@ -1578,9 +1547,14 @@ function castP2Skill(idx) {
     p2.flashlightLastTick = 0;
     p2.invincibleUntil = Math.max(p2.invincibleUntil || 0, castNow + 1000);
   } else if (idx === 2) {
-    // P2 时空暂停：冻结 P1
-    p1FrozenUntil = performance.now() + 3000;
+    // P2 时空暂停：冻结 P1（同时确保自己是自由的，修 P2 哆啦A梦自锁 bug）
+    const tNow = performance.now();
+    p1FrozenUntil = tNow + 3000;
     player.stunT = 180;
+    p2.stunT = 0;                 // 防御性：清空自身眩晕/倒地
+    p2.downT = 0;
+    p2.vx = 0;                    // 施法瞬间位置钳住
+    p2.invincibleUntil = Math.max(p2.invincibleUntil || 0, tNow + 500);
     spawnTimeStopFlash();
   } else if (idx === 3) {
     // P2 铜锣烧防御
@@ -2357,6 +2331,24 @@ function updateEntityCombat(attacker, target, char) {
         dmg = 1000; hit = true;
         if (!isInSubstitute(target)) target.downT = Math.max(target.downT || 0, 30);
       }
+      // atkType===99：空中下砸。目标须在身边 120px 内 + 高度差不大，着地瞬间命中
+      else if (attacker.atkType === 99 && Math.abs(dx) < 120 && attacker.onGround) {
+        dmg = 800; hit = true;
+        target.shakeT = 22;
+        if (!isInSubstitute(target)) {
+          target.downT = Math.max(target.downT || 0, 24);
+        }
+        // 落地冲击粒子
+        for (let i = 0; i < 20; i++) {
+          const a = (i / 20) * Math.PI * 2;
+          particles.push({
+            x: attacker.x + Math.cos(a) * 10,
+            y: attacker.y - 4 + Math.sin(a) * 4,
+            vx: Math.cos(a) * 6, vy: Math.sin(a) * 2 - 2,
+            life: 28, color: i % 2 ? "#ffaa33" : "#fff", size: 4,
+          });
+        }
+      }
     } else if (char === "xueking") {
       if (attacker.atkType === 1 && Math.abs(dx) < 140 && sameSide) {
         // 1A 前刺
@@ -2611,6 +2603,18 @@ function updateEntityCombat(attacker, target, char) {
 }
 
 function handleDoraemonAttack(e = player) {
+  // 空中平A：下砸单段，强制落地；不走普通连招
+  if (!e.onGround) {
+    e.atkT = 16;
+    e.atkType = 99;             // 99 = 下砸单段标记
+    e.atkHit = false;
+    e.slamT = 24;               // 下砸持续帧
+    e.vy = Math.max(e.vy, 14);  // 快速下坠
+    e.comboStage = 0;           // 落地后从 1A 重新起
+    e.comboWindow = 0;
+    return;
+  }
+
   const stage = e.comboStage;
   e.atkType = stage + 1;
   e.atkHit = false;
@@ -3464,62 +3468,64 @@ function castZjySkill(idx, caster, target) {
   }
 }
 
+// 哆啦A梦"任意门 → 银河毁灭核弹"：全屏 10000 伤害，施法期间 caster 短无敌
+function castDoraemonNuke(caster, target) {
+  const now = performance.now();
+  caster.invincibleUntil = Math.max(caster.invincibleUntil || 0, now + 1200);
+  // 生成一扇大门（在 caster 脚下），然后 700ms 后核弹从门里飞出 → 屏中心爆炸
+  const doorX = caster.x + caster.facing * 60;
+  const doorY = caster.y;
+  doors.push({ x: doorX, y: doorY, bornAt: now, life: 1500, giant: true });
+  damageTexts.push({
+    x: caster.x, y: caster.y - 180,
+    vx: 0, vy: -2.4, life: 70, maxLife: 70,
+    text: "银河毁灭核弹!", color: "#ff2200", size: 26, crit: true,
+  });
+  // 700ms 后结算 & 爆炸
+  setTimeout(() => {
+    if (matchEnded) return;
+    // 全屏 10000 伤害
+    const dealt = 10000;
+    if (target === player) damagePlayer(dealt);
+    else if (target === p2 || target === dummy) damageDummy(dealt);
+    // 全屏白闪（瞬时冲击环扩张到整屏）
+    particles.push({
+      x: W / 2, y: H / 2, vx: 0, vy: 0,
+      life: 30, maxLife: 30, color: "#fff", size: 2,
+      impact: true, expandTo: Math.max(W, H) * 1.6,
+    });
+    // 巨大蘑菇云粒子（红橙黄 + 烟）
+    for (let i = 0; i < 120; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * 240;
+      particles.push({
+        x: target.x + Math.cos(a) * r * 0.6,
+        y: target.y - 60 + Math.sin(a) * r * 0.4,
+        vx: Math.cos(a) * (4 + Math.random() * 4),
+        vy: Math.sin(a) * (3 + Math.random() * 3) - 4,
+        life: 60 + Math.random() * 40,
+        color: i % 4 === 0 ? "#ff2200" : i % 4 === 1 ? "#ffaa33" : i % 4 === 2 ? "#ffee66" : "#8a8a8a",
+        size: 5 + Math.random() * 4,
+        smoke: i % 4 === 3,
+      });
+    }
+    spawnHitImpact(target.x, target.y - 60, 120);
+    hitStopT = Math.max(hitStopT, 18);
+    shakeT = 48; shakeStrength = 22;
+    damageTexts.push({
+      x: target.x, y: target.y - 200,
+      vx: 0, vy: -3, life: 100, maxLife: 100,
+      text: "核 弹  爆 炸!  10000", color: "#ff2200", size: 32, crit: true,
+    });
+  }, 700);
+}
+
 function castDoraemonSkill(idx) {
   if (idx === 0) {
-    // 任意门：无 CD，瞬移到敌方身后（或另一侧），全程 500ms 无敌
-    const fromX = player.x;
-    const offset = 80;
-    const playerOnLeft = player.x < dummy.x;
-    // 默认"身后" = 玩家对面那一侧（相对敌人）
-    let toX = playerOnLeft ? dummy.x + offset : dummy.x - offset;
-    // 如果玩家已经在身后，改到敌人另一侧（身前）
-    if (Math.abs(player.x - toX) < 40) {
-      toX = playerOnLeft ? dummy.x - offset : dummy.x + offset;
-    }
-    toX = Math.max(40, Math.min(W_WORLD - 40,toX));
-    // 双门瞬时出现 + 立即瞬移
-    doors.push({ x: fromX, y: player.y, bornAt: performance.now(), life: 400 });
-    doors.push({ x: toX,   y: player.y, bornAt: performance.now(), life: 400 });
-    player.x = toX;
-    player.facing = dummy.x > toX ? 1 : -1;
-    player.invincibleUntil = performance.now() + 500;
-    spawnParticles(fromX, player.y - 30, "#ff8cd9", 16);
-    spawnParticles(toX,   player.y - 30, "#ff8cd9", 16);
-    // 5% 概率触发"幸运一击" 200 伤害
-    if (Math.random() < 0.05) {
-      damageDummy(200);
-      spawnHitImpact(dummy.x, dummy.y - 60, 60);
-      hitStopT = Math.max(hitStopT, 5);
-      shakeT = 14;
-      shakeStrength = 8;
-      // 粉色"幸运!"飘字
-      damageTexts.push({
-        x: dummy.x,
-        y: dummy.y - 130,
-        vx: 0,
-        vy: -2.5,
-        life: 70,
-        maxLife: 70,
-        text: "幸 运!",
-        color: "#ff66bb",
-        size: 32,
-        crit: true,
-      });
-      // 爱心粒子放射
-      for (let i = 0; i < 16; i++) {
-        const a = (i / 16) * Math.PI * 2;
-        const v = 3 + Math.random() * 2;
-        particles.push({
-          x: dummy.x,
-          y: dummy.y - 60,
-          vx: Math.cos(a) * v,
-          vy: Math.sin(a) * v - 1,
-          life: 40,
-          color: "#ff66bb",
-          size: 4,
-        });
-      }
-    }
+    // 任意门：从门里召唤"银河毁灭核弹"，全屏 10000 伤害。一小回合只能 1 次。
+    castDoraemonNuke(player, dummy);
+    // 一回合一次：把本技能 ready 推到 Infinity，配合 cd-mask 显示"废"
+    if (skills[0]) skills[0].ready = Infinity;
   } else if (idx === 1) {
     // 手电筒：1s 前摇（期间霸体无敌）+ 2s 圆柱光束（半屏），每 20ms 对命中目标造成 60 伤害
     const castNow = performance.now();
@@ -3528,9 +3534,14 @@ function castDoraemonSkill(idx) {
     player.flashlightLastTick = 0;
     player.invincibleUntil = Math.max(player.invincibleUntil || 0, castNow + 1000);
   } else if (idx === 2) {
-    // 时空暂停：对方冻结 3s，背景灰化，对手禁动作
-    timeFrozenUntil = performance.now() + 3000;
+    // 时空暂停：对方冻结 3s，背景灰化；同时清自己状态防止自锁
+    const tNow = performance.now();
+    timeFrozenUntil = tNow + 3000;
     dummy.stunT = 180;
+    player.stunT = 0;             // 防御性
+    player.downT = 0;
+    player.vx = 0;
+    player.invincibleUntil = Math.max(player.invincibleUntil || 0, tNow + 500);
     spawnTimeStopFlash();
   } else if (idx === 3) {
     // 铜锣烧防御：金色盾 5s
@@ -3781,6 +3792,49 @@ function drawDoraemon(state, attacking, tint) {
 
   ctx.restore();
   ctx.restore();
+
+  // 竹蜻蜓：长按跳空中持续飞行时在头顶渲染旋翼 + 红杆
+  if (state.copterActive) {
+    const spin = now / 20;
+    ctx.save();
+    ctx.translate(state.x, state.y - 110);
+    // 红色竹杆
+    ctx.fillStyle = "#c9204a";
+    ctx.fillRect(-1.5, 0, 3, 18);
+    // 黄色底座
+    ctx.fillStyle = "#ffd91f";
+    ctx.fillRect(-4, -3, 8, 4);
+    // 旋转模糊叶片（两片，旋转变化 opacity 带模糊感）
+    for (let i = 0; i < 2; i++) {
+      const a = spin + i * Math.PI;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = "#88d0ff";
+      // 叶片：宽椭圆
+      ctx.beginPath();
+      ctx.ellipse(14, -2, 14, 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // 叶片尖高光
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.ellipse(22, -2, 4, 1.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    // 轻微风粒子
+    if (Math.random() < 0.3) {
+      particles.push({
+        x: state.x + (Math.random() - 0.5) * 20,
+        y: state.y - 100 + Math.random() * 10,
+        vx: (Math.random() - 0.5) * 2,
+        vy: 2 + Math.random() * 2,
+        life: 12, color: "rgba(220,240,255,0.7)", size: 2,
+      });
+    }
+    ctx.restore();
+  }
 }
 
 // ===== 红温（zjy）=====
@@ -4773,6 +4827,16 @@ function update() {
     player.onGround = false;
   }
 
+  // 哆啦A梦专属：长按跳键 = 竹蜻蜓持续飞天（空中 W 长按）
+  player.copterActive = false;
+  if (!p1Disabled && keys["w"] && !player.onGround && player.char === "doraemon") {
+    // 每帧反向施加略大于重力的升力 → 轻微上升；到屏顶钳住
+    player.vy -= GRAVITY + 0.5;
+    player.vy = Math.max(player.vy, -4.5);       // 上升速度上限
+    if (player.y < 60) { player.y = 60; player.vy = Math.max(player.vy, 0); }
+    player.copterActive = true;
+  }
+
   player.x += player.vx;
   player.y += player.vy;
   player.vy += GRAVITY;
@@ -5022,6 +5086,14 @@ function update() {
       if (keys["arrowup"] && p2.onGround) {
         p2.vy = -14;
         p2.onGround = false;
+      }
+      // 哆啦A梦竹蜻蜓（P2）
+      p2.copterActive = false;
+      if (keys["arrowup"] && !p2.onGround && p2.char === "doraemon") {
+        p2.vy -= GRAVITY + 0.5;
+        p2.vy = Math.max(p2.vy, -4.5);
+        if (p2.y < 60) { p2.y = 60; p2.vy = Math.max(p2.vy, 0); }
+        p2.copterActive = true;
       }
     } else {
       p2.vx = 0;
@@ -6167,11 +6239,11 @@ function drawFlashlightVFX(state) {
     ctx.beginPath();
     ctx.arc(34, 0, 3 + chargeT * 4, 0, Math.PI * 2);
     ctx.fill();
-    // 环绕聚能粒子圈
-    ctx.strokeStyle = `rgba(255,230,120,${chargeT})`;
+    // 环绕聚能粒子圈：灰白冷光
+    ctx.strokeStyle = `rgba(230,240,255,${chargeT})`;
     ctx.lineWidth = 2;
-    ctx.shadowColor = "#ffee88";
-    ctx.shadowBlur = 16;
+    ctx.shadowColor = "#ffffff";
+    ctx.shadowBlur = 18;
     ctx.beginPath();
     ctx.arc(34, 0, 18 - chargeT * 12, 0, Math.PI * 2);
     ctx.stroke();
@@ -6181,7 +6253,7 @@ function drawFlashlightVFX(state) {
       const a = (i / 8) * Math.PI * 2 + chargeT * 2;
       const rOut = 36 - chargeT * 14;
       const rIn  = 20 - chargeT * 10;
-      ctx.strokeStyle = `rgba(255,220,120,${chargeT * 0.8})`;
+      ctx.strokeStyle = `rgba(200,220,250,${chargeT * 0.9})`;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(34 + Math.cos(a) * rOut, Math.sin(a) * rOut);
@@ -6208,36 +6280,50 @@ function drawFlashlightVFX(state) {
   const remain = state.flashlightEnd - now;
   const alpha = Math.min(1, remain / 400);  // 最后 400ms 渐隐
 
-  // 主光柱（圆柱形，等宽）
+  // 电磁炮：灰白亮色能量光柱
   const grad = ctx.createLinearGradient(20, 0, BEAM_LEN, 0);
-  grad.addColorStop(0, `rgba(255,255,200,${0.92 * alpha})`);
-  grad.addColorStop(0.85, `rgba(255,230,120,${0.55 * alpha})`);
-  grad.addColorStop(1, `rgba(255,210,80,${0.15 * alpha})`);
+  grad.addColorStop(0, `rgba(255,255,255,${0.95 * alpha})`);       // 发射口：纯白
+  grad.addColorStop(0.85, `rgba(210,230,255,${0.55 * alpha})`);    // 中段：淡灰蓝
+  grad.addColorStop(1, `rgba(180,210,240,${0.15 * alpha})`);       // 末端：冷白雾
   ctx.fillStyle = grad;
   ctx.fillRect(20, -110, BEAM_LEN - 20, 220);
 
-  // 中心高光芯（等宽）
-  ctx.fillStyle = `rgba(255,255,255,${0.55 * alpha})`;
+  // 中心高光芯：纯白极亮
+  ctx.fillStyle = `rgba(255,255,255,${0.65 * alpha})`;
   ctx.fillRect(20, -26, BEAM_LEN - 20, 52);
 
   // 细热心线
-  ctx.fillStyle = `rgba(255,255,255,${0.9 * alpha})`;
+  ctx.fillStyle = `rgba(255,255,255,${0.95 * alpha})`;
   ctx.fillRect(20, -4, BEAM_LEN - 20, 8);
 
-  // 边缘闪烁亮环（每 60ms 抖一次）
+  // 边缘闪烁亮环：冷白发光
   const edgeFlicker = 0.35 + (Math.sin(now / 30) + 1) * 0.15;
-  ctx.strokeStyle = `rgba(255,240,150,${edgeFlicker * alpha})`;
+  ctx.strokeStyle = `rgba(230,240,255,${edgeFlicker * alpha})`;
   ctx.lineWidth = 3;
-  ctx.shadowColor = "#ffee88";
-  ctx.shadowBlur = 14;
+  ctx.shadowColor = "#ffffff";
+  ctx.shadowBlur = 16;
   ctx.strokeRect(20, -110, BEAM_LEN - 20, 220);
   ctx.shadowBlur = 0;
 
-  // 手电筒外壳
-  ctx.fillStyle = "#555";
-  ctx.fillRect(10, -6, 16, 12);
+  // 电磁炮外壳：银灰金属感
+  ctx.fillStyle = "#444";
+  ctx.fillRect(10, -8, 18, 16);
   ctx.fillStyle = "#888";
-  ctx.fillRect(24, -10, 10, 20);
+  ctx.fillRect(26, -12, 10, 24);
+  ctx.fillStyle = "#c8d6e0";          // 金属高光
+  ctx.fillRect(28, -10, 6, 4);
+  // 枪口电弧火花
+  if (Math.random() < 0.7) {
+    ctx.strokeStyle = "rgba(200,230,255,0.9)";
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 3; i++) {
+      const sy = -10 + Math.random() * 20;
+      ctx.beginPath();
+      ctx.moveTo(20, sy);
+      ctx.lineTo(20 + Math.random() * 8, sy + (Math.random() - 0.5) * 12);
+      ctx.stroke();
+    }
+  }
 
   ctx.restore();
 }
