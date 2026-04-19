@@ -1809,6 +1809,23 @@ function rageDamageMul(attacker) {
   return base + burst;
 }
 
+// 张鸡块命中红色粒子（每段平A 命中都撒一把）
+function spawnZjyHitParticles(x, y, facing, count) {
+  count = count || 14;
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    particles.push({
+      x: x + (Math.random() - 0.5) * 30,
+      y: y + (Math.random() - 0.5) * 20,
+      vx: Math.cos(a) * 4 + facing * 2,
+      vy: Math.sin(a) * 3 - 1,
+      life: 24 + Math.random() * 14,
+      color: i % 3 === 0 ? "#ff2020" : (i % 3 === 1 ? "#ff5030" : "#ffaa33"),
+      size: 3 + Math.random() * 2,
+    });
+  }
+}
+
 // 记录一次"被控时按平A"。返回 true 表示本次双击成功解控
 function registerSubstituteTap(entity, side) {
   const now = performance.now();
@@ -2238,32 +2255,37 @@ function updateEntityCombat(attacker, target, char) {
         }
       }
     } else if (char === "zjy") {
-      // 红温 4 段拳脚：基础伤害会被 rageDamageMul 乘上红温叠层
-      if (attacker.atkType === 1 && Math.abs(dx) < 110 && sameSide) {
-        // 1A 直拳
-        dmg = 400; hit = true;
+      // 张鸡块 6 段连招（伤害会被 rageDamageMul 乘）
+      if (attacker.atkType === 1 && Math.abs(dx) < 120 && sameSide) {
+        // 1A 前踢冲刺：命中时造成伤害，拖拽由 spearT 持续 tick 分支负责
+        dmg = 350; hit = true;
         target.shakeT = 10;
-      } else if (attacker.atkType === 2 && Math.abs(dx) < 110 && sameSide) {
-        // 2A 勾拳
-        dmg = 550; hit = true;
-        target.shakeT = 12;
-      } else if (attacker.atkType === 3 && Math.abs(dx) < 120 && sameSide) {
-        // 3A 上勾拳：挑飞+短眩晕
-        dmg = 700; hit = true;
-        if (typeof target.vy === "number" && !isInSubstitute(target)) {
-          target.vy = -11;
-          target.onGround = false;
-        }
-        if (!isInSubstitute(target)) target.stunT = Math.max(target.stunT || 0, 60);
-        target.shakeT = 16;
-      } else if (attacker.atkType === 4 && Math.abs(dx) < 130 && sameSide) {
-        // 4A 重击：击退+倒地
-        dmg = 1000; hit = true;
+      } else if (attacker.atkType === 2 && Math.abs(dx) < 120 && sameSide) {
+        // 2A 跳踢：命中僵直（短眩晕）
+        dmg = 500; hit = true;
+        if (!isInSubstitute(target)) target.stunT = Math.max(target.stunT || 0, 45);
+        target.shakeT = 14;
+      } else if (attacker.atkType === 3 && Math.abs(dx) < 140 && sameSide && !attacker.atkHit) {
+        // 3A 回旋踢首击：倒地；持续伤害由 spinT 分支处理
+        dmg = 400; hit = true;
         if (!isInSubstitute(target)) {
-          target.downT = Math.max(target.downT || 0, 30);
-          target.x += attacker.facing * 24;
+          target.downT = Math.max(target.downT || 0, 60);
         }
-        target.shakeT = 22;
+        target.shakeT = 18;
+      } else if (attacker.atkType === 4 && Math.abs(dx) < 130 && sameSide) {
+        // 4A 重拳：击退
+        dmg = 800; hit = true;
+        if (!isInSubstitute(target)) target.x += attacker.facing * 22;
+        target.shakeT = 20;
+      } else if (attacker.atkType === 5 && Math.abs(dx) < 160 && sameSide) {
+        // 5A 小拳拳首击：标记 atkHit=true，后续伤害走 punchRush tick
+        dmg = 120; hit = true;
+        target.shakeT = 10;
+      } else if (attacker.atkType === 6 && Math.abs(dx) < 120 && sameSide) {
+        // 6A 踢腿
+        dmg = 600; hit = true;
+        if (!isInSubstitute(target)) target.x += attacker.facing * 14;
+        target.shakeT = 14;
       }
     }
     if (hit) {
@@ -2275,6 +2297,55 @@ function updateEntityCombat(attacker, target, char) {
       shakeT = 12;
       shakeStrength = (attacker.atkType === 2 || attacker.atkType === 4) ? 9 : 6;
       spawnHitImpact(target.x - attacker.facing * 20, target.y - 60, 44);
+      // 张鸡块所有段平A 都撒红色粒子
+      if (char === "zjy") spawnZjyHitParticles(target.x - attacker.facing * 16, target.y - 60, attacker.facing);
+    }
+  }
+
+  // 张鸡块 1A 前踢冲刺：spearT 期间持续把目标带走（替身状态免疫）
+  if (char === "zjy" && attacker.atkType === 1 && attacker.spearT > 0) {
+    const dx1 = target.x - attacker.x;
+    const inReach = Math.sign(dx1) === attacker.facing && Math.abs(dx1) < 130;
+    if (inReach && !isInSubstitute(target)) {
+      target.x += attacker.facing * 2.6;
+      target.x = Math.max(100, Math.min(W_WORLD - 100, target.x));
+    }
+  }
+
+  // 张鸡块 3A 回旋踢 tick（持续 2s 造成小伤害 + 红色火星）
+  if (char === "zjy" && attacker.spinT > 0) {
+    const dx2 = target.x - attacker.x;
+    if (Math.abs(dx2) < 150) {
+      const nowTick = performance.now();
+      if (nowTick - (attacker.spinLastTick || 0) >= 100) {  // 每 100ms 一次（避免过猛）
+        const mul = rageDamageMul(attacker);
+        applyDamageTo(target, Math.ceil(40 * mul));
+        attacker.spinLastTick = nowTick;
+        spawnZjyHitParticles(target.x, target.y - 60, attacker.facing, 6);
+      }
+    }
+  }
+
+  // 张鸡块 5A 小拳拳：前推 + 拖拽 + 每 6 帧一次 tick 伤害（与哆啦共用 punchRushT 字段）
+  if (char === "zjy" && attacker.punchRushT > 0) {
+    attacker.punchRushT--;
+    attacker.x += attacker.facing * 2.6;
+    attacker.x = Math.max(40, Math.min(W_WORLD - 40, attacker.x));
+    const dx5 = target.x - attacker.x;
+    const inReach = Math.sign(dx5) === attacker.facing && Math.abs(dx5) < 150;
+    if (inReach) {
+      if (!isInSubstitute(target)) {
+        target.x += attacker.facing * 2.2;
+        target.x = Math.max(100, Math.min(W_WORLD - 100, target.x));
+      }
+      if (attacker.punchRushT % 6 === 0) {
+        const mul = rageDamageMul(attacker);
+        applyDamageTo(target, Math.ceil(100 * mul));
+        hitStopT = Math.max(hitStopT, 2);
+        shakeT = 6; shakeStrength = 4;
+        spawnHitImpact(target.x - attacker.facing * 24, target.y - 60 + (Math.random() - 0.5) * 30, 28);
+        spawnZjyHitParticles(target.x, target.y - 60, attacker.facing, 8);
+      }
     }
   }
 
@@ -2391,29 +2462,44 @@ function handleDoraemonAttack(e = player) {
   else if (e === p2) updateP2ComboIndicator();
 }
 
-// 红温：4 段拳脚连招（基础值，红温加成在 updateEntityCombat 里乘）
-//   1A 直拳 / 2A 勾拳 / 3A 上勾拳（挑飞+眩晕） / 4A 重击（击退+倒地）
+// 张鸡块：6 段连招（红温伤害倍率在 updateEntityCombat 里统一乘）
+//   1A 前踢冲刺（带走目标） / 2A 跳踢（僵直） / 3A 回旋踢 2s（倒地+持续伤害）
+//   4A 重拳（击退）       / 5A 小拳拳（连击拖拽） / 6A 踢腿
 function handleZjyAttack(e = player) {
   const stage = e.comboStage || 0;
   e.atkType = stage + 1;
   e.atkHit = false;
   if (stage === 0) {
-    e.atkT = 22;
-    e.spearT = 22;      // 复用 spearT 作为"1A 向前一刺"的前冲标记
-    e.x += e.facing * 40;
-  } else if (stage === 1) {
-    e.atkT = 24;
-    e.spearT = 24;
+    // 1A 前踢冲刺：期间持续拖拽目标（由 updateEntityCombat 的 zjy-spearT 分支处理）
+    e.atkT = 26;
+    e.spearT = 26;
     e.x += e.facing * 30;
+  } else if (stage === 1) {
+    // 2A 跳踢：小跳 + 前移
+    e.atkT = 22;
+    if (e.onGround) { e.vy = -9; e.onGround = false; }
+    e.x += e.facing * 20;
   } else if (stage === 2) {
+    // 3A 回旋踢：持续 2s（120 帧）
+    e.atkT = 120;
+    e.spinT = 120;
+    e.spinLastTick = 0;
+  } else if (stage === 3) {
+    // 4A 重拳
     e.atkT = 28;
+    e.x += e.facing * 18;
+  } else if (stage === 4) {
+    // 5A 小拳拳（复用 punchRushT，流程交给 zjy-punchRush tick 分支）
+    e.atkT = 48;
+    e.punchRushT = 48;
   } else {
-    e.atkT = 32;
+    // 6A 踢腿
+    e.atkT = 22;
     e.x += e.facing * 16;
   }
   e.x = Math.max(40, Math.min(W_WORLD - 40, e.x));
-  e.comboStage = (stage + 1) % 4;
-  e.comboWindow = 54;
+  e.comboStage = (stage + 1) % 6;
+  e.comboWindow = 60;
   if (e === player) updateComboIndicator();
   else if (e === p2) updateP2ComboIndicator();
 }
@@ -2422,7 +2508,7 @@ const COMBO_NAMES = {
   naruto:   ["1A 突刺", "2A 上勾", "3A 后翻"],
   doraemon: ["1A 石矛", "2A 回旋", "3A 小拳拳", "4A 电击枪", "5A 穿门连击"],
   xueking:  ["1A 前刺", "2A 上挑", "3A 横斩", "4A 天降"],
-  zjy:      ["1A 直拳", "2A 勾拳", "3A 上勾拳", "4A 重击"],
+  zjy:      ["1A 前踢冲刺", "2A 跳踢", "3A 回旋踢", "4A 重拳", "5A 小拳拳", "6A 踢腿"],
 };
 
 function updateComboIndicator() {
