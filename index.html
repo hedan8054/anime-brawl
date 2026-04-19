@@ -1431,6 +1431,12 @@ function handleP2Attack() {
   if (roundCountdownActive()) return;  // 开局 3-2-1 禁操作
   // 张鸡块「我去你的!」狂按窗口：优先拦截，不走普攻
   if (isZjySmashing(p2)) { zjySmashBeat(p2); return; }
+  // 哆啦A梦任意门窗口：按↓ → 传送到身后 + 元气波
+  if (p2.char === "doraemon" && performance.now() < (p2.doraWarpWindowUntil || 0)) {
+    castDoraemonKamehameha(p2, player);
+    p2.doraWarpWindowUntil = 0;
+    return;
+  }
   if (p2.atkT > 0) return;
   if (p2.stunT > 0 || p2.downT > 0) return;
   if (performance.now() < timeFrozenUntil) return;
@@ -1536,9 +1542,20 @@ function castP2Skill(idx) {
     return;
   }
   if (idx === 0) {
-    // P2 任意门：召唤银河毁灭核弹，全屏 10000 伤害。一回合一次
-    castDoraemonNuke(p2, player);
-    if (p2.skills[0]) p2.skills[0].ready = Infinity;
+    // P2 任意门：地面瞬移；空中核弹（一回合 1 次）
+    if (!p2.onGround) {
+      if (p2.doraNukeUsed) {
+        damageTexts.push({
+          x: p2.x, y: p2.y - 150, vx: 0, vy: -1.8,
+          life: 40, maxLife: 40, text: "核弹本回合已用", color: "#cccccc", size: 14, crit: false,
+        });
+        return;
+      }
+      p2.doraNukeUsed = true;
+      castDoraemonNuke(p2, player);
+    } else {
+      castDoraemonWarpForward(p2, player);
+    }
   } else if (idx === 1) {
     // P2 手电筒：1s 前摇（霸体）+ 2s 圆柱光束（半屏），每 20ms 60 伤害
     const castNow = performance.now();
@@ -1709,6 +1726,10 @@ const player = {
   zjyYeahBuffUntil: 0,   // 张鸡块 U「耶!」伤害 +100% 结束时刻
   zjyComboUsed: false,   // 同按 2·3·4 合体技：本回合是否已触发
   zjyComboBasicBuff: false, // 合体技后：本回合普攻 +300%
+  doraNukeUsed: false,   // 哆啦A梦 J「核弹」本回合是否已用（空中才能召唤）
+  doraWarpWindowUntil: 0,// 地面瞬移后 500ms 窗口内按平A → 元气波连招
+  doraArmorUntil: 0,     // 瞬移期间霸体结束时刻
+  slamT: 0,              // 空中平A 下砸计时
 };
 
 const LONG_PRESS_THRESHOLD = 20; // 超过即进入飞天模式
@@ -2161,6 +2182,7 @@ const p2 = {
   soundDebuffUntil: 0, smashUntil: 0, smashPresses: 0, smashTargetIsP2: false,
   zjyYeahBuffUntil: 0,
   zjyComboUsed: false, zjyComboBasicBuff: false,
+  doraNukeUsed: false, doraWarpWindowUntil: 0, doraArmorUntil: 0, slamT: 0,
 };
 
 // dummy 是共用引用，训练=baseDummy / PVP=p2
@@ -2215,6 +2237,12 @@ function roundTimeIsUp() {
 function handleNormalAttack() {
   // 张鸡块「我去你的!」狂按窗口：优先拦截，绕开 atkT 门
   if (isZjySmashing(player)) { zjySmashBeat(player); return; }
+  // 哆啦A梦任意门窗口：按 Space → 传送到身后 + 元气波击飞
+  if (selectedChar === "doraemon" && performance.now() < (player.doraWarpWindowUntil || 0)) {
+    castDoraemonKamehameha(player, dummy);
+    player.doraWarpWindowUntil = 0;
+    return;
+  }
   if (player.atkT > 0) return;
   if (inAerial()) return;
   if (selectedChar === "doraemon") handleDoraemonAttack(player);
@@ -3468,6 +3496,79 @@ function castZjySkill(idx, caster, target) {
   }
 }
 
+// 哆啦A梦 J 地面分支：向前瞬移 180px，500ms 无敌 + 开启 500ms 任意门窗口
+// 窗口期间按平A → 传送到敌方身后 + 发射元气波（castDoraemonKamehameha）
+function castDoraemonWarpForward(caster, target) {
+  const now = performance.now();
+  const dist = 180;
+  const fromX = caster.x;
+  const toX = Math.max(40, Math.min(W_WORLD - 40, caster.x + caster.facing * dist));
+  doors.push({ x: fromX, y: caster.y, bornAt: now, life: 400 });
+  doors.push({ x: toX,   y: caster.y, bornAt: now, life: 400 });
+  caster.x = toX;
+  caster.invincibleUntil = Math.max(caster.invincibleUntil || 0, now + 500);
+  // 霸体（配合 invincible 同时成立，双重豁免）
+  caster.doraArmorUntil = now + 500;
+  // 任意门窗口：500ms 内按平A 会传到敌方身后 + 元气波
+  caster.doraWarpWindowUntil = now + 500;
+  spawnParticles(fromX, caster.y - 30, "#ff8cd9", 16);
+  spawnParticles(toX,   caster.y - 30, "#ff8cd9", 16);
+  damageTexts.push({
+    x: caster.x, y: caster.y - 130,
+    vx: 0, vy: -1.8, life: 40, maxLife: 40,
+    text: "任意门 · 无敌霸体", color: "#ff8cd9", size: 14, crit: false,
+  });
+}
+
+// 哆啦A梦"任意门连招"：传送到敌方身后 + 元气波击飞（按平A 时触发）
+function castDoraemonKamehameha(caster, target) {
+  const now = performance.now();
+  const offset = 80;
+  const fromX = caster.x;
+  const behindX = caster.x < target.x ? target.x + offset : target.x - offset;
+  const newX = Math.max(40, Math.min(W_WORLD - 40, behindX));
+  doors.push({ x: fromX, y: caster.y, bornAt: now, life: 400 });
+  doors.push({ x: newX,  y: caster.y, bornAt: now, life: 400 });
+  caster.x = newX;
+  caster.facing = target.x > caster.x ? 1 : -1;
+  caster.invincibleUntil = Math.max(caster.invincibleUntil || 0, now + 500);
+  // 元气波：直接命中 + 击飞 + 强击退
+  const dmg = 1500;
+  if (target === player) damagePlayer(dmg);
+  else damageDummy(dmg);
+  if (!isInSubstitute(target)) {
+    if (typeof target.vy === "number") {
+      target.vy = -14;
+      target.onGround = false;
+    }
+    target.x += caster.facing * 60;
+    target.stunT = Math.max(target.stunT || 0, 40);
+  }
+  target.shakeT = 28;
+  hitStopT = Math.max(hitStopT, 10);
+  shakeT = 22; shakeStrength = 12;
+  spawnHitImpact(target.x, target.y - 60, 70);
+  damageTexts.push({
+    x: target.x, y: target.y - 170,
+    vx: 0, vy: -3, life: 80, maxLife: 80,
+    text: "元 气 波!", color: "#8ee0ff", size: 30, crit: true,
+  });
+  // 元气波粒子：caster 到 target 之间一道蓝白能量
+  const dirX = Math.sign(target.x - caster.x) || caster.facing;
+  for (let i = 0; i < 50; i++) {
+    const t = i / 50;
+    particles.push({
+      x: caster.x + dirX * (20 + t * (Math.abs(target.x - caster.x) - 20)),
+      y: caster.y - 60 + (Math.random() - 0.5) * 30,
+      vx: dirX * (3 + Math.random() * 3),
+      vy: (Math.random() - 0.5) * 2 - 1,
+      life: 28 + Math.random() * 14,
+      color: i % 3 === 0 ? "#ffffff" : (i % 3 === 1 ? "#8ee0ff" : "#3f7fd8"),
+      size: 4 + Math.random() * 3,
+    });
+  }
+}
+
 // 哆啦A梦"任意门 → 银河毁灭核弹"：全屏 10000 伤害，施法期间 caster 短无敌
 function castDoraemonNuke(caster, target) {
   const now = performance.now();
@@ -3522,10 +3623,22 @@ function castDoraemonNuke(caster, target) {
 
 function castDoraemonSkill(idx) {
   if (idx === 0) {
-    // 任意门：从门里召唤"银河毁灭核弹"，全屏 10000 伤害。一小回合只能 1 次。
-    castDoraemonNuke(player, dummy);
-    // 一回合一次：把本技能 ready 推到 Infinity，配合 cd-mask 显示"废"
-    if (skills[0]) skills[0].ready = Infinity;
+    // J 任意门：地面 → 前瞬移 + 无敌霸体；空中（竹蜻蜓时）→ 核弹（一回合 1 次）
+    if (!player.onGround) {
+      // 空中分支：核弹
+      if (player.doraNukeUsed) {
+        damageTexts.push({
+          x: player.x, y: player.y - 150, vx: 0, vy: -1.8,
+          life: 40, maxLife: 40, text: "核弹本回合已用", color: "#cccccc", size: 14, crit: false,
+        });
+        return;
+      }
+      player.doraNukeUsed = true;
+      castDoraemonNuke(player, dummy);
+    } else {
+      // 地面分支：向前瞬移 + 无敌 + 开启"任意门窗口"（Space 可接元气波）
+      castDoraemonWarpForward(player, dummy);
+    }
   } else if (idx === 1) {
     // 手电筒：1s 前摇（期间霸体无敌）+ 2s 圆柱光束（半屏），每 20ms 对命中目标造成 60 伤害
     const castNow = performance.now();
@@ -4625,6 +4738,7 @@ function resetRound() {
   p2.rageStacks = 0; p2.rageGainFlash = 0; p2.rageBurstUntil = 0;
   p2.soundDebuffUntil = 0; p2.smashUntil = 0; p2.smashPresses = 0; p2.zjyYeahBuffUntil = 0;
   p2.zjyComboUsed = false; p2.zjyComboBasicBuff = false;
+  p2.doraNukeUsed = false; p2.doraWarpWindowUntil = 0; p2.doraArmorUntil = 0; p2.slamT = 0;
   p2.icecreamEnd = 0; p2.icecreamNextTick = 0;
   p2.iceGate1 = null; p2.iceGate2 = null; p2.iceGateCooldown = 0;
   p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
@@ -4651,6 +4765,7 @@ function resetRound() {
   player.rageStacks = 0; player.rageGainFlash = 0; player.rageBurstUntil = 0;
   player.soundDebuffUntil = 0; player.smashUntil = 0; player.smashPresses = 0; player.zjyYeahBuffUntil = 0;
   player.zjyComboUsed = false; player.zjyComboBasicBuff = false;
+  player.doraNukeUsed = false; player.doraWarpWindowUntil = 0; player.doraArmorUntil = 0; player.slamT = 0;
   player.icecreamEnd = 0; player.icecreamNextTick = 0;
   player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
   player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
