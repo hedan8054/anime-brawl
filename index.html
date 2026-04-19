@@ -749,6 +749,8 @@
   .avatar-card.doraemon-bg svg { background: #1d7db8; }
   .avatar-card.xueking-bg svg { background: #5aa8d8; }
   .avatar-card.zjy-bg svg { background: #b32020; }
+  .avatar-card.itachi-bg svg { background: #1a1a1a; }
+  .kof-cell.itachi-bg svg { background: #1a1a1a; }
   .avatar-card span {
     font-size: 12px;
     letter-spacing: 2px;
@@ -1225,6 +1227,27 @@
               <span class="kof-cell-name">张 鸡 块</span>
               <span class="kof-cursor"></span>
             </button>
+            <button class="kof-cell itachi-bg" data-char="itachi">
+              <svg viewBox="0 0 40 40">
+                <!-- 晓组织红云 -->
+                <ellipse cx="10" cy="8" rx="4" ry="2.5" fill="#c5201c"/>
+                <ellipse cx="30" cy="8" rx="4" ry="2.5" fill="#c5201c"/>
+                <!-- 黑发轮廓 -->
+                <path d="M8 14 Q20 2 32 14 L32 18 Q20 10 8 18 Z" fill="#111"/>
+                <!-- 脸 -->
+                <ellipse cx="20" cy="24" rx="10" ry="10" fill="#e8c5a0"/>
+                <!-- 写轮眼 -->
+                <circle cx="15.5" cy="23" r="2.8" fill="#c5201c"/>
+                <circle cx="24.5" cy="23" r="2.8" fill="#c5201c"/>
+                <circle cx="15.5" cy="23" r="1" fill="#111"/>
+                <circle cx="24.5" cy="23" r="1" fill="#111"/>
+                <!-- 鼻下纹 -->
+                <path d="M14 28 Q16 30 18 28" stroke="#8a6040" stroke-width="0.7" fill="none"/>
+                <path d="M22 28 Q24 30 26 28" stroke="#8a6040" stroke-width="0.7" fill="none"/>
+              </svg>
+              <span class="kof-cell-name">宇 智 波 鼬</span>
+              <span class="kof-cursor"></span>
+            </button>
           </div>
           <div class="kof-ready">● R E A D Y</div>
         </div>
@@ -1298,6 +1321,22 @@
                 <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
               </svg>
               <span class="kof-cell-name">张 鸡 块</span>
+              <span class="kof-cursor"></span>
+            </button>
+            <button class="kof-cell itachi-bg" data-char="itachi">
+              <svg viewBox="0 0 40 40">
+                <ellipse cx="10" cy="8" rx="4" ry="2.5" fill="#c5201c"/>
+                <ellipse cx="30" cy="8" rx="4" ry="2.5" fill="#c5201c"/>
+                <path d="M8 14 Q20 2 32 14 L32 18 Q20 10 8 18 Z" fill="#111"/>
+                <ellipse cx="20" cy="24" rx="10" ry="10" fill="#e8c5a0"/>
+                <circle cx="15.5" cy="23" r="2.8" fill="#c5201c"/>
+                <circle cx="24.5" cy="23" r="2.8" fill="#c5201c"/>
+                <circle cx="15.5" cy="23" r="1" fill="#111"/>
+                <circle cx="24.5" cy="23" r="1" fill="#111"/>
+                <path d="M14 28 Q16 30 18 28" stroke="#8a6040" stroke-width="0.7" fill="none"/>
+                <path d="M22 28 Q24 30 26 28" stroke="#8a6040" stroke-width="0.7" fill="none"/>
+              </svg>
+              <span class="kof-cell-name">宇 智 波 鼬</span>
               <span class="kof-cursor"></span>
             </button>
           </div>
@@ -1378,6 +1417,21 @@
             <circle cx="34" cy="22" r="1.2" fill="#ff5a30"/>
           </svg>
           <span>张 鸡 块</span>
+        </button>
+        <button class="avatar-card itachi-bg" data-char="itachi">
+          <svg viewBox="0 0 40 40">
+            <ellipse cx="10" cy="8" rx="4" ry="2.5" fill="#c5201c"/>
+            <ellipse cx="30" cy="8" rx="4" ry="2.5" fill="#c5201c"/>
+            <path d="M8 14 Q20 2 32 14 L32 18 Q20 10 8 18 Z" fill="#111"/>
+            <ellipse cx="20" cy="24" rx="10" ry="10" fill="#e8c5a0"/>
+            <circle cx="15.5" cy="23" r="2.8" fill="#c5201c"/>
+            <circle cx="24.5" cy="23" r="2.8" fill="#c5201c"/>
+            <circle cx="15.5" cy="23" r="1" fill="#111"/>
+            <circle cx="24.5" cy="23" r="1" fill="#111"/>
+            <path d="M14 28 Q16 30 18 28" stroke="#8a6040" stroke-width="0.7" fill="none"/>
+            <path d="M22 28 Q24 30 26 28" stroke="#8a6040" stroke-width="0.7" fill="none"/>
+          </svg>
+          <span>宇 智 波 鼬</span>
         </button>
       </div>
     </div>
@@ -1469,6 +1523,27 @@ const skillConfigs = {
     { name: "你叫个屁呀叫!", key: "l", cd: 10000, icon: "💨" },
     { name: "耶!",           key: "u", cd: 20000, icon: "🙌" },
   ],
+  itachi: [
+    { name: "月读",     key: "j", cd: 15000, icon: "🌙" },
+    { name: "天照",     key: "k", cd: 12000, icon: "🔥" },
+    { name: "须佐能乎", key: "l", cd: 18000, icon: "⚔" },
+    { name: "乌鸦分身", key: "u", cd: 10000, icon: "🪶" },
+  ],
+};
+
+// 宇智波鼬 · 贴图资源（整张精灵动作表，直接按行切帧）
+const itachiSprite = new Image();
+itachiSprite.src = "宇智波鼬动作.jpeg";
+itachiSprite.onload = () => { itachiSpriteReady = true; };
+let itachiSpriteReady = false;
+// 贴图帧切片（像素坐标，需根据实际图做视觉微调）
+// 原图 724 × 1024，7 行布局：1 待机 / 2 跳跃 / 3 跑步 / 4 眼睛 / 5 乌鸦 / 6 天照 / 7 月读
+const ITA_FR = {
+  idle: { y:  95, h: 115, firstX: 15, stride: 118, count: 6 },
+  jump: { y: 230, h: 130, firstX: 15, stride: 118, count: 6 },
+  run:  { y: 370, h: 115, firstX: 15, stride: 118, count: 6 },
+  // 第 5 行 释放乌鸦（用于平A + 技能预备姿态）
+  crow: { y: 590, h: 135, firstX: 10, stride: 142, count: 5 },
 };
 
 const keys = {};
@@ -1509,6 +1584,7 @@ function handleP2Attack() {
   if (p2.char === "doraemon") handleDoraemonAttack(p2);
   else if (p2.char === "xueking") handleSnowkingAttack(p2);
   else if (p2.char === "zjy") handleZjyAttack(p2);
+  else if (p2.char === "itachi") handleItachiAttack(p2);
   else handleNarutoAttack(p2);
 }
 
@@ -1604,6 +1680,10 @@ function castP2Skill(idx) {
   }
   if (p2.char === "zjy") {
     castZjySkill(idx, p2, player);
+    return;
+  }
+  if (p2.char === "itachi") {
+    castItachiSkill(idx, p2, player);
     return;
   }
   if (idx === 0) {
@@ -2341,6 +2421,7 @@ function handleNormalAttack() {
   if (selectedChar === "doraemon") handleDoraemonAttack(player);
   else if (selectedChar === "xueking") handleSnowkingAttack(player);
   else if (selectedChar === "zjy") handleZjyAttack(player);
+  else if (selectedChar === "itachi") handleItachiAttack(player);
   else handleNarutoAttack(player);
 }
 
@@ -2428,6 +2509,98 @@ function handleNarutoAttack(e = player) {
     updateComboIndicator();
     clones.forEach(c => triggerCloneAttack(c, stage + 1));
   }
+}
+
+// ========== 宇智波鼬（第一步：基础 1A + J 月读；其余 5A / 技能 / 全 VFX 下一轮） ==========
+function handleItachiAttack(e = player) {
+  const stage = e.comboStage || 0;
+  e.atkType = stage + 1;        // 1~5
+  e.atkHit = false;
+  e.comboWindow = 40;
+  // 第一步只做 1A；2-5 先用同样参数占位，下一轮细化
+  e.atkT = 20;
+  e.slashT = 16;
+  e.x += e.facing * 30;
+  e.x = Math.max(40, Math.min(W_WORLD - 40, e.x));
+  e.comboStage = (stage + 1) % 5;
+  if (e === player) updateComboIndicator();
+  else if (e === p2) updateP2ComboIndicator();
+}
+
+function castItachiSkill(idx, caster, target) {
+  if (idx === 0) {
+    // J 月读：锁定敌方 1.5s + 1200 固定伤害 + 鼬自伤 5%（万花筒代价）
+    target.stunT = Math.max(target.stunT || 0, 90);
+    target.vx = 0;
+    for (let i = 0; i < 30; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 30 + Math.random() * 80;
+      particles.push({
+        x: target.x + Math.cos(a) * r,
+        y: target.y - 60 + Math.sin(a) * r,
+        vx: Math.cos(a) * -1.2,
+        vy: Math.sin(a) * -1.2,
+        life: 55, color: "#c5201c", size: 3,
+      });
+    }
+    damageTexts.push({
+      x: target.x, y: target.y - 150,
+      vx: 0, vy: -2, life: 60, maxLife: 60,
+      text: "月 读", color: "#c5201c", size: 26, crit: true,
+    });
+    if (target === player) damagePlayer(1200); else damageDummy(1200);
+    // 万花筒代价
+    const cost = Math.max(1, Math.ceil(caster.hp * 0.05));
+    if (caster === player) damagePlayer(cost); else damageDummy(cost);
+    return;
+  }
+  // 下一轮做 K 天照 / L 须佐能乎 / U 乌鸦分身
+  damageTexts.push({
+    x: caster.x, y: caster.y - 150, vx: 0, vy: -2,
+    life: 40, maxLife: 40, text: "敬请期待", color: "#aaa", size: 14, crit: false,
+  });
+}
+
+function drawItachi(state, attacking) {
+  const x = state.x, y = state.y, facing = state.facing;
+  const moving  = Math.abs(state.vx || 0) > 0.15 && state.onGround !== false && !attacking;
+  const jumping = state.onGround === false && !attacking;
+  let fr = ITA_FR.idle;
+  if (attacking)     fr = ITA_FR.crow;
+  else if (jumping)  fr = ITA_FR.jump;
+  else if (moving)   fr = ITA_FR.run;
+  // 帧索引
+  const t = performance.now();
+  let progress;
+  if (attacking) {
+    progress = 1 - (state.atkT || 0) / 20;  // 0→1
+  } else if (moving) {
+    progress = (state.walkT || 0) / 6;
+  } else {
+    progress = t / 400;
+  }
+  const idx = Math.max(0, Math.min(fr.count - 1, Math.floor(progress * fr.count) % fr.count));
+  const sx = fr.firstX + idx * fr.stride;
+  const sy = fr.y, sw = fr.stride - 6, sh = fr.h;
+  // 目标高度
+  const drawH = 180;
+  const drawW = drawH * (sw / sh);
+  const dx = x - drawW / 2;
+  const dy = y - drawH;
+  ctx.save();
+  if (facing < 0) {
+    ctx.translate(x, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-x, 0);
+  }
+  if (itachiSpriteReady) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(itachiSprite, sx, sy, sw, sh, dx, dy, drawW, drawH);
+  } else {
+    ctx.fillStyle = "#111";
+    ctx.fillRect(dx, dy, drawW, drawH);
+  }
+  ctx.restore();
 }
 
 function applyDamageTo(target, amount) {
@@ -2535,6 +2708,12 @@ function updateEntityCombat(attacker, target, char) {
             });
           }
         }
+      }
+    } else if (char === "itachi") {
+      // 鼬 · 平A（第一步：1-5A 全部走短距前刺参数，下一轮细化 2/3/4/5 各段效果）
+      if (attacker.atkType >= 1 && attacker.atkType <= 5 && Math.abs(dx) < 130 && sameSide) {
+        dmg = 500; hit = true;
+        target.shakeT = 12;
       }
     } else if (char === "zjy") {
       // 张鸡块 6 段连招（伤害会被 rageDamageMul 乘）
@@ -2831,6 +3010,7 @@ const COMBO_NAMES = {
   doraemon: ["1A 石矛", "2A 回旋", "3A 小拳拳", "4A 电击枪", "5A 穿门连击"],
   xueking:  ["1A 前刺", "2A 上挑", "3A 横斩", "4A 天降"],
   zjy:      ["1A 前踢冲刺", "2A 跳踢", "3A 回旋踢", "4A 重拳", "5A 小拳拳", "6A 踢腿"],
+  itachi:   ["1A 拔刀斩", "2A 双刀回旋", "3A 手里剑", "4A 豪火球", "5A 万鸦啄噬"],
 };
 
 function updateComboIndicator() {
@@ -2893,6 +3073,10 @@ function castSkill(idx) {
   }
   if (selectedChar === "zjy") {
     castZjySkill(idx, player, dummy);
+    return;
+  }
+  if (selectedChar === "itachi") {
+    castItachiSkill(idx, player, dummy);
     return;
   }
   if (idx === 0) {
@@ -4811,7 +4995,7 @@ function showSeriesEnd() {
   const sub = document.getElementById("matchSub");
   const buttons = document.querySelector('.match-buttons');
   buttons.style.display = '';
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "张 鸡 块";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : c === "itachi" ? "宇 智 波 鼬" : "张 鸡 块";
   if (winner === "draw") {
     title.textContent = "D R A W";
     sub.textContent = `平 局　·　${p1Wins} : ${p2Wins}`;
@@ -4956,7 +5140,7 @@ function updateWinPips() {
   };
   const p1NameEl = document.querySelector('.hpbar.left .name > span');
   const p2NameEl = document.querySelector('.hpbar.right .name > span');
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "张 鸡 块";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : c === "itachi" ? "宇 智 波 鼬" : "张 鸡 块";
   const p1Name = nameOf(selectedChar);
   if (gameMode === "pvp") {
     p1NameEl.innerHTML = p1Name + pipsHtml(p1Wins);
@@ -6776,6 +6960,8 @@ function draw() {
     drawSnowKing(player, player.atkT > 0 || player.arcT > 0);
   } else if (selectedChar === "zjy") {
     drawZjy(player, player.atkT > 0);
+  } else if (selectedChar === "itachi") {
+    drawItachi(player, player.atkT > 0);
   } else {
     drawNinja(player.x, player.y, player.facing, player.slashT > 0 || player.atkT > 0);
   }
@@ -7016,6 +7202,8 @@ function draw() {
       drawSnowKing(p2, p2.atkT > 0 || p2.arcT > 0);
     } else if (p2.char === "zjy") {
       drawZjy(p2, p2.atkT > 0);
+    } else if (p2.char === "itachi") {
+      drawItachi(p2, p2.atkT > 0);
     } else {
       drawNinja(p2.x, p2.y, p2.facing, p2.atkT > 0, undefined, p2);
     }
