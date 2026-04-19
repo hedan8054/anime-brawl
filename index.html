@@ -279,6 +279,89 @@
   }
   #netIndicator.show { display: block; }
 
+  /* ===== 手机触屏控件 (只在触屏设备上显示) ===== */
+  #touchControls { display: none; }
+  .tc-btn { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+  @media (pointer: coarse), (hover: none) {
+    #touchControls { display: block; }
+    .tc-left, .tc-right {
+      position: fixed;
+      bottom: 14px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: auto;
+    }
+    .tc-left  { left: 12px; }
+    .tc-right { right: 12px; }
+    .tc-row { display: flex; gap: 8px; align-items: center; }
+    .tc-btn {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: rgba(255,255,255,0.16);
+      border: 2px solid rgba(255,255,255,0.35);
+      color: #fff; font-size: 17px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit;
+      padding: 0;
+      transition: transform .05s ease, background .05s ease;
+    }
+    .tc-btn:active, .tc-btn.tc-held {
+      background: rgba(255,217,85,0.55);
+      transform: scale(0.92);
+    }
+    .tc-attack {
+      width: 70px; height: 70px; font-size: 26px;
+      background: rgba(255,80,80,0.32);
+      border-color: #ff8080;
+      margin-top: 4px;
+    }
+    .tc-attack:active, .tc-attack.tc-held { background: rgba(255,80,80,0.75); }
+    .tc-skill {
+      background: rgba(120,90,255,0.28);
+      border-color: #9a8aff;
+      font-size: 13px;
+    }
+    .tc-skill:active, .tc-skill.tc-held { background: rgba(255,217,85,0.55); }
+    .tc-skill .tc-k { font-size: 11px; opacity: .7; line-height: 1; margin-bottom: 2px; }
+    .tc-skill .tc-ico { font-size: 20px; line-height: 1; }
+    /* 触屏设备上隐藏键盘提示、标题、左上角切换、P2 技能栏 */
+    #hint, h1, #charSwitcher, .hud-col-p2 { display: none !important; }
+    .battle-hud { margin-top: 4px; gap: 6px; }
+    #skillbar { gap: 6px; }
+    #skillbar .skill { width: 48px; height: 48px; }
+    #skillbar .skill .icon { font-size: 18px; }
+    #skillbar .skill .label { font-size: 9px; }
+    body { min-height: 100vh; padding: 4px; }
+    #stage { width: 96vw; max-height: 60vh; }
+  }
+
+  /* ===== 竖屏提示 ===== */
+  #rotateHint { display: none; }
+  @media (orientation: portrait) and (max-width: 900px) {
+    #rotateHint {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      background: #0a0518;
+      z-index: 500;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #fff;
+      padding: 24px;
+    }
+    #rotateHint .icon { font-size: 72px; animation: rotate-sway 1.6s ease-in-out infinite; }
+    #rotateHint h2 { font-size: 22px; letter-spacing: 6px; margin: 16px 0 8px; color: #ffd91f; }
+    #rotateHint p  { font-size: 13px; letter-spacing: 2px; color: #aaa; }
+  }
+  @keyframes rotate-sway {
+    0%,100% { transform: rotate(0); }
+    50%     { transform: rotate(90deg); }
+  }
+
   /* ===== 拳皇风格选角 ===== */
   #coverSelect.hidden { display: none; }
   #coverSelect { width: 92vw; max-width: 1180px; padding: 24px 20px; }
@@ -873,6 +956,43 @@
   <!-- 联机状态指示器（常驻右上角）-->
   <div id="netIndicator">● 未连接</div>
 
+  <!-- 手机触屏控件（仅触屏设备显示） -->
+  <div id="touchControls">
+    <div class="tc-left">
+      <button class="tc-btn" data-tk="w" aria-label="跳">↑</button>
+      <div class="tc-row">
+        <button class="tc-btn" data-tk="a" aria-label="左">←</button>
+        <button class="tc-btn" data-tk="d" aria-label="右">→</button>
+      </div>
+    </div>
+    <div class="tc-right">
+      <div class="tc-row">
+        <button class="tc-btn tc-skill" data-tk="j" aria-label="技能 1">
+          <span class="tc-k">技1</span><span class="tc-ico" id="tcIco0">🔪</span>
+        </button>
+        <button class="tc-btn tc-skill" data-tk="k" aria-label="技能 2">
+          <span class="tc-k">技2</span><span class="tc-ico" id="tcIco1">💕</span>
+        </button>
+      </div>
+      <div class="tc-row">
+        <button class="tc-btn tc-skill" data-tk="l" aria-label="技能 3">
+          <span class="tc-k">技3</span><span class="tc-ico" id="tcIco2">🌀</span>
+        </button>
+        <button class="tc-btn tc-skill" data-tk="u" aria-label="技能 4">
+          <span class="tc-k">技4</span><span class="tc-ico" id="tcIco3">👥</span>
+        </button>
+      </div>
+      <button class="tc-btn tc-attack" data-tk="space" aria-label="普攻">⚔</button>
+    </div>
+  </div>
+
+  <!-- 竖屏提示层 -->
+  <div id="rotateHint">
+    <div class="icon">📱</div>
+    <h2>请 横 屏 握 持</h2>
+    <p>TURN YOUR PHONE SIDEWAYS</p>
+  </div>
+
   <!-- 封面 -->
   <div id="cover">
     <div class="cover-orb orb-left"></div>
@@ -1438,6 +1558,11 @@ function applyCharacter(name) {
     el.querySelector(".icon").textContent = cfg[i].icon;
     el.querySelector(".label").textContent = cfg[i].name;
   });
+  // 同步手机触屏按钮的技能 icon
+  for (let i = 0; i < 4; i++) {
+    const ic = document.getElementById("tcIco" + i);
+    if (ic && cfg[i]) ic.textContent = cfg[i].icon;
+  }
   // 清空战斗状态
   player.rasenCharging = false;
   player.rasenThrowT = 0;
@@ -1544,6 +1669,11 @@ function isP2Controlled() {
       || now < (p2.iceFrozenUntil || 0);
 }
 
+// 替身状态中（解控后 1.5s）：渲染时身体半透明
+function isInSubstitute(entity) {
+  return performance.now() < (entity.substituteUntil || 0);
+}
+
 // 记录一次"被控时按平A"。返回 true 表示本次双击成功解控
 function registerSubstituteTap(entity, side) {
   const now = performance.now();
@@ -1584,6 +1714,7 @@ function registerSubstituteTap(entity, side) {
   if (side === "p1") p1FrozenUntil = 0;
   else timeFrozenUntil = 0;
   entity.invincibleUntil = Math.max(entity.invincibleUntil || 0, now + SUBSTITUTE_DURATION);
+  entity.substituteUntil = now + SUBSTITUTE_DURATION;   // 替身状态结束时刻（用于半透明渲染）
   entity.substituteReady = now + SUBSTITUTE_COOLDOWN;
   entity.substituteTaps = [];
   spawnSubstituteVFX(entity);
@@ -3382,7 +3513,7 @@ function resetRound() {
   p2.arcT = 0; p2.arcHit = false; p2.skyDropT = 0; p2.flyUntil = 0; p2.flyNextHail = 0;
   p2.iceFrozenUntil = 0;
   p2.shieldAmount = 0; p2.shieldExpiry = 0;
-  p2.substituteReady = 0; p2.substituteTaps = [];
+  p2.substituteReady = 0; p2.substituteTaps = []; p2.substituteUntil = 0;
   p2.icecreamEnd = 0; p2.icecreamNextTick = 0;
   p2.iceGate1 = null; p2.iceGate2 = null; p2.iceGateCooldown = 0;
   p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
@@ -3405,7 +3536,7 @@ function resetRound() {
   player.arcT = 0; player.arcHit = false; player.skyDropT = 0; player.flyUntil = 0; player.flyNextHail = 0;
   player.iceFrozenUntil = 0;
   player.shieldAmount = 0; player.shieldExpiry = 0;
-  player.substituteReady = 0; player.substituteTaps = [];
+  player.substituteReady = 0; player.substituteTaps = []; player.substituteUntil = 0;
   player.icecreamEnd = 0; player.icecreamNextTick = 0;
   player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
   player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
@@ -5013,6 +5144,8 @@ function draw() {
     ctx.rotate(tilt);
     ctx.translate(-player.x, -player.y);
   }
+  const p1Sub = isInSubstitute(player);
+  if (p1Sub) { ctx.save(); ctx.globalAlpha = 0.3; }
   if (selectedChar === "doraemon") {
     drawDoraemon(player, player.atkT > 0 || flashOn);
   } else if (selectedChar === "xueking") {
@@ -5020,6 +5153,7 @@ function draw() {
   } else {
     drawNinja(player.x, player.y, player.facing, player.slashT > 0 || player.atkT > 0);
   }
+  if (p1Sub) ctx.restore();
   if (p1Down) {
     ctx.restore();
     // "倒地" 标签
@@ -5248,6 +5382,8 @@ function draw() {
       ctx.rotate(tilt);
       ctx.translate(-p2.x, -p2.y);
     }
+    const p2Sub = isInSubstitute(p2);
+    if (p2Sub) { ctx.save(); ctx.globalAlpha = 0.3; }
     if (p2.char === "doraemon") {
       drawDoraemon(p2, p2.atkT > 0 || performance.now() < p2.flashlightEnd);
     } else if (p2.char === "xueking") {
@@ -5255,6 +5391,7 @@ function draw() {
     } else {
       drawNinja(p2.x, p2.y, p2.facing, p2.atkT > 0, undefined, p2);
     }
+    if (p2Sub) ctx.restore();
     ctx.restore();
     if (p2Down) {
       // "倒地" 标签
@@ -6053,6 +6190,7 @@ document.getElementById("btnConfirmPick").addEventListener("click", () => {
   if (typeof netMode !== "undefined" && netMode === "client") return;
   if (typeof netMode !== "undefined" && netMode === "host") {
     netSendReliable({ type: "start", p1: pickedP1, p2: pickedP2 }, 5, 80);
+    netInGame = true;
   }
   startPVPMatch(pickedP1, pickedP2);
   hideCover();
@@ -6260,6 +6398,7 @@ async function netJoinRoom(code) {
     return;
   }
   console.log("[netJoin] initPeer done; myId=", netPeerId, "connecting to", code);
+  netLastHostId = code;  // 记住房主码，供自动重连
   // reliable:false = 不重传不保序，避免网络抖动时队头阻塞（游戏状态"最新的就够"）
   netConn = netPeer.connect(code, { reliable: false });
   console.log("[netJoin] connect() returned, waiting open...");
@@ -6268,23 +6407,36 @@ async function netJoinRoom(code) {
 
 function netSetupConn() {
   console.log("[netSetupConn] wiring, peer=", netConn.peer);
+  // 新连接建立 → 清除宽容期计时
+  if (typeof netStopGracePeriod === "function") netStopGracePeriod();
   netConn.on("open", () => {
     console.log("[netSetupConn] DataConnection OPEN");
-    netSetStatus("已连接！进入选角...", "ok");
+    const isRejoin = (typeof netInGame !== "undefined" && netInGame);
+    netSetStatus(isRejoin ? "已重连！继续战斗" : "已连接！进入选角...", "ok");
     netSetIndicator("● 已连接 (" + (netMode === "host" ? "房主" : "加入者") + ")", "#66ff99");
-    netSendReliable({ type: "hello", role: netMode, pick: (netMode === "host" ? pickedP1 : pickedP2) }, 3, 80);
-    setTimeout(netGotoSelect, 400);
+    netSendReliable({ type: "hello", role: netMode, pick: (netMode === "host" ? pickedP1 : pickedP2), rejoin: isRejoin }, 3, 80);
+    // 首次连接：转场到选角；重连：游戏已在跑，什么都不做
+    if (!isRejoin) setTimeout(netGotoSelect, 400);
   });
   netConn.on("data", netOnPacket);
   netConn.on("close", () => {
     console.log("[netSetupConn] CLOSE");
-    netHandleDisconnect("对方已断开");
+    // 游戏中才进入宽容期；未开打时的断开仍然立即回菜单
+    if (netInGame) netStartGracePeriod("对方掉线");
+    else netHandleDisconnect("对方已断开");
   });
   netConn.on("error", err => {
     console.error("[conn err]", err);
-    netHandleDisconnect("连接错误: " + (err.type || err.message || "未知"));
+    if (netInGame) netStartGracePeriod("连接错误");
+    else netHandleDisconnect("连接错误: " + (err.type || err.message || "未知"));
   });
-  netConn.on("iceStateChanged", s => console.log("[ice state]", s));
+  netConn.on("iceStateChanged", s => {
+    console.log("[ice state]", s);
+    // 游戏中 ice 断开立即进入宽容期（有些浏览器 close 事件延迟很久才触发）
+    if (netInGame && (s === "disconnected" || s === "failed" || s === "closed") && !netGracePeriodEnd) {
+      netStartGracePeriod("对方掉线");
+    }
+  });
 }
 
 function netSend(obj) {
@@ -6355,6 +6507,7 @@ function netOnPacket(data) {
       document.getElementById("coverMain").classList.remove("hidden");
       startPVPMatch(pickedP1, pickedP2);
       document.getElementById("cover").classList.add("hidden");
+      netInGame = true;
       netSetIndicator("● " + (netMode === "host" ? "房主" : "加入者") + " · 联机中", "#66ff99");
       break;
     case "input":
@@ -6422,6 +6575,8 @@ function netHandleDisconnect(msg) {
 
 function netCleanup() {
   netMode = null;
+  if (typeof netInGame !== "undefined") netInGame = false;
+  if (typeof netStopGracePeriod === "function") netStopGracePeriod();
   if (netConn) { try { netConn.close(); } catch(e){} netConn = null; }
   if (netPeer) { try { netPeer.destroy(); } catch(e){} netPeer = null; }
   netHideIndicator();
@@ -6697,6 +6852,95 @@ document.getElementById("btnCopyCode").addEventListener("click", async () => {
     netSetStatus("复制失败，请手动长按选中复制", "error");
   }
 });
+
+// =====================================================
+// ==========  手机触屏按钮 → 合成 KeyboardEvent  =======
+// =====================================================
+// 思路：触屏按下/松开合成原生 keydown/keyup 事件，走已有的键盘处理通道
+// 好处：键盘和触屏逻辑完全复用，联机的 input 上行/本地触发都自动生效
+function tcBindBtn(el) {
+  const tk = el.dataset.tk;
+  if (!tk) return;
+  const keyName = (tk === "space") ? " " : tk;
+  let held = false;
+  const press = (e) => {
+    if (e && e.cancelable !== false) { try { e.preventDefault(); } catch(_) {} }
+    try { el.setPointerCapture && el.setPointerCapture(e.pointerId); } catch(_) {}
+    if (held) return;
+    held = true;
+    el.classList.add("tc-held");
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: keyName }));
+  };
+  const release = (e) => {
+    if (e && e.cancelable !== false) { try { e.preventDefault(); } catch(_) {} }
+    if (!held) return;
+    held = false;
+    el.classList.remove("tc-held");
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: keyName }));
+  };
+  el.addEventListener("pointerdown", press);
+  el.addEventListener("pointerup", release);
+  el.addEventListener("pointercancel", release);
+  el.addEventListener("pointerleave", release);
+  // iOS Safari 偶尔 pointer 事件丢失，补一个 touchend 保险
+  el.addEventListener("touchend", release, { passive: false });
+  el.addEventListener("touchcancel", release, { passive: false });
+  // 避免长按弹选择菜单
+  el.addEventListener("contextmenu", e => e.preventDefault());
+}
+document.querySelectorAll("#touchControls .tc-btn").forEach(tcBindBtn);
+
+// 触屏设备上阻止 pinch / double-tap zoom （避免游戏中误缩放）
+if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+  document.addEventListener("gesturestart", e => e.preventDefault());
+  document.addEventListener("touchmove", e => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+}
+
+// =====================================================
+// ==========  宽容重连（对方掉线 15s 内可同码重连） =====
+// =====================================================
+let netGracePeriodEnd = 0;
+let netGraceTimer = null;
+let netLastHostId = null; // 客户端记住上次连接的房主码，用于自动重连
+
+function netStartGracePeriod(msg) {
+  if (netGracePeriodEnd && performance.now() < netGracePeriodEnd) return; // 已在宽容期
+  netGracePeriodEnd = performance.now() + 15000;
+  netSetIndicator("● " + (msg || "对方掉线") + " 15s", "#ff9966");
+  if (netGraceTimer) clearInterval(netGraceTimer);
+  netGraceTimer = setInterval(() => {
+    const remain = Math.max(0, Math.ceil((netGracePeriodEnd - performance.now()) / 1000));
+    if (remain <= 0) {
+      clearInterval(netGraceTimer); netGraceTimer = null;
+      netHandleDisconnect("对方未在 15 秒内回来");
+      return;
+    }
+    netSetIndicator("● " + (msg || "对方掉线") + " " + remain + "s", "#ff9966");
+  }, 500);
+  // 客户端：尝试自动重连（每 2.5s 重试一次）
+  if (netMode === "client" && netPeer && !netPeer.destroyed && netLastHostId) {
+    const retry = () => {
+      if (netConn && netConn.open) return; // 已重连
+      if (performance.now() >= netGracePeriodEnd) return; // 超时
+      try {
+        console.log("[auto-rejoin] retrying...");
+        netConn = netPeer.connect(netLastHostId, { reliable: false });
+        netSetupConn();
+      } catch(e) { console.warn("auto-rejoin err", e); }
+      setTimeout(retry, 2500);
+    };
+    setTimeout(retry, 1500);
+  }
+}
+function netStopGracePeriod() {
+  if (netGraceTimer) { clearInterval(netGraceTimer); netGraceTimer = null; }
+  netGracePeriodEnd = 0;
+}
+
+// 记住"是否在游戏中"，供 close 处理决定是否进入宽容期
+let netInGame = false;
 
 </script>
 </body>
