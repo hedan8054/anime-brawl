@@ -3547,9 +3547,17 @@ function drawZjy(state, attacking, tint) {
   }
   ctx.scale(facing, 1);
 
+  // 3A 回旋踢：蹲身 + 旋转扫腿
+  const spinning = (state.spinT || 0) > 0 && state.atkType === 3;
+  if (spinning) {
+    // 整体下蹲：垂直挤压 + 下移
+    ctx.translate(0, 12);
+    ctx.scale(1, 0.78);
+  }
+
   const idleBob = Math.sin(now / 500) * 1.0;
   const walkBob = moving ? Math.abs(Math.sin(walkT * 2)) * 2.2 : 0;
-  const bodyY   = moving ? -walkBob : idleBob;
+  const bodyY   = moving ? -walkBob : (spinning ? 4 : idleBob);
   const legSwing = moving ? Math.sin(walkT) * 0.38 : 0;
 
   function drawLeg(hipX, swing) {
@@ -3755,6 +3763,56 @@ function drawZjy(state, attacking, tint) {
       }
       ctx.restore();
     }
+  }
+
+  // 3A 蹲转扫腿：在脚下加一道横向旋转的红色虚影 + 地面尘环
+  if ((state.spinT || 0) > 0 && state.atkType === 3) {
+    const cx = state.x, cy = state.y;
+    const phase = (now / 60) % (Math.PI * 2);  // 快速旋转
+    ctx.save();
+    // 拖影扫腿（4-6 道弧线，残影叠加）
+    for (let i = 0; i < 5; i++) {
+      const p = phase - i * 0.12;
+      const len = 38;
+      const x1 = cx + Math.cos(p) * len * 0.4;        // 起点（脚下中心略偏）
+      const y1 = cy - 4;
+      const x2 = cx + Math.cos(p) * len;
+      const y2 = cy - 4 + Math.sin(p) * 6;            // 椭圆透视
+      ctx.strokeStyle = `rgba(255,${60 + i * 20},${30 + i * 20},${0.7 - i * 0.13})`;
+      ctx.lineWidth = 5 - i * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    // 地面红色尘环（椭圆，透视感）
+    const ringPulse = 28 + Math.sin(now / 40) * 4;
+    ctx.strokeStyle = "rgba(255,80,40,0.55)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 2, ringPulse, ringPulse * 0.32, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,180,60,0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 2, ringPulse * 0.7, ringPulse * 0.32 * 0.7, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    // 周期性撒一圈火星
+    if (Math.floor(now / 80) !== state._spinFxTick) {
+      state._spinFxTick = Math.floor(now / 80);
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        particles.push({
+          x: cx + Math.cos(a) * 32,
+          y: cy - 2 + Math.sin(a) * 10,
+          vx: Math.cos(a) * 2.2,
+          vy: Math.sin(a) * 0.8 - 1,
+          life: 22, color: i % 2 ? "#ff3322" : "#ffaa33",
+          size: 2 + Math.random() * 2,
+        });
+      }
+    }
+    ctx.restore();
   }
 }
 
