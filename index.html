@@ -2499,7 +2499,8 @@ function handleZjyAttack(e = player) {
   }
   e.x = Math.max(40, Math.min(W_WORLD - 40, e.x));
   e.comboStage = (stage + 1) % 6;
-  e.comboWindow = 60;
+  // 衔接窗口 = 当前段动画时长 + 60 帧（1s）缓冲。3A 蹲转 120 帧也能稳衔 4A
+  e.comboWindow = e.atkT + 60;
   if (e === player) updateComboIndicator();
   else if (e === p2) updateP2ComboIndicator();
 }
