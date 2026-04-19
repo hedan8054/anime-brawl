@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>拳皇小派 · 闪电忍者</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -181,6 +182,102 @@
     letter-spacing: 3px;
     margin: 0;
   }
+
+  /* ===== 联机对战面板 ===== */
+  #coverOnline.hidden { display: none; }
+  #coverOnline { width: 92vw; max-width: 560px; padding: 32px 28px; }
+  .online-title {
+    font-family: "Impact", "PingFang SC", sans-serif;
+    font-size: 28px;
+    letter-spacing: 8px;
+    color: #ffd91f;
+    text-align: center;
+    margin-bottom: 22px;
+    text-shadow: 0 0 12px rgba(255,217,31,.4);
+  }
+  .online-section {
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .online-section h3 {
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: #9fd8ff;
+    margin-bottom: 10px;
+  }
+  .online-section p { font-size: 12px; color: #999; line-height: 1.6; margin-bottom: 10px; }
+  .online-code {
+    font-family: "Menlo", monospace;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: #ffd91f;
+    background: #0b0b18;
+    border: 1px solid #333;
+    padding: 10px 14px;
+    border-radius: 6px;
+    word-break: break-all;
+    user-select: all;
+    cursor: text;
+    margin-bottom: 8px;
+  }
+  .online-input {
+    width: 100%;
+    font-family: "Menlo", monospace;
+    font-size: 16px;
+    padding: 10px 14px;
+    background: #0b0b18;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+  .online-input:focus { outline: none; border-color: #ffd91f; }
+  .online-btn {
+    display: block;
+    width: 100%;
+    padding: 11px 18px;
+    font-size: 14px;
+    letter-spacing: 3px;
+    background: linear-gradient(180deg, #ff6b1a, #c84210);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .online-btn:hover { filter: brightness(1.1); }
+  .online-btn.secondary {
+    background: linear-gradient(180deg, #3d4a60, #232a38);
+  }
+  .online-status {
+    font-size: 12px;
+    color: #7cf;
+    text-align: center;
+    letter-spacing: 2px;
+    margin-top: 6px;
+    min-height: 16px;
+  }
+  .online-status.error { color: #ff6677; }
+  .online-status.ok { color: #66ff99; }
+  #netIndicator {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,.6);
+    color: #66ff99;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    z-index: 99;
+    display: none;
+    font-family: "Menlo", monospace;
+  }
+  #netIndicator.show { display: block; }
 
   /* ===== 拳皇风格选角 ===== */
   #coverSelect.hidden { display: none; }
@@ -773,6 +870,9 @@
 </style>
 </head>
 <body>
+  <!-- 联机状态指示器（常驻右上角）-->
+  <div id="netIndicator">● 未连接</div>
+
   <!-- 封面 -->
   <div id="cover">
     <div class="cover-orb orb-left"></div>
@@ -797,8 +897,44 @@
           <span class="cbtn-icon">🎯</span>
           <span>木桩训练</span>
         </button>
+        <button class="cbtn" id="btnOnline" style="background: linear-gradient(180deg, #5a3aff, #2a1a8a); border-color: #8a6aff;">
+          <span class="cbtn-icon">🌐</span>
+          <span>联机对战</span>
+          <span class="cbtn-tag" style="background:#66ff99;color:#000;">P2P</span>
+        </button>
       </div>
       <p class="cover-footer">v0.1 · 点击任意按钮开始</p>
+    </div>
+
+    <!-- 联机对战面板 -->
+    <div class="cover-content hidden" id="coverOnline">
+      <div class="online-title">联 机 对 战</div>
+
+      <div class="online-section">
+        <h3>◆ 创 建 房 间</h3>
+        <p>点击后生成房间码，发给朋友让他加入。</p>
+        <button class="online-btn" id="btnCreateRoom">创 建 房 间</button>
+        <div id="roomCodeBox" style="display:none; margin-top:12px;">
+          <p style="color:#ccc; margin-bottom:6px;">房间码（点一下全选，复制发给朋友）：</p>
+          <div class="online-code" id="roomCodeText">...</div>
+          <button class="online-btn secondary" id="btnCopyCode">复 制 房 间 码</button>
+        </div>
+      </div>
+
+      <div class="online-section">
+        <h3>◆ 加 入 房 间</h3>
+        <p>粘贴朋友发给你的房间码。</p>
+        <input class="online-input" id="roomCodeInput" placeholder="粘贴房间码 / paste room code" />
+        <button class="online-btn" id="btnJoinRoom">加 入 房 间</button>
+      </div>
+
+      <div class="online-status" id="onlineStatus"></div>
+
+      <div class="cover-buttons" style="margin-top: 16px;">
+        <button class="cbtn cbtn-secondary" id="btnBackOnline">
+          <span>← 返 回</span>
+        </button>
+      </div>
     </div>
 
     <div class="cover-content hidden" id="coverSelect">
@@ -1022,6 +1158,8 @@
     <b style="color:#ff8a30">P1</b>: A/D 移 · W 跳 · Space 平A · J K L U 技能
     　｜
     <b style="color:#4cc8ff">P2</b>: ← → 移 · ↑ 跳 · ↓ 普攻 · <b>1/2/3/4 技能</b>（PVP）
+    　｜
+    <b style="color:#ffdd66">被控时双击平A=替身(CD10s)</b>
   </div>
 
   <!-- 胜负结算 -->
@@ -1074,7 +1212,15 @@ const keys = {};
 // P2 按键（箭头防滚动 + JKIL 技能）
 addEventListener("keydown", e => {
   if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) e.preventDefault();
-  if (e.key === "ArrowDown" && gameMode === "pvp" && !keys["arrowdown"]) handleP2Attack();
+  // 联机: 客户端不直接触发本地 P2 动作（会通过 input 包转发给房主）
+  if (typeof netMode !== "undefined" && netMode) return;
+  if (e.key === "ArrowDown" && gameMode === "pvp" && !keys["arrowdown"]) {
+    // 被控时双击↓触发替身，否则正常普攻
+    if (!matchEnded && isP2Controlled()) registerSubstituteTap(p2, "p2");
+    else handleP2Attack();
+    // 抢先登记按键：避免 P1 也被控时 keys 状态失同步，让 keyrepeat 反复触发
+    keys["arrowdown"] = true;
+  }
   if (gameMode === "pvp") {
     const k = e.key.toLowerCase();
     const idx = P2_SKILL_KEYS.indexOf(k);
@@ -1244,6 +1390,14 @@ function castP2Skill(idx) {
 addEventListener("keydown", e => {
   const k = e.key === " " ? "space" : e.key.toLowerCase();
   if (k === "space") e.preventDefault();
+  // 联机客户端: 只记录按键状态用于发送，不触发任何本地动作
+  if (typeof netMode !== "undefined" && netMode === "client") { keys[k] = true; return; }
+  // 替身术：被控时双击 Space 解控（在 blocked 判定之前拦截）
+  if (k === "space" && !keys["space"] && !matchEnded && isP1Controlled()) {
+    registerSubstituteTap(player, "p1");
+    keys["space"] = true;
+    return;
+  }
   const p1Blocked = matchEnded
                     || performance.now() < p1FrozenUntil
                     || player.downT > 0 || player.stunT > 0
@@ -1263,6 +1417,8 @@ addEventListener("keydown", e => {
 });
 addEventListener("keyup", e => {
   const k = e.key === " " ? "space" : e.key.toLowerCase();
+  // 客户端 keyup 也只记录状态
+  if (typeof netMode !== "undefined" && netMode === "client") { keys[k] = false; return; }
   if (k === currentP1RasenKey()) releaseRasen();
   keys[k] = false;
 });
@@ -1349,6 +1505,8 @@ const player = {
   iceFrozenUntil: 0,     // 被雪王 4A 冻住的结束时刻
   shieldAmount: 0,       // 雪王冰甲护盾值（可吸伤）
   shieldExpiry: 0,       // 护盾到期时刻
+  substituteReady: 0,    // 替身术：下次可用时刻（冷却到期时间戳）
+  substituteTaps: [],    // 替身术：被控时最近平A 按键时间戳（双击判定用）
 };
 
 const LONG_PRESS_THRESHOLD = 20; // 超过即进入飞天模式
@@ -1365,6 +1523,101 @@ function isOpponentFrozen() {
 // 铜锣烧盾激活中
 function isShieldActive() {
   return performance.now() < shieldActiveUntil;
+}
+
+// ─────────── 替身术：被控时双击平A 解除所有控制，冷却 10s ───────────
+const SUBSTITUTE_COOLDOWN = 10000;
+const SUBSTITUTE_TAP_WINDOW = 500;  // 0.5s 内连按两次视为双击
+const SUBSTITUTE_MIN_GAP = 60;      // 过滤浏览器 keyrepeat（>=60ms 才算真人再按一次）
+
+function isP1Controlled() {
+  const now = performance.now();
+  return player.downT > 0 || player.stunT > 0
+      || now < p1FrozenUntil
+      || now < (player.iceFrozenUntil || 0);
+}
+function isP2Controlled() {
+  const now = performance.now();
+  return p2.downT > 0 || p2.stunT > 0
+      || now < timeFrozenUntil
+      || now < (p2.iceFrozenUntil || 0);
+}
+
+// 记录一次"被控时按平A"。返回 true 表示本次双击成功解控
+function registerSubstituteTap(entity, side) {
+  const now = performance.now();
+  if (now < (entity.substituteReady || 0)) {
+    // 冷却中：弹一条提示，告诉玩家替身还没恢复
+    damageTexts.push({
+      x: entity.x, y: entity.y - 130,
+      vx: 0, vy: -1.6, life: 30, maxLife: 30,
+      text: "替身 冷却中", color: "#cccccc", size: 14, crit: false,
+    });
+    return false;
+  }
+  const controlled = side === "p1" ? isP1Controlled() : isP2Controlled();
+  if (!controlled) return false;
+  const taps = (entity.substituteTaps || []).filter(t => now - t < SUBSTITUTE_TAP_WINDOW);
+  if (taps.length && now - taps[taps.length - 1] < SUBSTITUTE_MIN_GAP) return false;
+  taps.push(now);
+  entity.substituteTaps = taps;
+  if (taps.length < 2) {
+    // 首次轻提示：让玩家知道"按对了，再按一下"
+    spawnParticles(entity.x, entity.y - 60, "#fff6a6", 4);
+    return false;
+  }
+  // 双击成功：清空所有控制 + 短无敌 + 进冷却
+  entity.stunT = 0;
+  entity.downT = 0;
+  entity.iceFrozenUntil = 0;
+  if (side === "p1") p1FrozenUntil = 0;
+  else timeFrozenUntil = 0;
+  entity.invincibleUntil = Math.max(entity.invincibleUntil || 0, now + 500);
+  entity.substituteReady = now + SUBSTITUTE_COOLDOWN;
+  entity.substituteTaps = [];
+  spawnSubstituteVFX(entity);
+  return true;
+}
+
+// 替身解控 VFX：一团白烟 + "替 身!" 飘字
+function spawnSubstituteVFX(entity) {
+  const cx = entity.x, cy = entity.y - 40;
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    particles.push({
+      x: cx + Math.cos(a) * 18, y: cy + Math.sin(a) * 18,
+      vx: Math.cos(a) * 4, vy: Math.sin(a) * 4 - 1.2,
+      life: 42, color: "#f2ecd8", size: 7 + Math.random() * 4,
+      smoke: true,
+    });
+  }
+  damageTexts.push({
+    x: entity.x, y: entity.y - 110,
+    vx: 0, vy: -2.4, life: 55, maxLife: 55,
+    text: "替 身!", color: "#ffee66", size: 28, crit: true,
+  });
+  hitStopT = Math.max(hitStopT, 4);
+}
+
+// 头顶提示：被控时显示 "双击平A 替身" / 冷却中则显示剩余秒数
+function drawSubstituteHint(entity, side) {
+  const controlled = side === "p1" ? isP1Controlled() : isP2Controlled();
+  if (!controlled) return;
+  const now = performance.now();
+  const onCd = now < (entity.substituteReady || 0);
+  const text = onCd
+    ? `替身 CD ${((entity.substituteReady - now) / 1000).toFixed(1)}s`
+    : (side === "p1" ? "双击 Space 替身!" : "双击 ↓ 替身!");
+  const color = onCd ? "#aaaaaa" : "#ffdd66";
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "900 13px -apple-system, 'PingFang SC', sans-serif";
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#000";
+  ctx.strokeText(text, entity.x, entity.y - 168);
+  ctx.fillStyle = color;
+  ctx.fillText(text, entity.x, entity.y - 168);
+  ctx.restore();
 }
 
 // 对玩家造成伤害（为 PVP 预留统一入口）——无敌 / 盾减伤 90% 都在这里处理
@@ -1463,6 +1716,8 @@ const p2 = {
   // 雪王
   arcT: 0, arcHit: false, iceFrozenUntil: 0,
   shieldAmount: 0, shieldExpiry: 0,
+  // 替身术
+  substituteReady: 0, substituteTaps: [],
 };
 
 // dummy 是共用引用，训练=baseDummy / PVP=p2
@@ -3108,6 +3363,7 @@ function resetRound() {
   p2.arcT = 0; p2.arcHit = false; p2.skyDropT = 0; p2.flyUntil = 0; p2.flyNextHail = 0;
   p2.iceFrozenUntil = 0;
   p2.shieldAmount = 0; p2.shieldExpiry = 0;
+  p2.substituteReady = 0; p2.substituteTaps = [];
   p2.icecreamEnd = 0; p2.icecreamNextTick = 0;
   p2.iceGate1 = null; p2.iceGate2 = null; p2.iceGateCooldown = 0;
   p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
@@ -3130,6 +3386,7 @@ function resetRound() {
   player.arcT = 0; player.arcHit = false; player.skyDropT = 0; player.flyUntil = 0; player.flyNextHail = 0;
   player.iceFrozenUntil = 0;
   player.shieldAmount = 0; player.shieldExpiry = 0;
+  player.substituteReady = 0; player.substituteTaps = [];
   player.icecreamEnd = 0; player.icecreamNextTick = 0;
   player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
   player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
@@ -3189,9 +3446,9 @@ function updateHint() {
   const hintEl = document.getElementById("hint");
   if (!hintEl) return;
   if (gameMode === "pvp") {
-    hintEl.innerHTML = `<b style="color:#ff8a30">P1</b>: A/D 移 · W 跳 · Space 平A · <b>1/2/3/4 技能</b>　｜　<b style="color:#4cc8ff">P2</b>: ← → 移 · ↑ 跳 · ↓ 普攻 · <b>J/K/I/L 技能</b>`;
+    hintEl.innerHTML = `<b style="color:#ff8a30">P1</b>: A/D 移 · W 跳 · Space 平A · <b>1/2/3/4 技能</b>　｜　<b style="color:#4cc8ff">P2</b>: ← → 移 · ↑ 跳 · ↓ 普攻 · <b>J/K/I/L 技能</b>　｜　<b style="color:#ffdd66">被控时双击平A=替身(CD10s)</b>`;
   } else {
-    hintEl.innerHTML = `A / D 移动 · W 跳跃 · <b style="color:#ffdd55">Space 平A</b> · <b>J K L U 技能</b>`;
+    hintEl.innerHTML = `A / D 移动 · W 跳跃 · <b style="color:#ffdd55">Space 平A</b> · <b>J K L U 技能</b>　｜　<b style="color:#ffdd66">被控时双击 Space=替身(CD10s)</b>`;
   }
 }
 
@@ -3265,6 +3522,10 @@ function flashSkill(idx, success) {
 }
 
 function update() {
+  // 联机: 客户端不跑游戏逻辑，只把本地键位打包发给房主
+  if (typeof netMode !== "undefined" && netMode === "client") { netSendClientInput(); return; }
+  // 联机: 房主把客户端的键位映射到 P2
+  if (typeof netMode !== "undefined" && netMode === "host") netApplyClientInputsToKeys();
   if (hitStopT > 0) { hitStopT--; return; }
   if (shakeT > 0) shakeT--;
 
@@ -3681,6 +3942,9 @@ function update() {
   const targetCamX = Math.max(0, Math.min(W_WORLD - W, midX - W / 2));
   camX += (targetCamX - camX) * 0.12;
   camX = Math.max(0, Math.min(W_WORLD - W, camX));
+
+  // 联机: 房主每帧广播状态给客户端
+  if (typeof netMode !== "undefined" && netMode === "host") netBroadcastState();
 }
 
 // 通用：绘制某个角色的普攻连招特效（石矛/回旋/电击枪/小拳拳）
@@ -4803,6 +5067,10 @@ function draw() {
   if (player.char === "xueking" && player.shieldAmount > 0) drawIceArmorVFX(player, player.shieldExpiry);
   if (gameMode === "pvp" && p2.char === "xueking" && p2.shieldAmount > 0) drawIceArmorVFX(p2, p2.shieldExpiry);
 
+  // 替身术头顶提示（被控时显示）
+  drawSubstituteHint(player, "p1");
+  if (gameMode === "pvp") drawSubstituteHint(p2, "p2");
+
   // 哆啦A梦手电筒（1s 前摇充能 + 2s 圆柱光束；霸体时附加光环）
   drawFlashlightVFX(player);
 
@@ -5736,11 +6004,18 @@ document.querySelectorAll("#coverSelect .kof-cell").forEach(el => {
     const grid = el.closest(".kof-grid");
     const side = grid.dataset.p;
     const char = el.dataset.char;
+    // 联机: 只允许操作自己那一侧
+    if (typeof netMode !== "undefined" && netMode) {
+      if (netMode === "host" && side !== "p1") return;
+      if (netMode === "client" && side !== "p2") return;
+    }
     if (side === "p1") pickedP1 = char;
     else pickedP2 = char;
     grid.querySelectorAll(".kof-cell").forEach(c => c.classList.remove("selected"));
     el.classList.add("selected");
     updateKofPortrait(side, char);
+    // 联机: 广播自己的选择给对方
+    if (typeof netMode !== "undefined" && netMode) netSend({ type: "pick", side, char });
   });
 });
 
@@ -5755,6 +6030,11 @@ document.getElementById("btnStart").addEventListener("click", () => {
 });
 
 document.getElementById("btnConfirmPick").addEventListener("click", () => {
+  // 联机模式: 只有房主能开打，并同时广播给客户端
+  if (typeof netMode !== "undefined" && netMode === "client") return;
+  if (typeof netMode !== "undefined" && netMode === "host") {
+    netSend({ type: "start", p1: pickedP1, p2: pickedP2 });
+  }
   startPVPMatch(pickedP1, pickedP2);
   hideCover();
   // 下次回到菜单时恢复默认页
@@ -5768,10 +6048,20 @@ document.getElementById("btnBackCover").addEventListener("click", () => {
 });
 
 document.getElementById("btnRematch").addEventListener("click", () => {
+  if (typeof netMode !== "undefined" && netMode === "client") return;
+  if (typeof netMode !== "undefined" && netMode === "host") {
+    netSend({ type: "start", p1: pickedP1, p2: pickedP2 });
+    startPVPMatch(pickedP1, pickedP2);
+    return;
+  }
   startPVPMatch();
 });
 document.getElementById("btnBackMenu").addEventListener("click", () => {
   matchEnded = false;
+  if (typeof netMode !== "undefined" && netMode) {
+    netSend({ type: "menu" });
+    netCleanup();
+  }
   document.getElementById("matchOverlay").classList.add("hidden");
   document.getElementById("cover").classList.remove("hidden");
   document.getElementById("charSwitcher").classList.remove("hidden-pvp");
@@ -5838,6 +6128,509 @@ document.querySelectorAll(".avatar-card").forEach(card => {
     }
     charPanel.classList.add("hidden");
   });
+});
+
+// =====================================================
+// ==========  联机对战 (WebRTC / PeerJS)  =============
+// =====================================================
+// netMode / netConn 用 var (hoist 到 undefined) 让前面 update/keydown 钩子能提前引用，避 TDZ
+var netMode = null;       // null | "host" | "client"
+var netConn = null;       // DataConnection
+let netPeer = null;       // PeerJS Peer 实例
+let netPeerId = null;     // 本机 peer id
+let netBroadcastLast = 0; // 上次广播/发送时刻
+const NET_SEND_RATE_MS = 33; // ~30Hz 状态同步，权衡带宽和流畅度
+let netCurClientInput = { left:false, right:false, up:false, attack:false, s0:false, s1:false, s2:false, s3:false };
+let netPrevClientInput = { ...netCurClientInput };
+let netPrevMatchEnded = false;
+
+function netSetStatus(text, cls="") {
+  const el = document.getElementById("onlineStatus");
+  if (!el) return;
+  el.textContent = text;
+  el.className = "online-status " + cls;
+}
+function netSetIndicator(text, color="#66ff99") {
+  const el = document.getElementById("netIndicator");
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = color;
+  el.classList.add("show");
+}
+function netHideIndicator() {
+  const el = document.getElementById("netIndicator");
+  if (el) el.classList.remove("show");
+}
+
+function netInitPeer() {
+  if (netPeer && !netPeer.destroyed) return Promise.resolve(netPeer);
+  return new Promise((resolve, reject) => {
+    if (typeof Peer === "undefined") {
+      netSetStatus("PeerJS 未加载，请刷新", "error");
+      reject(new Error("peerjs missing"));
+      return;
+    }
+    let opened = false;
+    netPeer = new Peer(undefined, {
+      debug: 2,
+      config: {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:global.stun.twilio.com:3478" },
+        ]
+      }
+    });
+    netPeer.on("open", id => { opened = true; netPeerId = id; resolve(netPeer); });
+    netPeer.on("error", err => {
+      console.error("[peer error]", err.type, err);
+      if (!opened) {
+        netSetStatus("连接错误：" + (err.type || err.message || "未知"), "error");
+        reject(err);
+      } else {
+        netSetStatus("对端错误：" + (err.type || err.message || "未知"), "error");
+      }
+    });
+    netPeer.on("disconnected", () => {
+      console.log("[peer disconnected]");
+      try { netPeer.reconnect(); } catch(e){}
+    });
+  });
+}
+
+async function netCreateRoom() {
+  netMode = "host";
+  document.getElementById("btnCreateRoom").disabled = true;
+  document.getElementById("btnJoinRoom").disabled = true;
+  netSetStatus("正在获取房间码...", "");
+  try { await netInitPeer(); }
+  catch (e) {
+    netMode = null;
+    document.getElementById("btnCreateRoom").disabled = false;
+    document.getElementById("btnJoinRoom").disabled = false;
+    return;
+  }
+  document.getElementById("roomCodeText").textContent = netPeerId;
+  document.getElementById("roomCodeBox").style.display = "block";
+  netSetStatus("等待对手加入...（把房间码发给朋友）", "ok");
+  netSetIndicator("● 等待对手 (房主)", "#ffd91f");
+  netPeer.on("connection", conn => {
+    console.log("[netCreate] incoming connection from", conn.peer);
+    if (netConn && netConn.open) { try { conn.close(); } catch(e){} return; }
+    netConn = conn;
+    netSetupConn();
+  });
+  console.log("[netCreate] host ready, peer id =", netPeerId);
+}
+
+async function netJoinRoom(code) {
+  if (!code) { netSetStatus("请输入房间码", "error"); return; }
+  netMode = "client";
+  document.getElementById("btnCreateRoom").disabled = true;
+  document.getElementById("btnJoinRoom").disabled = true;
+  netSetStatus("正在连接房间...", "");
+  netSetIndicator("● 正在连接...", "#ffd91f");
+  try { await netInitPeer(); }
+  catch (e) {
+    netMode = null;
+    document.getElementById("btnCreateRoom").disabled = false;
+    document.getElementById("btnJoinRoom").disabled = false;
+    return;
+  }
+  console.log("[netJoin] initPeer done; myId=", netPeerId, "connecting to", code);
+  netConn = netPeer.connect(code, { reliable: true });
+  console.log("[netJoin] connect() returned, waiting open...");
+  netSetupConn();
+}
+
+function netSetupConn() {
+  console.log("[netSetupConn] wiring, peer=", netConn.peer);
+  netConn.on("open", () => {
+    console.log("[netSetupConn] DataConnection OPEN");
+    netSetStatus("已连接！进入选角...", "ok");
+    netSetIndicator("● 已连接 (" + (netMode === "host" ? "房主" : "加入者") + ")", "#66ff99");
+    netSend({ type: "hello", role: netMode, pick: (netMode === "host" ? pickedP1 : pickedP2) });
+    setTimeout(netGotoSelect, 400);
+  });
+  netConn.on("data", netOnPacket);
+  netConn.on("close", () => {
+    console.log("[netSetupConn] CLOSE");
+    netHandleDisconnect("对方已断开");
+  });
+  netConn.on("error", err => {
+    console.error("[conn err]", err);
+    netHandleDisconnect("连接错误: " + (err.type || err.message || "未知"));
+  });
+  netConn.on("iceStateChanged", s => console.log("[ice state]", s));
+}
+
+function netSend(obj) {
+  if (netConn && netConn.open) {
+    try { netConn.send(obj); } catch(e) { console.warn("send fail", e); }
+  }
+}
+
+function netGotoSelect() {
+  document.getElementById("coverOnline").classList.add("hidden");
+  document.getElementById("coverMain").classList.add("hidden");
+  document.getElementById("coverSelect").classList.remove("hidden");
+  netUpdateSelectUI();
+  // 初始化肖像
+  if (typeof updateKofPortrait === "function") {
+    updateKofPortrait("p1", pickedP1);
+    updateKofPortrait("p2", pickedP2);
+  }
+}
+
+function netUpdateSelectUI() {
+  const p1Grid = document.querySelector('.kof-grid[data-p="p1"]');
+  const p2Grid = document.querySelector('.kof-grid[data-p="p2"]');
+  const fightBtn = document.getElementById("btnConfirmPick");
+  if (netMode === "host") {
+    p2Grid.style.filter = "grayscale(0.4)";
+    p2Grid.style.opacity = "0.7";
+    fightBtn.disabled = false;
+    fightBtn.style.opacity = "";
+    fightBtn.querySelectorAll("span")[1].textContent = "F I G H T !";
+  } else if (netMode === "client") {
+    p1Grid.style.filter = "grayscale(0.4)";
+    p1Grid.style.opacity = "0.7";
+    fightBtn.disabled = true;
+    fightBtn.style.opacity = "0.5";
+    fightBtn.style.cursor = "not-allowed";
+    fightBtn.querySelectorAll("span")[1].textContent = "等 待 房 主 开 打";
+  }
+}
+
+function netOnPacket(data) {
+  if (!data || !data.type) return;
+  switch (data.type) {
+    case "hello":
+      if (data.pick) {
+        if (netMode === "host") pickedP2 = data.pick;
+        else pickedP1 = data.pick;
+        netApplyPickVisual();
+      }
+      break;
+    case "pick":
+      if (data.side === "p1") pickedP1 = data.char;
+      else pickedP2 = data.char;
+      netApplyPickVisual();
+      break;
+    case "start":
+      pickedP1 = data.p1; pickedP2 = data.p2;
+      document.getElementById("coverSelect").classList.add("hidden");
+      document.getElementById("coverMain").classList.remove("hidden");
+      startPVPMatch(pickedP1, pickedP2);
+      document.getElementById("cover").classList.add("hidden");
+      netSetIndicator("● " + (netMode === "host" ? "房主" : "加入者") + " · 联机中", "#66ff99");
+      break;
+    case "input":
+      netCurClientInput = {
+        left: !!data.left, right: !!data.right, up: !!data.up, attack: !!data.attack,
+        s0: !!data.s0, s1: !!data.s1, s2: !!data.s2, s3: !!data.s3,
+      };
+      break;
+    case "state":
+      netApplyState(data);
+      break;
+    case "menu":
+      netHandleDisconnect("房主已退出");
+      break;
+  }
+}
+
+function netApplyPickVisual() {
+  if (typeof updateKofPortrait === "function") {
+    updateKofPortrait("p1", pickedP1);
+    updateKofPortrait("p2", pickedP2);
+  }
+  document.querySelectorAll('.kof-grid[data-p="p1"] .kof-cell').forEach(c => {
+    c.classList.toggle("selected", c.dataset.char === pickedP1);
+  });
+  document.querySelectorAll('.kof-grid[data-p="p2"] .kof-cell').forEach(c => {
+    c.classList.toggle("selected", c.dataset.char === pickedP2);
+  });
+}
+
+function netHandleDisconnect(msg) {
+  netSetIndicator("● " + (msg || "已断开"), "#ff6677");
+  const wasMode = netMode;
+  netMode = null;
+  if (netConn) { try { netConn.close(); } catch(e){} netConn = null; }
+  if (netPeer) { try { netPeer.destroy(); } catch(e){} netPeer = null; }
+  setTimeout(() => {
+    netHideIndicator();
+    document.getElementById("matchOverlay").classList.add("hidden");
+    document.getElementById("coverOnline").classList.add("hidden");
+    document.getElementById("coverSelect").classList.add("hidden");
+    document.getElementById("coverMain").classList.remove("hidden");
+    document.getElementById("cover").classList.remove("hidden");
+    document.getElementById("charSwitcher").classList.remove("hidden-pvp");
+    document.getElementById("btnCreateRoom").disabled = false;
+    document.getElementById("btnJoinRoom").disabled = false;
+    document.getElementById("roomCodeBox").style.display = "none";
+    // 重置选角栏视觉
+    const p1Grid = document.querySelector('.kof-grid[data-p="p1"]');
+    const p2Grid = document.querySelector('.kof-grid[data-p="p2"]');
+    p1Grid.style.filter = p2Grid.style.filter = "";
+    p1Grid.style.opacity = p2Grid.style.opacity = "";
+    const fightBtn = document.getElementById("btnConfirmPick");
+    fightBtn.disabled = false;
+    fightBtn.style.opacity = fightBtn.style.cursor = "";
+    fightBtn.querySelectorAll("span")[1].textContent = "F I G H T !";
+    matchEnded = true;
+    // 清 keys 避免键位残留
+    for (const k in keys) keys[k] = false;
+  }, 1200);
+}
+
+function netCleanup() {
+  netMode = null;
+  if (netConn) { try { netConn.close(); } catch(e){} netConn = null; }
+  if (netPeer) { try { netPeer.destroy(); } catch(e){} netPeer = null; }
+  netHideIndicator();
+  document.getElementById("btnCreateRoom").disabled = false;
+  document.getElementById("btnJoinRoom").disabled = false;
+  document.getElementById("roomCodeBox").style.display = "none";
+  const p1Grid = document.querySelector('.kof-grid[data-p="p1"]');
+  const p2Grid = document.querySelector('.kof-grid[data-p="p2"]');
+  if (p1Grid) { p1Grid.style.filter = ""; p1Grid.style.opacity = ""; }
+  if (p2Grid) { p2Grid.style.filter = ""; p2Grid.style.opacity = ""; }
+  const fightBtn = document.getElementById("btnConfirmPick");
+  if (fightBtn) {
+    fightBtn.disabled = false;
+    fightBtn.style.opacity = fightBtn.style.cursor = "";
+    const spans = fightBtn.querySelectorAll("span");
+    if (spans[1]) spans[1].textContent = "F I G H T !";
+  }
+}
+
+// ===== 状态序列化 (房主发) / 反序列化 (客户端收) =====
+const NET_ENTITY_FIELDS = [
+  "char","x","y","vx","vy","w","h","facing","hp","maxHp","onGround","wasOnGround",
+  "walkT","landT","blinkT","flipT",
+  "atkT","atkType","atkHit","comboStage","comboWindow",
+  "slashT","teleportT","teleportFromX",
+  "rasenCharging","rasenChargeT","rasenThrowT","rasenDashT",
+  "aerialStart","aerialDuration","aerialShotsLeft","sealT",
+  "flashlightStart","flashlightEnd","flashlightLastTick","invincibleUntil",
+  "spearT","spinT","spinLastTick","punchRushT","thunderT",
+  "arcT","arcHit","skyDropT",
+  "hitFlash","stunT","downT","shakeT",
+  "iceFrozenUntil","shieldAmount","shieldExpiry",
+  "icecreamEnd","icecreamNextTick",
+  "iceGate1","iceGate2","iceGateCooldown",
+  "hailStormEnd","hailStormX","hailNextTick","slowUntil","dmgDebuffUntil","narutoBuffUntil",
+  "flyUntil","flyNextHail","cdPenalty",
+];
+// 绝对时间戳字段（需要加上时钟偏移）
+const NET_TIMER_FIELDS = new Set([
+  "flashlightStart","flashlightEnd","flashlightLastTick","invincibleUntil",
+  "aerialStart","iceFrozenUntil","shieldExpiry",
+  "spinLastTick",
+  "icecreamEnd","icecreamNextTick","iceGateCooldown",
+  "hailStormEnd","hailNextTick","slowUntil","dmgDebuffUntil","narutoBuffUntil",
+  "flyUntil","flyNextHail",
+]);
+
+function netPackEntity(o) {
+  const r = {};
+  for (const k of NET_ENTITY_FIELDS) if (k in o) r[k] = o[k];
+  if (o.skills) r._skills = o.skills.map(s => ({ ready: s.ready, cd: s.cd, name: s.name, key: s.key, icon: s.icon }));
+  return r;
+}
+
+function netSerializeState() {
+  const now = performance.now();
+  return {
+    type: "state",
+    hostNow: now,
+    player: netPackEntity(player),
+    p2: netPackEntity(p2),
+    projectiles: projectiles.slice(),
+    clones: clones.slice(),
+    damageTexts: damageTexts.slice(),
+    rasenBalls: rasenBalls.slice(),
+    fogClouds: fogClouds.map(f => { const c = {...f}; c.hit = []; return c; }),
+    doors: doors.slice(),
+    timeFrozenUntil, p1FrozenUntil, shieldActiveUntil, p2ShieldUntil,
+    matchEnded, winner, p1Wins, p2Wins,
+    camX, hitStopT, shakeT,
+    gameMode,
+    skillsReady: skills.map(s => s.ready),
+  };
+}
+
+function netApplyState(data) {
+  if (!data.player || !data.p2) return;
+  const recvNow = performance.now();
+  const offset = recvNow - data.hostNow;
+
+  const applyTimers = (obj) => {
+    for (const k in obj) {
+      if (NET_TIMER_FIELDS.has(k) && typeof obj[k] === "number" && obj[k] !== 0) {
+        obj[k] = obj[k] + offset;
+      }
+    }
+  };
+  applyTimers(data.player);
+  applyTimers(data.p2);
+
+  // 更新局前 / 局后切换状态（用于客户端显示胜利覆盖）
+  const prevMatchEnded = matchEnded;
+
+  // 角色属性
+  Object.assign(player, data.player);
+  Object.assign(p2, data.p2);
+  if (data.player._skills) {
+    player.skills = data.player._skills.map(s => ({ ...s }));
+  }
+  if (data.p2._skills) {
+    p2.skills = data.p2._skills.map(s => ({ ...s }));
+  }
+  // skills 是单独的数组（用于 P1 技能栏显示 CD）
+  if (data.skillsReady && skills && skills.length) {
+    for (let i = 0; i < skills.length && i < data.skillsReady.length; i++) {
+      skills[i].ready = data.skillsReady[i];
+    }
+  }
+  // 保持 dummy === p2 的引用
+  if (data.gameMode === "pvp") dummy = p2;
+
+  // 数组 (就地替换，避免 draw 引用失效)
+  projectiles.length = 0; projectiles.push(...data.projectiles);
+  clones.length = 0;      clones.push(...data.clones);
+  damageTexts.length = 0; damageTexts.push(...data.damageTexts);
+  rasenBalls.length = 0;  rasenBalls.push(...data.rasenBalls);
+  fogClouds.length = 0;   fogClouds.push(...data.fogClouds.map(f => ({ ...f, hit: new Set(f.hit || []) })));
+  doors.length = 0;       doors.push(...data.doors);
+
+  // 全局定时器 (绝对时间 → 加偏移)
+  timeFrozenUntil   = data.timeFrozenUntil   === 0 ? 0 : data.timeFrozenUntil   + offset;
+  p1FrozenUntil     = data.p1FrozenUntil     === 0 ? 0 : data.p1FrozenUntil     + offset;
+  shieldActiveUntil = data.shieldActiveUntil === 0 ? 0 : data.shieldActiveUntil + offset;
+  p2ShieldUntil     = data.p2ShieldUntil     === 0 ? 0 : data.p2ShieldUntil     + offset;
+
+  matchEnded = data.matchEnded;
+  winner = data.winner;
+  p1Wins = data.p1Wins;
+  p2Wins = data.p2Wins;
+  camX = data.camX;
+  hitStopT = data.hitStopT;
+  shakeT = data.shakeT;
+  gameMode = data.gameMode;
+
+  // HP 条 + 胜场圆点
+  document.getElementById("hp1").style.width = (player.hp / player.maxHp * 100) + "%";
+  document.getElementById("hpnum1").textContent = `${player.hp} / ${player.maxHp}`;
+  document.getElementById("hp2").style.width = (p2.hp / p2.maxHp * 100) + "%";
+  document.getElementById("hpnum2").textContent = `${p2.hp} / ${p2.maxHp}`;
+  if (typeof updateWinPips === "function") updateWinPips();
+  if (typeof updateSkillBarKeys === "function") updateSkillBarKeys();
+  if (typeof refreshShieldBar === "function") {
+    refreshShieldBar(player, "p1");
+    refreshShieldBar(p2, "p2");
+  }
+  if (typeof updateP2ComboIndicator === "function") updateP2ComboIndicator();
+
+  // 胜负 overlay: 客户端根据状态跳变显示 / 隐藏
+  if (netMode === "client") {
+    if (matchEnded && !prevMatchEnded) {
+      const overlay = document.getElementById("matchOverlay");
+      const title = document.getElementById("matchTitle");
+      const sub = document.getElementById("matchSub");
+      const buttons = document.querySelector('.match-buttons');
+      if (p1Wins >= WINS_TO_WIN || p2Wins >= WINS_TO_WIN) {
+        // 总决胜：客户端只看不能按
+        title.textContent = winner === "p1" ? "P1 总 决 胜!" : "P2 总 决 胜!";
+        sub.textContent = `${p1Wins} : ${p2Wins}　·　等 待 房 主 决 定`;
+        overlay.className = "overlay " + (winner === "p1" ? "win-p1" : "win-p2");
+        buttons.style.display = 'none';
+      } else {
+        title.textContent = winner === "p1" ? "P1 拿 下 本 局" : "P2 拿 下 本 局";
+        sub.textContent = `比 分 ${p1Wins} : ${p2Wins}　·　3 秒 后 进 入 下 一 局`;
+        overlay.className = "overlay " + (winner === "p1" ? "win-p1" : "win-p2");
+        buttons.style.display = 'none';
+      }
+      overlay.classList.remove("hidden");
+    } else if (!matchEnded && prevMatchEnded) {
+      document.getElementById("matchOverlay").classList.add("hidden");
+    }
+  }
+}
+
+// 房主: 把客户端的逻辑输入映射到 keys (这样已有 P2 update 逻辑照常工作)
+function netApplyClientInputsToKeys() {
+  const cur = netCurClientInput;
+  const prev = netPrevClientInput;
+  keys["arrowleft"]  = cur.left;
+  keys["arrowright"] = cur.right;
+  keys["arrowup"]    = cur.up;
+  keys["arrowdown"]  = cur.attack;
+  // 边沿触发
+  if (cur.attack && !prev.attack) handleP2Attack();
+  if (cur.s0 && !prev.s0) handleP2SkillKey(0);
+  if (cur.s1 && !prev.s1) handleP2SkillKey(1);
+  if (cur.s2 && !prev.s2) handleP2SkillKey(2);
+  if (cur.s3 && !prev.s3) handleP2SkillKey(3);
+  netPrevClientInput = { ...cur };
+}
+
+// 房主: 每帧广播状态 (限速 ~30Hz)
+function netBroadcastState() {
+  if (!netConn || !netConn.open) return;
+  const now = performance.now();
+  if (now - netBroadcastLast < NET_SEND_RATE_MS) return;
+  netBroadcastLast = now;
+  netSend(netSerializeState());
+}
+
+// 客户端: 每帧把本地键位打包发给房主
+let netInputSendLast = 0;
+function netSendClientInput() {
+  if (!netConn || !netConn.open) return;
+  const now = performance.now();
+  if (now - netInputSendLast < NET_SEND_RATE_MS) return;
+  netInputSendLast = now;
+  netSend({
+    type: "input",
+    left:   !!keys["a"],
+    right:  !!keys["d"],
+    up:     !!keys["w"],
+    attack: !!keys["space"],
+    s0:     !!keys["j"],
+    s1:     !!keys["k"],
+    s2:     !!keys["l"],
+    s3:     !!keys["u"],
+  });
+}
+
+// ===== UI 事件绑定 =====
+document.getElementById("btnOnline").addEventListener("click", () => {
+  document.getElementById("coverMain").classList.add("hidden");
+  document.getElementById("coverOnline").classList.remove("hidden");
+  netSetStatus("");
+  document.getElementById("roomCodeBox").style.display = "none";
+  document.getElementById("roomCodeInput").value = "";
+});
+document.getElementById("btnBackOnline").addEventListener("click", () => {
+  netCleanup();
+  document.getElementById("coverOnline").classList.add("hidden");
+  document.getElementById("coverMain").classList.remove("hidden");
+});
+document.getElementById("btnCreateRoom").addEventListener("click", netCreateRoom);
+document.getElementById("btnJoinRoom").addEventListener("click", () => {
+  const code = document.getElementById("roomCodeInput").value.trim();
+  netJoinRoom(code);
+});
+document.getElementById("btnCopyCode").addEventListener("click", async () => {
+  const code = document.getElementById("roomCodeText").textContent;
+  try {
+    await navigator.clipboard.writeText(code);
+    netSetStatus("已复制！把房间码发给朋友", "ok");
+  } catch (e) {
+    netSetStatus("复制失败，请手动长按选中复制", "error");
+  }
 });
 
 </script>
