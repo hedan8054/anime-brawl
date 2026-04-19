@@ -2631,13 +2631,14 @@ function updateEntityCombat(attacker, target, char) {
 }
 
 function handleDoraemonAttack(e = player) {
-  // 空中平A：下砸单段，强制落地；不走普通连招
+  // 空中平A：下砸单段，必须"砸到地"才判定；不走普通连招
   if (!e.onGround) {
-    e.atkT = 16;
+    // atkT 跨越整个下落 + 落地一点余量，避免高空按下时落地前窗口就结束
+    e.atkT = 60;
     e.atkType = 99;             // 99 = 下砸单段标记
     e.atkHit = false;
-    e.slamT = 24;               // 下砸持续帧
-    e.vy = Math.max(e.vy, 14);  // 快速下坠
+    e.slamT = 60;               // 下砸持续帧（与 atkT 对齐）
+    e.vy = 32;                  // 直接砸下去，不再只是"快一点"
     e.comboStage = 0;           // 落地后从 1A 重新起
     e.comboWindow = 0;
     return;
