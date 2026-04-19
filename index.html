@@ -1321,7 +1321,7 @@
   <h1>动 漫 战 斗</h1>
   <div id="stage">
     <canvas id="canvas" width="1440" height="480"></canvas>
-    <div class="hpbar left"><div class="fill" id="hp1" style="width:100%"></div><div class="shield" id="shield1"></div><div class="name"><span>鸣 人</span><span class="hpnum" id="hpnum1">10000 / 10000</span></div></div>
+    <div class="hpbar left"><div class="fill" id="hp1" style="width:100%"></div><div class="shield" id="shield1"></div><div class="name"><span>鸣 人</span><span class="hpnum" id="hpnum1">50000 / 50000</span></div></div>
     <div class="hpbar right"><div class="fill" id="hp2" style="width:100%"></div><div class="shield" id="shield2"></div><div class="name"><span>木 桩</span><span class="hpnum" id="hpnum2">20000 / 20000</span></div></div>
   </div>
   <div class="battle-hud">
@@ -1350,6 +1350,8 @@
     <b style="color:#4cc8ff">P2</b>: ← → 移 · ↑ 跳 · ↓ 普攻 · <b>1/2/3/4 技能</b>（PVP）
     　｜
     <b style="color:#ffdd66">被控时双击平A=替身(CD10s)</b>
+    　｜
+    <b style="color:#ff7a44">红温：受击叠层 → 4 层 ×2 伤害</b>
   </div>
 
   <!-- 胜负结算 -->
@@ -1371,7 +1373,7 @@ const W = canvas.width, H = canvas.height;   // 屏幕视口尺寸
 const W_WORLD = 2000;                         // 世界（地图）宽度
 let camX = 0;                                 // 摄像机 x 偏移（世界坐标，屏幕左边对应的世界 x）
 // 基础最大生命（每局开始重置用，避免雪王冰甲转永久 HP 残留到下一局）
-const BASE_MAX_HP = { player: 10000, p2: 10000, dummy: 20000 };
+const BASE_MAX_HP = { player: 50000, p2: 50000, dummy: 20000 };
 const GROUND = 400;
 const GRAVITY = 0.55;
 
@@ -1679,7 +1681,7 @@ const player = {
   x: 200, y: GROUND, vx: 0, vy: 0,
   w: 48, h: 80,
   facing: 1,
-  hp: 10000, maxHp: 10000,
+  hp: 50000, maxHp: 50000,
   onGround: true,
   slashT: 0,       // 雷电斩动画计时
   teleportT: 0,    // 瞬移残影计时
@@ -1982,7 +1984,7 @@ const p2 = {
   x: 760, y: GROUND, vx: 0, vy: 0,
   w: 60, h: 90,
   facing: -1,
-  hp: 10000, maxHp: 10000,
+  hp: 50000, maxHp: 50000,
   onGround: true,
   wasOnGround: true,
   walkT: 0, landT: 0, blinkT: 90, flipT: 0,
@@ -3428,6 +3430,242 @@ function drawDoraemon(state, attacking, tint) {
   ctx.restore();
 }
 
+// ===== 红温（zjy）=====
+// 少先队员造型：红领巾 + 蓝上衣 + 深蓝裤 + 黑发。脸色随 rageStacks 越来越红，满层冒气
+function drawZjy(state, attacking, tint) {
+  state = state || player;
+  const x = state.x, y = state.y, facing = state.facing;
+  const moving = Math.abs(state.vx || 0) > 0.15 && state.onGround !== false && !attacking;
+  const jumping = state.onGround === false && !attacking;
+  const walkT = state.walkT || 0;
+  const landT = state.landT || 0;
+  const now = performance.now();
+  const stacks = state.rageStacks || 0;
+
+  // 脸色：0=正常，1=微红，2=明显红，3=很红，4=爆红
+  const facePalette = ["#ffd8b8", "#ffb090", "#ff8266", "#f25a3a", "#d93020"];
+  const faceColor = tint || facePalette[Math.min(stacks, 4)];
+  const shirt = "#3f7fd8";
+  const shirtDk = "#2a5aaa";
+  const collar = "#ffffff";
+  const scarf = "#e03030";
+  const pants = "#1a2e5a";
+  const shoes = "#f0f0f0";
+  const hair = "#1a1412";
+
+  ctx.save();
+  ctx.translate(x, y);
+  if (landT > 0) {
+    const k = landT / 8;
+    ctx.scale(1 + k * 0.15, 1 - k * 0.2);
+  }
+  ctx.scale(facing, 1);
+
+  const idleBob = Math.sin(now / 500) * 1.0;
+  const walkBob = moving ? Math.abs(Math.sin(walkT * 2)) * 2.2 : 0;
+  const bodyY   = moving ? -walkBob : idleBob;
+  const legSwing = moving ? Math.sin(walkT) * 0.38 : 0;
+
+  function drawLeg(hipX, swing) {
+    ctx.save();
+    ctx.translate(hipX, -4 + bodyY);
+    ctx.rotate(jumping ? -0.3 : swing);
+    ctx.fillStyle = pants;
+    ctx.fillRect(-4, 0, 8, 22);
+    ctx.fillStyle = shoes;
+    ctx.fillRect(-5, 20, 11, 6);
+    ctx.fillStyle = "#cccccc";
+    ctx.fillRect(-5, 25, 11, 1);
+    ctx.restore();
+  }
+  drawLeg(-5, legSwing);
+  drawLeg(5, -legSwing);
+
+  ctx.save();
+  ctx.translate(0, bodyY);
+  ctx.fillStyle = shirt;
+  ctx.beginPath();
+  ctx.moveTo(-13, -4);
+  ctx.lineTo(13, -4);
+  ctx.lineTo(11, -34);
+  ctx.lineTo(-11, -34);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = shirtDk;
+  ctx.fillRect(-13, -8, 26, 4);
+
+  ctx.fillStyle = collar;
+  ctx.beginPath();
+  ctx.moveTo(-11, -34);
+  ctx.lineTo(-4, -30);
+  ctx.lineTo(-2, -33);
+  ctx.lineTo(2, -33);
+  ctx.lineTo(4, -30);
+  ctx.lineTo(11, -34);
+  ctx.lineTo(11, -30);
+  ctx.lineTo(-11, -30);
+  ctx.closePath();
+  ctx.fill();
+
+  // 红领巾：领口大三角 + 胸前打的结 + 一长一短两条飘带（清晰可辨）
+  ctx.fillStyle = scarf;
+  // 后领横带（脖子绕一圈）
+  ctx.beginPath();
+  ctx.moveTo(-12, -35);
+  ctx.lineTo(12, -35);
+  ctx.lineTo(11, -31);
+  ctx.lineTo(-11, -31);
+  ctx.closePath();
+  ctx.fill();
+  // 胸前大 V 形领巾（最显眼的部分）
+  ctx.beginPath();
+  ctx.moveTo(-12, -33);
+  ctx.lineTo(0, -16);
+  ctx.lineTo(12, -33);
+  ctx.lineTo(8, -33);
+  ctx.lineTo(0, -22);
+  ctx.lineTo(-8, -33);
+  ctx.closePath();
+  ctx.fill();
+  // 中央打结（深色小方）
+  ctx.fillStyle = "#9a1010";
+  ctx.fillRect(-2, -22, 4, 3);
+  // 飘带尾巴（朝身后甩，深色，飘动）
+  ctx.fillStyle = scarf;
+  const scarfSway = Math.sin(now / 180) * 2;
+  ctx.beginPath();
+  ctx.moveTo(-9, -30);
+  ctx.lineTo(-18 - scarfSway, -26 + scarfSway);
+  ctx.lineTo(-16 - scarfSway, -22 + scarfSway);
+  ctx.lineTo(-7, -27);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(8, -22, 1.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  const armFwd = attacking ? 0.95 : (moving ? Math.sin(walkT) * 0.25 : 0);
+  ctx.save();
+  ctx.translate(8, -30);
+  ctx.rotate(armFwd);
+  ctx.fillStyle = shirt;
+  ctx.fillRect(-3, 0, 6, 12);
+  ctx.fillStyle = faceColor;
+  ctx.fillRect(-3, 12, 6, 8);
+  ctx.beginPath();
+  ctx.arc(0, 22, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = shirt;
+  ctx.fillRect(-11, -30, 6, 12);
+  ctx.fillStyle = faceColor;
+  ctx.fillRect(-11, -18, 6, 8);
+
+  ctx.fillStyle = faceColor;
+  ctx.beginPath();
+  ctx.arc(0, -42, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 黑发：圆乎乎的"锅盖头"（小学生短发，刻意避开任何尖刺感）
+  ctx.fillStyle = hair;
+  ctx.beginPath();
+  // 上半圆头盖 + 平直额前刘海
+  ctx.arc(0, -44, 11.5, Math.PI, 0);
+  ctx.lineTo(11, -39);   // 右耳上方
+  ctx.lineTo(7,  -38);   // 鬓角
+  ctx.lineTo(5,  -40);   // 刘海下沿（横平直）
+  ctx.lineTo(-5, -40);
+  ctx.lineTo(-7, -38);
+  ctx.lineTo(-11, -39);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#111";
+  const eyeTilt = stacks * 0.4;
+  ctx.save(); ctx.translate(-4, -42); ctx.rotate(-eyeTilt * 0.3);
+  ctx.fillRect(-1.5, -1, 3, 2);
+  ctx.restore();
+  ctx.save(); ctx.translate(4, -42); ctx.rotate(eyeTilt * 0.3);
+  ctx.fillRect(-1.5, -1, 3, 2);
+  ctx.restore();
+
+  if (stacks >= 2) {
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-7, -46); ctx.lineTo(-2, -45);
+    ctx.moveTo(2, -45);  ctx.lineTo(7, -46);
+    ctx.stroke();
+  }
+
+  if (stacks >= 3) {
+    ctx.fillStyle = "#660000";
+    ctx.beginPath();
+    ctx.ellipse(0, -37, 3, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-2, -38); ctx.lineTo(2, -38);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+  ctx.restore();
+
+  // 气急败坏的怒气波浪（≥2 层时出现，世界坐标）
+  if (stacks >= 2) {
+    const steamCount = stacks - 1;
+    for (let i = 0; i < steamCount; i++) {
+      const phase = (now / 400 + i * 0.9) % 1;
+      const sx = x + (i - (steamCount - 1) / 2) * 8;
+      const sy = y - 58 - phase * 18;
+      ctx.save();
+      ctx.globalAlpha = 1 - phase;
+      ctx.strokeStyle = "#ff5a30";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(sx + 3, sy - 3, sx, sy - 6);
+      ctx.quadraticCurveTo(sx - 3, sy - 9, sx, sy - 12);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // 头顶四格火苗指示
+  if (stacks > 0 || (state.rageGainFlash || 0) > 0) {
+    const cx = x, cy = y - 112;
+    for (let i = 0; i < RAGE_MAX; i++) {
+      const lit = i < stacks;
+      const flashK = (state.rageGainFlash || 0) > 0 && i === stacks - 1 ? (state.rageGainFlash / 28) : 0;
+      const px = cx + (i - (RAGE_MAX - 1) / 2) * 10;
+      ctx.save();
+      ctx.translate(px, cy);
+      ctx.fillStyle = lit ? "#ff5a30" : "rgba(120,120,120,0.35)";
+      ctx.beginPath();
+      ctx.moveTo(0, 4);
+      ctx.quadraticCurveTo(-4, -2, -2, -6);
+      ctx.quadraticCurveTo(0, -3, 2, -6);
+      ctx.quadraticCurveTo(4, -2, 0, 4);
+      ctx.closePath();
+      ctx.fill();
+      if (lit) { ctx.strokeStyle = "#ffdd33"; ctx.lineWidth = 0.8; ctx.stroke(); }
+      if (flashK > 0) {
+        ctx.globalAlpha = flashK;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 6 + (1 - flashK) * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+}
+
 // ===== 雪王 =====
 function drawSnowKing(state, attacking, tint) {
   state = state || player;
@@ -3831,7 +4069,7 @@ function showSeriesEnd() {
   const sub = document.getElementById("matchSub");
   const buttons = document.querySelector('.match-buttons');
   buttons.style.display = '';
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : "雪 王";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "红 温";
   if (winner === "draw") {
     title.textContent = "D R A W";
     sub.textContent = `平 局　·　${p1Wins} : ${p2Wins}`;
@@ -3867,6 +4105,7 @@ function resetRound() {
   p2.iceFrozenUntil = 0;
   p2.shieldAmount = 0; p2.shieldExpiry = 0;
   p2.substituteReady = 0; p2.substituteTaps = []; p2.substituteUntil = 0;
+  p2.rageStacks = 0; p2.rageGainFlash = 0; p2.rageBurstUntil = 0;
   p2.icecreamEnd = 0; p2.icecreamNextTick = 0;
   p2.iceGate1 = null; p2.iceGate2 = null; p2.iceGateCooldown = 0;
   p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
@@ -3890,6 +4129,7 @@ function resetRound() {
   player.iceFrozenUntil = 0;
   player.shieldAmount = 0; player.shieldExpiry = 0;
   player.substituteReady = 0; player.substituteTaps = []; player.substituteUntil = 0;
+  player.rageStacks = 0; player.rageGainFlash = 0; player.rageBurstUntil = 0;
   player.icecreamEnd = 0; player.icecreamNextTick = 0;
   player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
   player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
@@ -3968,7 +4208,7 @@ function updateWinPips() {
   };
   const p1NameEl = document.querySelector('.hpbar.left .name > span');
   const p2NameEl = document.querySelector('.hpbar.right .name > span');
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : "雪 王";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : "红 温";
   const p1Name = nameOf(selectedChar);
   if (gameMode === "pvp") {
     p1NameEl.innerHTML = p1Name + pipsHtml(p1Wins);
@@ -4038,6 +4278,7 @@ function update() {
   // P1 状态衰减（被 P2 技能压制：倒地/眩晕）
   if (player.stunT > 0) player.stunT--;
   if (player.downT > 0) player.downT--;
+  if (player.rageGainFlash > 0) player.rageGainFlash--;
   const p1Disabled = player.downT > 0 || player.stunT > 0
                     || performance.now() < p1FrozenUntil
                     || performance.now() < (player.iceFrozenUntil || 0)
@@ -4285,6 +4526,7 @@ function update() {
   if (dummy.hitFlash > 0) dummy.hitFlash--;
   if (dummy.stunT > 0) dummy.stunT--;
   if (dummy.downT > 0) dummy.downT--;
+  if ((dummy.rageGainFlash || 0) > 0) dummy.rageGainFlash--;
 
   // === PVP: 玩家 2 操作 / 物理 / 攻击 ===
   if (gameMode === "pvp") {
@@ -5508,6 +5750,8 @@ function draw() {
     drawDoraemon(player, player.atkT > 0 || flashOn);
   } else if (selectedChar === "xueking") {
     drawSnowKing(player, player.atkT > 0 || player.arcT > 0);
+  } else if (selectedChar === "zjy") {
+    drawZjy(player, player.atkT > 0);
   } else {
     drawNinja(player.x, player.y, player.facing, player.slashT > 0 || player.atkT > 0);
   }
@@ -5746,6 +5990,8 @@ function draw() {
       drawDoraemon(p2, p2.atkT > 0 || performance.now() < p2.flashlightEnd);
     } else if (p2.char === "xueking") {
       drawSnowKing(p2, p2.atkT > 0 || p2.arcT > 0);
+    } else if (p2.char === "zjy") {
+      drawZjy(p2, p2.atkT > 0);
     } else {
       drawNinja(p2.x, p2.y, p2.facing, p2.atkT > 0, undefined, p2);
     }
@@ -6419,6 +6665,7 @@ function buildKofPortraitSVG(char) {
     naruto:   { bg1: "#ff8a30", bg2: "#8a1a08", ray: "#ffdd55", nameColor: "#ffdd55" },
     doraemon: { bg1: "#4cc8ff", bg2: "#0a3a6a", ray: "#ffffff", nameColor: "#ffeecc" },
     xueking:  { bg1: "#7dd3fc", bg2: "#0c4a6e", ray: "#e0f2fe", nameColor: "#e0f2fe" },
+    zjy:      { bg1: "#ff5a30", bg2: "#5a0808", ray: "#ffaa33", nameColor: "#ffdd66" },
   };
   const t = themes[char];
   const innerXueking = `
@@ -6466,7 +6713,44 @@ function buildKofPortraitSVG(char) {
       <circle cx="25" cy="-35" r="2" fill="#cfe2ef"/>
     </g>
   `;
-  const innerSVG = char === "xueking" ? innerXueking : (char === "naruto" ? `
+  const innerZjy = `
+    <!-- 红温（上半身）少先队员 -->
+    <g transform="translate(100 165) scale(4.6)">
+      <!-- 深蓝裤顶 -->
+      <rect x="-16" y="26" width="32" height="14" fill="#1a2e5a"/>
+      <!-- 蓝上衣 -->
+      <path d="M-18,28 L-14,-4 L14,-4 L18,28 Z" fill="#3f7fd8"/>
+      <!-- 白领 -->
+      <polygon points="-14,-4 -4,0 -2,-3 2,-3 4,0 14,-4 14,-1 -14,-1" fill="#ffffff"/>
+      <!-- 红领巾（V 形 + 飘扬一角）-->
+      <polygon points="-10,-2 0,12 10,-2 6,0 0,8 -6,0" fill="#e03030"/>
+      <polygon points="-8,0 -18,4 -14,-2" fill="#e03030"/>
+      <!-- 校徽 -->
+      <circle cx="10" cy="8" r="1.8" fill="#ffffff"/>
+      <!-- 头（红温：明显泛红）-->
+      <circle cx="0" cy="-16" r="13" fill="#f25a3a"/>
+      <!-- 刘海 -->
+      <path d="M-13,-20 L-10,-28 L-6,-24 L-3,-30 L0,-26 L3,-30 L7,-24 L11,-28 L13,-20 L13,-16 L-13,-16 Z" fill="#1a1412"/>
+      <!-- 眼睛（怒目）-->
+      <path d="M-7,-18 L-3,-16" stroke="#111" stroke-width="1.6" fill="none"/>
+      <path d="M3,-16 L7,-18" stroke="#111" stroke-width="1.6" fill="none"/>
+      <!-- 眉头紧锁 -->
+      <path d="M-8,-22 L-3,-20" stroke="#111" stroke-width="1.4" fill="none"/>
+      <path d="M3,-20 L8,-22" stroke="#111" stroke-width="1.4" fill="none"/>
+      <!-- 张口吼 -->
+      <ellipse cx="0" cy="-10" rx="3" ry="2" fill="#660000"/>
+      <!-- 气急波浪 -->
+      <g stroke="#ff5a30" stroke-width="1.6" fill="none">
+        <path d="M-10,-32 Q-7,-34 -10,-36 Q-13,-38 -10,-40"/>
+        <path d="M10,-32 Q13,-34 10,-36 Q7,-38 10,-40"/>
+        <path d="M0,-34 Q3,-36 0,-38 Q-3,-40 0,-42"/>
+      </g>
+      <!-- 紧握拳 -->
+      <circle cx="20" cy="10" r="4.5" fill="#f25a3a"/>
+      <circle cx="-20" cy="10" r="4.5" fill="#f25a3a"/>
+    </g>
+  `;
+  const innerSVG = char === "zjy" ? innerZjy : (char === "xueking" ? innerXueking : (char === "naruto" ? `
     <!-- 鸣人（上半身）-->
     <g transform="translate(100 150) scale(4.4)">
       <!-- 脖子 -->
@@ -6536,7 +6820,7 @@ function buildKofPortraitSVG(char) {
       <circle cx="-26" cy="6" r="6" fill="#fff"/>
       <circle cx="-28" cy="4" r="6" fill="#30a8e8"/>
     </g>
-  `);
+  `));
   // 背景光芒（16 道辐射）
   let rays = "";
   for (let i = 0; i < 16; i++) {
@@ -6568,8 +6852,8 @@ function updateKofPortrait(side, char) {
   // 清掉除了四个角标的旧内容
   [...wrap.querySelectorAll("svg")].forEach(n => n.remove());
   wrap.insertAdjacentHTML("afterbegin", buildKofPortraitSVG(char));
-  const enName = char === "naruto" ? "NARUTO" : char === "xueking" ? "SNOW KING" : "DORAEMON";
-  const cnName = char === "naruto" ? "鸣 人" : char === "xueking" ? "雪 王" : "哆 啦 A 梦";
+  const enName = char === "naruto" ? "NARUTO" : char === "xueking" ? "SNOW KING" : char === "zjy" ? "RED FURY" : "DORAEMON";
+  const cnName = char === "naruto" ? "鸣 人" : char === "xueking" ? "雪 王" : char === "zjy" ? "红 温" : "哆 啦 A 梦";
   document.getElementById(side === "p1" ? "kofNameEnP1" : "kofNameEnP2").textContent = enName;
   document.getElementById(side === "p1" ? "kofNameCnP1" : "kofNameCnP2").textContent = cnName;
 }
@@ -6677,8 +6961,8 @@ function refreshAvatarDisplay() {
   const card = document.querySelector(`.avatar-card[data-char="${selectedChar}"]`);
   currentSvg.innerHTML = card.querySelector("svg").innerHTML;
   const btn = document.getElementById("avatarBtn");
-  const bgMap  = { naruto: "#d96518", doraemon: "#1d7db8", xueking: "#5aa8d8" };
-  const brdMap = { naruto: "#ffdd55", doraemon: "#4cc8ff", xueking: "#c8f0ff" };
+  const bgMap  = { naruto: "#d96518", doraemon: "#1d7db8", xueking: "#5aa8d8", zjy: "#b32020" };
+  const brdMap = { naruto: "#ffdd55", doraemon: "#4cc8ff", xueking: "#c8f0ff", zjy: "#ff7a44" };
   btn.style.background = bgMap[selectedChar] || "#1d7db8";
   btn.style.borderColor = brdMap[selectedChar] || "#fff";
   // 更新卡片选中态
