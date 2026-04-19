@@ -1446,6 +1446,9 @@ function handleP2SkillKey(idx) {
   if (roundCountdownActive()) return;  // 开局 3-2-1 禁操作
   if (performance.now() < timeFrozenUntil) return;
   if (performance.now() < (p2.iceFrozenUntil || 0)) return;
+  // 被控（眩晕 / 倒地）时禁用技能 —— 补齐原先缺失的 stun/down 判定
+  // 含张鸡块「我去你的!」的锁定，K 施法时每帧刷新 stunT（见 updateEntityCombat）
+  if (p2.stunT > 0 || p2.downT > 0) return;
   const s = p2.skills[idx];
   if (!s) return;
   const now = performance.now();
@@ -1919,6 +1922,16 @@ function registerSubstituteTap(entity, side) {
     });
     return false;
   }
+  // 张鸡块「我去你的!」锁定期间禁用替身（对面正在狂按你）
+  const smasher = side === "p1" ? p2 : player;
+  if (smasher && smasher.char === "zjy" && now < (smasher.smashUntil || 0)) {
+    damageTexts.push({
+      x: entity.x, y: entity.y - 130,
+      vx: 0, vy: -1.6, life: 30, maxLife: 30,
+      text: "被锁 无法替身", color: "#ff4422", size: 14, crit: false,
+    });
+    return false;
+  }
   if (now < (entity.substituteReady || 0)) {
     // 冷却中：弹一条提示，告诉玩家替身还没恢复
     damageTexts.push({
@@ -2385,6 +2398,13 @@ function updateEntityCombat(attacker, target, char) {
       // 张鸡块所有段平A 都撒红色粒子
       if (char === "zjy") spawnZjyHitParticles(target.x - attacker.facing * 16, target.y - 60, attacker.facing);
     }
+  }
+
+  // 张鸡块「我去你的!」锁定期间：每帧把目标 stunT 刷到至少 5，防止自然衰减
+  // （替身已在 registerSubstituteTap 单独 block；stunT 维持保证移动/普攻/技能都走常规 disabled 门）
+  if (char === "zjy" && performance.now() < (attacker.smashUntil || 0) && !isInSubstitute(target)) {
+    target.stunT = Math.max(target.stunT || 0, 5);
+    target.vx = 0;  // 吃按住的方向键避免漂移
   }
 
   // 张鸡块「我去你的!」窗口结束 → 把目标打上天
