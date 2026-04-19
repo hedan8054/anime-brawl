@@ -1018,6 +1018,37 @@
     color: #1a1040;
   }
   body.training-mode #btnNoCooldown { display: block; }
+
+  /* BGM 静音按钮（固定左下角） */
+  #btnBgm {
+    position: fixed;
+    left: 12px;
+    bottom: 12px;
+    z-index: 150;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(26, 16, 64, 0.7);
+    border: 1.5px solid rgba(154, 138, 255, 0.6);
+    color: #e8e8ff;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    backdrop-filter: blur(4px);
+    transition: background .15s, transform .1s;
+    font-family: inherit;
+    padding: 0;
+  }
+  #btnBgm:hover { background: rgba(90, 90, 255, 0.5); }
+  #btnBgm:active { transform: scale(0.9); }
+  #btnBgm.muted { opacity: 0.55; color: #888; }
+  /* 手机端挪到右上角，不挡移动按钮 */
+  @media (pointer: coarse), (hover: none) {
+    #btnBgm { left: auto; right: 12px; top: 40px; bottom: auto; width: 36px; height: 36px; font-size: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -1026,6 +1057,9 @@
 
   <!-- 训练模式：无冷却开关（只在训练模式可见） -->
   <button id="btnNoCooldown">⚡ 无 冷 却: 关</button>
+
+  <!-- BGM 静音按钮（始终可见） -->
+  <button id="btnBgm" title="背景音乐开关">🔊</button>
 
   <!-- 手机触屏控件（仅触屏设备显示）
        左下 T 字形方向键 + 右下王者荣耀风半圆形技能布局 -->
@@ -7940,6 +7974,143 @@ document.getElementById("btnTraining").addEventListener("click", () => {
   refreshAvatarDisplay();
   hideCover();
 });
+
+// =====================================================
+// ==========  背景音乐 (Web Audio 程序合成 chiptune)  ===
+// =====================================================
+// 8-bit 风格轻快循环旋律：方波主旋律 + 三角波低音
+// 零文件依赖，零版权问题；支持静音开关 + localStorage 记忆
+const BGM = (() => {
+  let ctx = null, masterGain = null;
+  let playing = false;
+  let muted = (localStorage.getItem("bgmMuted") === "1");
+  let timerId = null;
+
+  // MIDI 半音 → 频率
+  const mtof = n => 440 * Math.pow(2, (n - 69) / 12);
+
+  // 16 小节欢快循环旋律（MIDI 音高），C 大调，音阶琶音为主
+  // 1/8 音符单位；整首约 11 秒 loop
+  const MELODY = [
+    // 句 1: C 大三和弦上下行
+    72, 76, 79, 84,  79, 76, 72, 76,
+    // 句 2: A 小三和弦
+    81, 84, 88, 84,  81, 77, 81, 76,
+    // 句 3: F 大三和弦
+    77, 81, 84, 89,  84, 81, 77, 81,
+    // 句 4: G 大七 解决回 C
+    79, 83, 86, 89,  86, 83, 79, 72,
+    // 重复变奏
+    72, 76, 79, 84,  79, 76, 72, 79,
+    81, 84, 88, 91,  88, 84, 81, 84,
+    77, 81, 84, 89,  84, 81, 77, 72,
+    79, 74, 72, 74,  76, 77, 79, 72,
+  ];
+  const BASS = [
+    48, 48, 48, 48,  48, 48, 48, 48,   // C
+    57, 57, 57, 57,  57, 57, 57, 57,   // A
+    53, 53, 53, 53,  53, 53, 53, 53,   // F
+    55, 55, 55, 55,  55, 55, 55, 55,   // G
+    48, 48, 48, 48,  48, 48, 48, 48,
+    57, 57, 57, 57,  57, 57, 57, 57,
+    53, 53, 53, 53,  53, 53, 53, 53,
+    55, 55, 55, 55,  48, 48, 48, 48,
+  ];
+
+  const BPM = 128;
+  const NOTE_DUR_SEC = 60 / BPM / 2;  // 1/8 音符 ≈ 0.234s
+
+  function playNote(freq, when, durSec, type, peak) {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = freq;
+    const g = ctx.createGain();
+    // ADSR：短 attack，持续衰减，末尾淡出
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(peak, when + 0.008);
+    g.gain.exponentialRampToValueAtTime(peak * 0.6, when + durSec * 0.3);
+    g.gain.linearRampToValueAtTime(0.0001, when + durSec);
+    osc.connect(g).connect(masterGain);
+    osc.start(when);
+    osc.stop(when + durSec + 0.02);
+  }
+
+  function scheduleLoop() {
+    if (!playing || !ctx) return;
+    const now = ctx.currentTime;
+    for (let i = 0; i < MELODY.length; i++) {
+      const t = now + i * NOTE_DUR_SEC;
+      playNote(mtof(MELODY[i]), t, NOTE_DUR_SEC * 0.9, "square",   0.07);
+      playNote(mtof(BASS[i]),   t, NOTE_DUR_SEC * 0.95, "triangle", 0.09);
+    }
+    const totalSec = MELODY.length * NOTE_DUR_SEC;
+    // 下一轮在当前 loop 快结束前 80ms 调度（避免缝隙）
+    timerId = setTimeout(scheduleLoop, totalSec * 1000 - 80);
+  }
+
+  function ensureCtx() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      ctx = new AC();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = 0.16;  // 整体音量，柔和不扰
+      masterGain.connect(ctx.destination);
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return true;
+  }
+
+  function start() {
+    if (muted || playing) return;
+    if (!ensureCtx()) return;
+    playing = true;
+    scheduleLoop();
+  }
+
+  function stop() {
+    playing = false;
+    if (timerId) { clearTimeout(timerId); timerId = null; }
+    if (masterGain && ctx) {
+      // 平滑淡出，避免"啪"一声
+      const now = ctx.currentTime;
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+      masterGain.gain.linearRampToValueAtTime(0, now + 0.25);
+      setTimeout(() => { if (masterGain) masterGain.gain.value = 0.16; }, 300);
+    }
+  }
+
+  function toggle() {
+    muted = !muted;
+    localStorage.setItem("bgmMuted", muted ? "1" : "0");
+    updateBtn();
+    if (muted) stop(); else start();
+  }
+
+  function updateBtn() {
+    const btn = document.getElementById("btnBgm");
+    if (!btn) return;
+    btn.textContent = muted ? "🔇" : "🔊";
+    btn.classList.toggle("muted", muted);
+  }
+
+  return { start, stop, toggle, updateBtn, isMuted: () => muted };
+})();
+
+BGM.updateBtn();
+document.getElementById("btnBgm").addEventListener("click", () => BGM.toggle());
+
+// 浏览器要求用户交互后才能启动 Audio → 监听首次点击/触摸
+function _bgmFirstInteraction() {
+  if (!BGM.isMuted()) BGM.start();
+  document.body.removeEventListener("click",       _bgmFirstInteraction);
+  document.body.removeEventListener("touchstart",  _bgmFirstInteraction);
+  document.body.removeEventListener("keydown",     _bgmFirstInteraction);
+}
+document.body.addEventListener("click",      _bgmFirstInteraction);
+document.body.addEventListener("touchstart", _bgmFirstInteraction, { passive: true });
+document.body.addEventListener("keydown",    _bgmFirstInteraction);
 
 // 训练模式"无冷却"开关
 const _btnNC = document.getElementById("btnNoCooldown");
