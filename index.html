@@ -2446,11 +2446,11 @@ function updateEntityCombat(attacker, target, char) {
         // 5A 小拳拳首击：标记 atkHit=true，后续伤害走 punchRush tick
         dmg = 120; hit = true;
         target.shakeT = 10;
-      } else if (attacker.atkType === 6 && Math.abs(dx) < 120 && sameSide) {
-        // 6A 踢腿
-        dmg = 600; hit = true;
-        if (!isInSubstitute(target)) target.x += attacker.facing * 14;
-        target.shakeT = 14;
+      } else if (attacker.atkType === 6 && Math.abs(dx) < 140 && sameSide) {
+        // 6A 踢腿：收招大脚，击退拉远
+        dmg = 750; hit = true;
+        if (!isInSubstitute(target)) target.x += attacker.facing * 40;
+        target.shakeT = 20;
       }
     }
     if (hit) {
@@ -5264,12 +5264,12 @@ function drawZjyFistVFX(state) {
     return;
   }
 
-  // 不同段的拳头大小 / 相对位置
+  // 不同段的配置：shape=fist 拳头椭圆 / shape=rect 长方形扫踢条
   const cfgs = {
-    1: { size: 40, offY: -18, punch: true },   // 1A 前踢冲刺 → 大拳开路
-    2: { size: 34, offY: -8,  punch: false },  // 2A 跳踢 → 附在脚位（低位，大小适配）
-    4: { size: 55, offY: -18, punch: true },   // 4A 重拳 → 最大
-    6: { size: 34, offY: -30, punch: false },  // 6A 踢腿
+    1: { size: 40, offY: -18, shape: "rect" },  // 1A 前踢冲刺 → 红条扫腿
+    2: { size: 34, offY: -8,  shape: "rect" },  // 2A 跳踢 → 红条附脚
+    4: { size: 55, offY: -18, shape: "fist" },  // 4A 重拳 → 最大红拳
+    6: { size: 52, offY: -20, shape: "rect" },  // 6A 踢腿 → 大红条 + 远击退
   };
   const cfg = cfgs[stage] || cfgs[1];
   ctx.save();
@@ -5279,11 +5279,9 @@ function drawZjyFistVFX(state) {
   // 前冲距离随进度推进
   const reachX = 22 + prog * 96;
 
-  const jitter = 0;
-
   // 4 层拖影：从远到近、从淡到深
   for (let i = 4; i >= 0; i--) {
-    const tx = reachX - i * 22 + jitter * (i === 0 ? 1 : 0.2);
+    const tx = reachX - i * 22;
     const alpha = i === 0 ? 0.92 : (0.46 - i * 0.09);
     const size = cfg.size + i * 3.5;
 
@@ -5291,42 +5289,74 @@ function drawZjyFistVFX(state) {
     ctx.translate(tx, 0);
     ctx.globalAlpha = alpha;
 
-    // 红色径向渐变拳头本体
-    const grad = ctx.createRadialGradient(-size * 0.2, -size * 0.2, 0, 0, 0, size);
-    grad.addColorStop(0, "#ffee66");
-    grad.addColorStop(0.3, "#ff5533");
-    grad.addColorStop(0.75, "#dd1510");
-    grad.addColorStop(1, "#5a0405");
-    ctx.fillStyle = grad;
-    ctx.shadowColor = "#ff2200";
-    ctx.shadowBlur = i === 0 ? 32 : 18;
-    ctx.beginPath();
-    // 稍微椭圆，前端（右）更尖一点
-    ctx.ellipse(0, 0, size * 1.1, size, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 最近一层画指节褶皱细节
-    if (i === 0 && cfg.punch) {
-      ctx.strokeStyle = "rgba(90,4,5,0.85)";
-      ctx.lineWidth = 2.4;
-      // 指节四道弧线（横向，面朝前方）
-      for (let k = 0; k < 4; k++) {
-        const ky = -size * 0.48 + k * (size * 0.32);
-        ctx.beginPath();
-        ctx.arc(size * 0.1, ky, size * 0.22, -Math.PI / 2 + 0.2, Math.PI / 2 - 0.2);
-        ctx.stroke();
-      }
-      // 中央高光
-      ctx.fillStyle = "rgba(255,240,150,0.55)";
+    if (cfg.shape === "rect") {
+      // 长方形扫踢条：横向 2.2× 宽，竖向 0.55× 高
+      const rw = size * 2.2;
+      const rh = size * 0.55;
+      const grad = ctx.createLinearGradient(-rw / 2, 0, rw / 2, 0);
+      grad.addColorStop(0,   "rgba(90,4,5,0.1)");     // 尾端淡红
+      grad.addColorStop(0.3, "#dd1510");
+      grad.addColorStop(0.7, "#ff5533");
+      grad.addColorStop(1,   "#ffee66");              // 前端高光
+      ctx.fillStyle = grad;
+      ctx.shadowColor = "#ff2200";
+      ctx.shadowBlur = i === 0 ? 26 : 14;
+      // 圆角矩形
+      const r = Math.min(rh * 0.5, 10);
       ctx.beginPath();
-      ctx.ellipse(-size * 0.3, -size * 0.35, size * 0.25, size * 0.18, -0.5, 0, Math.PI * 2);
+      ctx.moveTo(-rw / 2 + r, -rh / 2);
+      ctx.lineTo(rw / 2 - r, -rh / 2);
+      ctx.arcTo(rw / 2, -rh / 2, rw / 2, -rh / 2 + r, r);
+      ctx.lineTo(rw / 2, rh / 2 - r);
+      ctx.arcTo(rw / 2, rh / 2, rw / 2 - r, rh / 2, r);
+      ctx.lineTo(-rw / 2 + r, rh / 2);
+      ctx.arcTo(-rw / 2, rh / 2, -rw / 2, rh / 2 - r, r);
+      ctx.lineTo(-rw / 2, -rh / 2 + r);
+      ctx.arcTo(-rw / 2, -rh / 2, -rw / 2 + r, -rh / 2, r);
+      ctx.closePath();
       ctx.fill();
-      // 手腕（肤色延伸回身体方向）
-      ctx.fillStyle = "#c89674";
-      ctx.fillRect(-size - 10, -8, 14, 16);
-      ctx.fillStyle = "rgba(100,50,30,0.4)";
-      ctx.fillRect(-size - 10, -8, 14, 2);
+      ctx.shadowBlur = 0;
+
+      if (i === 0) {
+        // 前端亮尖：一道更亮的竖条
+        ctx.fillStyle = "rgba(255,240,150,0.9)";
+        ctx.fillRect(rw / 2 - 8, -rh / 2 + 4, 6, rh - 8);
+        // 中央水平高光线
+        ctx.fillStyle = "rgba(255,255,230,0.55)";
+        ctx.fillRect(-rw / 2 + 6, -2, rw - 12, 4);
+      }
+    } else {
+      // 拳头椭圆 + 指节
+      const grad = ctx.createRadialGradient(-size * 0.2, -size * 0.2, 0, 0, 0, size);
+      grad.addColorStop(0, "#ffee66");
+      grad.addColorStop(0.3, "#ff5533");
+      grad.addColorStop(0.75, "#dd1510");
+      grad.addColorStop(1, "#5a0405");
+      ctx.fillStyle = grad;
+      ctx.shadowColor = "#ff2200";
+      ctx.shadowBlur = i === 0 ? 32 : 18;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 1.1, size, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      if (i === 0) {
+        ctx.strokeStyle = "rgba(90,4,5,0.85)";
+        ctx.lineWidth = 2.4;
+        for (let k = 0; k < 4; k++) {
+          const ky = -size * 0.48 + k * (size * 0.32);
+          ctx.beginPath();
+          ctx.arc(size * 0.1, ky, size * 0.22, -Math.PI / 2 + 0.2, Math.PI / 2 - 0.2);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(255,240,150,0.55)";
+        ctx.beginPath();
+        ctx.ellipse(-size * 0.3, -size * 0.35, size * 0.25, size * 0.18, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#c89674";
+        ctx.fillRect(-size - 10, -8, 14, 16);
+        ctx.fillStyle = "rgba(100,50,30,0.4)";
+        ctx.fillRect(-size - 10, -8, 14, 2);
+      }
     }
     ctx.restore();
   }
