@@ -1531,11 +1531,18 @@ const skillConfigs = {
   ],
 };
 
-// 宇智波鼬 · 贴图资源（整张精灵动作表，直接按行切帧）
-const itachiSprite = new Image();
-itachiSprite.src = "宇智波鼬动作.png";  // PNG 版带透明背景
-itachiSprite.onload = () => { itachiSpriteReady = true; };
-let itachiSpriteReady = false;
+// 宇智波鼬 · 贴图资源（4 张独立 sheet，每帧角色都已居中 → 不会横移）
+const itachiSheets = {
+  idle: new Image(),
+  jump: new Image(),
+  run:  new Image(),
+  crow: new Image(),
+};
+itachiSheets.idle.src = "itachi_idle_sheet.png";
+itachiSheets.jump.src = "itachi_jump_sheet.png";
+itachiSheets.run.src  = "itachi_run_sheet.png";
+itachiSheets.crow.src = "itachi_crow_sheet.png";
+let itachiSpriteReady = true;  // 逐张载入，缺哪张就画占位
 
 // 张鸡块 · 待机贴图（从 idle_animation.gif 导出的横向 10 帧精灵表 1280×128）
 const zjyIdleSheet = new Image();
@@ -1545,14 +1552,12 @@ let zjyIdleSheetReady = false;
 const ZJY_IDLE_FRAME = 128;    // 每帧 128×128
 const ZJY_IDLE_COUNT = 10;
 const ZJY_IDLE_FPS = 10;       // 播放速率
-// 贴图帧切片（像素坐标）
-// 原图 724 × 1024。y/h 严格卡在精灵行内避开标签，frameW < stride 留空隙
-// 防止露出下一帧的角色。
+// 4 张 sheet 每帧都已裁成角色居中的等宽格：sx = idx * frameW
 const ITA_FR = {
-  idle: { y: 115, h: 100, firstX: 10, stride: 120, frameW: 100, count: 6 },
-  jump: { y: 265, h:  95, firstX: 10, stride: 120, frameW: 100, count: 6 },
-  run:  { y: 400, h:  75, firstX: 10, stride: 120, frameW: 100, count: 6 },
-  crow: { y: 640, h: 100, firstX: 10, stride: 144, frameW: 120, count: 5 },
+  idle: { sheet: "idle", frameW:  90, frameH: 100, count: 5 },
+  jump: { sheet: "jump", frameW: 100, frameH:  90, count: 6 },
+  run:  { sheet: "run",  frameW: 100, frameH:  82, count: 7 },
+  crow: { sheet: "crow", frameW: 120, frameH: 100, count: 5 },
 };
 
 const keys = {};
@@ -2585,16 +2590,20 @@ function drawItachi(state, attacking) {
   const t = performance.now();
   let progress;
   if (attacking) {
-    progress = 1 - (state.atkT || 0) / 20;  // 0→1
+    progress = 1 - (state.atkT || 0) / 20;
   } else if (moving) {
-    progress = (state.walkT || 0) / 6;
+    // 跑步跟走路相位走，每帧推进一帧视觉位移
+    progress = ((state.walkT || 0) * 0.5) / fr.count;
+  } else if (jumping) {
+    progress = (state.vy < 0 ? 0.2 : 0.6);  // 上升/下落两段
   } else {
-    progress = t / 400;
+    // 待机：每帧 150ms → 轻柔的呼吸循环
+    progress = t / (fr.count * 150);
   }
   const idx = Math.max(0, Math.min(fr.count - 1, Math.floor(progress * fr.count) % fr.count));
-  const sx = fr.firstX + idx * fr.stride;
-  const sy = fr.y, sw = fr.frameW || (fr.stride - 6), sh = fr.h;
-  // 目标高度
+  const sheet = itachiSheets[fr.sheet];
+  const sx = idx * fr.frameW, sy = 0, sw = fr.frameW, sh = fr.frameH;
+  // 目标高度 = 180；按 sheet 比例算 drawW
   const drawH = 180;
   const drawW = drawH * (sw / sh);
   const dx = x - drawW / 2;
@@ -2605,9 +2614,9 @@ function drawItachi(state, attacking) {
     ctx.scale(-1, 1);
     ctx.translate(-x, 0);
   }
-  if (itachiSpriteReady) {
+  if (sheet && sheet.complete && sheet.naturalWidth > 0) {
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(itachiSprite, sx, sy, sw, sh, dx, dy, drawW, drawH);
+    ctx.drawImage(sheet, sx, sy, sw, sh, dx, dy, drawW, drawH);
   } else {
     ctx.fillStyle = "#111";
     ctx.fillRect(dx, dy, drawW, drawH);
