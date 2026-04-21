@@ -751,6 +751,8 @@
   .avatar-card.zjy-bg svg { background: #b32020; }
   .avatar-card.itachi-bg svg { background: #1a1a1a; }
   .kof-cell.itachi-bg svg { background: #1a1a1a; }
+  .avatar-card.xzy-bg svg { background: #f5c36a; }
+  .kof-cell.xzy-bg svg { background: #f5c36a; }
   .avatar-card span {
     font-size: 12px;
     letter-spacing: 2px;
@@ -1248,6 +1250,27 @@
               <span class="kof-cell-name">宇 智 波 鼬</span>
               <span class="kof-cursor"></span>
             </button>
+            <button class="kof-cell xzy-bg" data-char="xzy">
+              <svg viewBox="0 0 40 40">
+                <!-- 黄色大圆脸（占位，等图片替换）-->
+                <circle cx="20" cy="22" r="13" fill="#ffe29a"/>
+                <!-- 头顶一撮发 -->
+                <path d="M14 10 Q20 4 26 10" stroke="#3a2a1a" stroke-width="2" fill="none"/>
+                <!-- 眯眯眼 -->
+                <path d="M14 21 Q16 23 18 21" stroke="#111" stroke-width="1.4" fill="none"/>
+                <path d="M22 21 Q24 23 26 21" stroke="#111" stroke-width="1.4" fill="none"/>
+                <!-- 嘴 -->
+                <ellipse cx="20" cy="27" rx="3" ry="1.5" fill="#c03030"/>
+                <!-- 腮红 -->
+                <circle cx="13" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
+                <circle cx="27" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
+                <!-- 饭碗小图标 -->
+                <ellipse cx="7" cy="34" rx="3" ry="1.2" fill="#c89060"/>
+                <path d="M4 33 Q7 36 10 33" stroke="#8a5a2a" stroke-width="0.8" fill="#e6c09a"/>
+              </svg>
+              <span class="kof-cell-name">谢 只 因</span>
+              <span class="kof-cursor"></span>
+            </button>
           </div>
           <div class="kof-ready">● R E A D Y</div>
         </div>
@@ -1433,6 +1456,20 @@
           </svg>
           <span>宇 智 波 鼬</span>
         </button>
+        <button class="avatar-card xzy-bg" data-char="xzy">
+          <svg viewBox="0 0 40 40">
+            <circle cx="20" cy="22" r="13" fill="#ffe29a"/>
+            <path d="M14 10 Q20 4 26 10" stroke="#3a2a1a" stroke-width="2" fill="none"/>
+            <path d="M14 21 Q16 23 18 21" stroke="#111" stroke-width="1.4" fill="none"/>
+            <path d="M22 21 Q24 23 26 21" stroke="#111" stroke-width="1.4" fill="none"/>
+            <ellipse cx="20" cy="27" rx="3" ry="1.5" fill="#c03030"/>
+            <circle cx="13" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
+            <circle cx="27" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
+            <ellipse cx="7" cy="34" rx="3" ry="1.2" fill="#c89060"/>
+            <path d="M4 33 Q7 36 10 33" stroke="#8a5a2a" stroke-width="0.8" fill="#e6c09a"/>
+          </svg>
+          <span>谢 只 因</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1529,6 +1566,12 @@ const skillConfigs = {
     { name: "须佐能乎", key: "l", cd: 18000, icon: "⚔" },
     { name: "乌鸦分身", key: "u", cd: 10000, icon: "🪶" },
   ],
+  xzy: [
+    { name: "巨碗投掷",  key: "j", cd: 8000,  icon: "🍜" },
+    { name: "KMJ 爆炸",  key: "k", cd: 14000, icon: "💥" },
+    { name: "前冲突进",  key: "l", cd: 6000,  icon: "💨" },
+    { name: "鸡你太美",  key: "u", cd: 18000, icon: "🪩" },
+  ],
 };
 
 // 宇智波鼬 · 贴图资源（4 张独立 sheet，每帧角色都已居中 → 不会横移）
@@ -1599,6 +1642,7 @@ function handleP2Attack() {
   else if (p2.char === "xueking") handleSnowkingAttack(p2);
   else if (p2.char === "zjy") handleZjyAttack(p2);
   else if (p2.char === "itachi") handleItachiAttack(p2);
+  else if (p2.char === "xzy") handleXzyAttack(p2);
   else handleNarutoAttack(p2);
 }
 
@@ -1698,6 +1742,10 @@ function castP2Skill(idx) {
   }
   if (p2.char === "itachi") {
     castItachiSkill(idx, p2, player);
+    return;
+  }
+  if (p2.char === "xzy") {
+    castXzySkill(idx, p2, player);
     return;
   }
   if (idx === 0) {
@@ -2439,6 +2487,7 @@ function handleNormalAttack() {
   else if (selectedChar === "xueking") handleSnowkingAttack(player);
   else if (selectedChar === "zjy") handleZjyAttack(player);
   else if (selectedChar === "itachi") handleItachiAttack(player);
+  else if (selectedChar === "xzy") handleXzyAttack(player);
   else handleNarutoAttack(player);
 }
 
@@ -2544,6 +2593,132 @@ function handleItachiAttack(e = player) {
   else if (e === p2) updateP2ComboIndicator();
 }
 
+// ========== 谢只因（xzy）4 段平A + 4 技能 ==========
+// 1A 巴掌 / 2A 屁股顶（0.5s 眩晕）/ 3A 舌头（1s 持续伤害每 0.02s 25dmg）/ 4A 胸口击退
+function handleXzyAttack(e = player) {
+  const stage = e.comboStage || 0;
+  e.atkType = stage + 1;
+  e.atkHit = false;
+  e.comboWindow = 54;
+  const target = (e === player) ? dummy : player;
+
+  if (stage === 0) {
+    // 1A 巴掌：短距快速
+    e.atkT = 18;
+    e.arcT = 18;
+    e.x += e.facing * 20;
+  } else if (stage === 1) {
+    // 2A 屁股顶：向前蹭一下
+    e.atkT = 22;
+    e.arcT = 22;
+    e.x += e.facing * 25;
+  } else if (stage === 2) {
+    // 3A 舌头持续伤害：启动 1 秒 tongueT，每帧 tick（约 16.67ms），目标被定身
+    e.atkT = 60;           // 60 帧 ≈ 1s 动画锁定
+    e.tongueT = 60;        // 舌头持续帧
+    e.tongueLastTick = 0;  // 每帧 tick 一次
+    e.arcT = 60;
+  } else {
+    // 4A 胸口击退
+    e.atkT = 26;
+    e.arcT = 26;
+    e.x += e.facing * 18;
+  }
+
+  e.x = Math.max(40, Math.min(W_WORLD - 40, e.x));
+  e.comboStage = (stage + 1) % 4;
+  if (e === player) updateComboIndicator();
+  else if (e === p2) updateP2ComboIndicator();
+}
+
+// 谢只因技能分发
+function castXzySkill(idx, caster, target) {
+  const owner = (caster === player) ? "p1" : "p2";
+  const now = performance.now();
+
+  if (idx === 0) {
+    // J 巨碗投掷：抛物线飞行，命中目标 → 目标所有技能 CD +4s
+    projectiles.push({
+      kind: "xzyBowl",
+      x: caster.x + caster.facing * 30,
+      y: caster.y - 70,
+      vx: caster.facing * 10,
+      vy: -5,
+      gravity: 0.38,   // 抛物线
+      life: 180,
+      rot: 0,
+      damage: 400,
+      cdDebuff: 4000,  // 命中目标 → 所有技能 CD +4s
+      owner, hitR: 40,
+    });
+    spawnParticles(caster.x + caster.facing * 30, caster.y - 70, "#c89060", 10);
+    damageTexts.push({
+      x: caster.x, y: caster.y - 150, vx: 0, vy: -2,
+      life: 30, maxLife: 30, text: "巨 碗!", color: "#c89060", size: 18, crit: false,
+    });
+    return;
+  }
+
+  if (idx === 1) {
+    // K "KMJ 爆炸"：瞄准敌人瞬间爆炸，高伤（需在半屏内）
+    const dx = target.x - caster.x;
+    if (Math.abs(dx) > W / 2) {
+      damageTexts.push({
+        x: caster.x, y: caster.y - 150, vx: 0, vy: -2,
+        life: 40, maxLife: 40, text: "距离太远!", color: "#cccccc", size: 14, crit: false,
+      });
+      return;
+    }
+    const ex = target.x, ey = target.y - 50;
+    // 爆炸特效：大量红黄色粒子外扩 + 白色闪光
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * Math.PI * 2;
+      particles.push({
+        x: ex + Math.cos(a) * 10, y: ey + Math.sin(a) * 10,
+        vx: Math.cos(a) * (3 + Math.random() * 4),
+        vy: Math.sin(a) * (3 + Math.random() * 4) - 2,
+        life: 40, color: i % 2 ? "#ff3322" : "#ffdd55", size: 4 + Math.random() * 3,
+      });
+    }
+    spawnHitImpact(ex, ey, 80);
+    hitStopT = Math.max(hitStopT, 6);
+    shakeT = 22; shakeStrength = 14;
+    if (target === player) damagePlayer(2500); else damageDummy(2500);
+    damageTexts.push({
+      x: ex, y: ey - 50, vx: 0, vy: -3,
+      life: 55, maxLife: 55, text: "K M J!", color: "#ff3322", size: 30, crit: true,
+    });
+    return;
+  }
+
+  if (idx === 2) {
+    // L 前冲突进：300px 冲 + 沿途敌人击飞
+    caster.xzyDashT = 30;       // 30 帧 ≈ 0.5s 冲刺
+    caster.xzyDashHit = false;
+    caster.rasenDashT = 0;      // 避免跟鸣人螺旋丸冲刺冲突
+    caster.invincibleUntil = Math.max(caster.invincibleUntil || 0, now + 300);
+    spawnParticles(caster.x - caster.facing * 20, caster.y - 40, "#f5c36a", 14);
+    damageTexts.push({
+      x: caster.x, y: caster.y - 150, vx: 0, vy: -2,
+      life: 28, maxLife: 28, text: "冲!", color: "#ffd91f", size: 18, crit: false,
+    });
+    return;
+  }
+
+  if (idx === 3) {
+    // U 鸡你太美：2 秒跳舞，身边圆形范围震荡 + 敌人眩晕 1s
+    caster.danceT = 120;         // 120 帧 ≈ 2s
+    caster.danceHit = false;
+    caster.danceWaveNext = 0;    // 下次震荡 tick
+    spawnParticles(caster.x, caster.y - 60, "#ff66cc", 24);
+    damageTexts.push({
+      x: caster.x, y: caster.y - 150, vx: 0, vy: -2,
+      life: 60, maxLife: 60, text: "鸡 你 太 美", color: "#ff66cc", size: 22, crit: true,
+    });
+    return;
+  }
+}
+
 function castItachiSkill(idx, caster, target) {
   if (idx === 0) {
     // J 月读：锁定敌方 1.5s + 1200 固定伤害 + 鼬自伤 5%（万花筒代价）
@@ -2576,6 +2751,125 @@ function castItachiSkill(idx, caster, target) {
     x: caster.x, y: caster.y - 150, vx: 0, vy: -2,
     life: 40, maxLife: 40, text: "敬请期待", color: "#aaa", size: 14, crit: false,
   });
+}
+
+// 谢只因立绘（占位版：圆头胖身黄衣；等用户发图再换成 sprite sheet）
+function drawXzy(state, attacking) {
+  const x = state.x, y = state.y, facing = state.facing;
+  const t = performance.now();
+  ctx.save();
+  if (facing < 0) {
+    ctx.translate(x, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-x, 0);
+  }
+  // 身体（胖椭圆 上半黄 T恤 + 下半深色短裤）
+  const bodyY = y - 56;
+  ctx.fillStyle = "#f5c36a";
+  ctx.beginPath();
+  ctx.ellipse(x, bodyY, 26, 36, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#3a2a1a";
+  ctx.beginPath();
+  ctx.ellipse(x, y - 18, 24, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // 肩腕（大胖胳膊）
+  ctx.fillStyle = "#ffe29a";
+  const armSwing = attacking ? Math.sin(t / 30) * 14 : Math.sin(t / 400) * 3;
+  // 前臂（挥舞时前伸）
+  ctx.beginPath();
+  ctx.ellipse(x + 26 + armSwing, bodyY - 2, 9, 14, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // 后臂
+  ctx.beginPath();
+  ctx.ellipse(x - 26, bodyY - 2, 8, 14, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  // 腿
+  ctx.fillStyle = "#3a2a1a";
+  ctx.fillRect(x - 14, y - 8, 10, 10);
+  ctx.fillRect(x + 4, y - 8, 10, 10);
+  // 鞋
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fillRect(x - 16, y - 2, 14, 4);
+  ctx.fillRect(x + 2, y - 2, 14, 4);
+  // 头（胖圆）
+  const headY = y - 108;
+  const bob = Math.sin(t / 300) * 1.5;
+  ctx.fillStyle = "#ffe29a";
+  ctx.beginPath();
+  ctx.arc(x, headY + bob, 24, 0, Math.PI * 2);
+  ctx.fill();
+  // 头发（一撮）
+  ctx.strokeStyle = "#3a2a1a";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(x - 8, headY - 18 + bob);
+  ctx.quadraticCurveTo(x, headY - 28 + bob, x + 8, headY - 18 + bob);
+  ctx.stroke();
+  // 眯眯眼
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - 10, headY - 2 + bob);
+  ctx.quadraticCurveTo(x - 6, headY + 2 + bob, x - 2, headY - 2 + bob);
+  ctx.moveTo(x + 2, headY - 2 + bob);
+  ctx.quadraticCurveTo(x + 6, headY + 2 + bob, x + 10, headY - 2 + bob);
+  ctx.stroke();
+  // 嘴
+  ctx.fillStyle = "#c03030";
+  ctx.beginPath();
+  ctx.ellipse(x + 1, headY + 8 + bob, 4, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // 腮红
+  ctx.fillStyle = "rgba(255,150,150,0.6)";
+  ctx.beginPath();
+  ctx.arc(x - 14, headY + 4 + bob, 3, 0, Math.PI * 2);
+  ctx.arc(x + 14, headY + 4 + bob, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 攻击特效
+  if (state.atkType === 3 && state.tongueT > 0) {
+    // 3A 舌头：从嘴向前延伸一个粉色长条
+    ctx.fillStyle = "#ff4d79";
+    ctx.beginPath();
+    ctx.ellipse(x + 48, headY + 10 + bob, 30, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ff8ea9";
+    ctx.beginPath();
+    ctx.ellipse(x + 48, headY + 8 + bob, 28, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+
+  // 冲刺速度线（屏幕坐标之上也叠）
+  if (state.xzyDashT > 0) {
+    ctx.strokeStyle = "rgba(255,217,31,0.7)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.moveTo(x - facing * (30 + i * 15), y - 20 - i * 10);
+      ctx.lineTo(x - facing * (60 + i * 15), y - 20 - i * 10);
+      ctx.stroke();
+    }
+  }
+
+  // 跳舞时旋转的星星
+  if (state.danceT > 0) {
+    ctx.save();
+    ctx.translate(x, y - 60);
+    const a = t / 80;
+    for (let i = 0; i < 6; i++) {
+      const ang = a + (i * Math.PI) / 3;
+      const r = 50 + Math.sin(t / 100 + i) * 8;
+      const sx = Math.cos(ang) * r;
+      const sy = Math.sin(ang) * r;
+      ctx.fillStyle = ["#ff66cc", "#ffdd33", "#66ffff"][i % 3];
+      ctx.beginPath();
+      ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 }
 
 function drawItachi(state, attacking) {
@@ -2735,6 +3029,30 @@ function updateEntityCombat(attacker, target, char) {
       if (attacker.atkType >= 1 && attacker.atkType <= 5 && Math.abs(dx) < 130 && sameSide) {
         dmg = 500; hit = true;
         target.shakeT = 12;
+      }
+    } else if (char === "xzy") {
+      // 谢只因 · 4 段平A
+      if (attacker.atkType === 1 && Math.abs(dx) < 110 && sameSide) {
+        // 1A 巴掌
+        dmg = 400; hit = true;
+        target.shakeT = 10;
+      } else if (attacker.atkType === 2 && Math.abs(dx) < 120 && sameSide) {
+        // 2A 屁股顶：0.5s 眩晕（30 帧）+ 击退
+        dmg = 500; hit = true;
+        if (!isInSubstitute(target)) {
+          target.stunT = Math.max(target.stunT || 0, 30);
+          target.x += attacker.facing * 16;
+        }
+        target.shakeT = 14;
+      } else if (attacker.atkType === 3 && Math.abs(dx) < 130 && sameSide) {
+        // 3A 舌头：首击轻伤；持续伤害由 tongueT tick 分支处理
+        dmg = 100; hit = true;
+        target.shakeT = 8;
+      } else if (attacker.atkType === 4 && Math.abs(dx) < 130 && sameSide) {
+        // 4A 胸口击退：强击退
+        dmg = 700; hit = true;
+        if (!isInSubstitute(target)) target.x += attacker.facing * 40;
+        target.shakeT = 20;
       }
     } else if (char === "zjy") {
       // 张鸡块 6 段连招（伤害会被 rageDamageMul 乘）
@@ -2907,6 +3225,109 @@ function updateEntityCombat(attacker, target, char) {
     }
   }
 
+  // 谢只因 3A 舌头持续伤害：tongueT 帧内每帧造成 25 点 + 定住敌人
+  if (char === "xzy" && attacker.tongueT > 0) {
+    attacker.tongueT--;
+    const dxT = target.x - attacker.x;
+    const inReach = Math.sign(dxT) === attacker.facing && Math.abs(dxT) < 180;
+    if (inReach && !isInSubstitute(target)) {
+      // 拉拽目标向己方靠近
+      target.x += -attacker.facing * 1.2;
+      target.x = Math.max(60, Math.min(W_WORLD - 60, target.x));
+      target.vx = 0;
+      target.stunT = Math.max(target.stunT || 0, 3);
+      // 每帧 25 点伤害（60fps ≈ 16.67ms 一帧，接近用户要求的 0.02s 间隔）
+      applyDamageTo(target, 25);
+      if (attacker.tongueT % 4 === 0) {
+        spawnHitImpact(target.x - attacker.facing * 14, target.y - 60, 20);
+      }
+      // 粉色/红色小飞沫粒子
+      if (attacker.tongueT % 3 === 0) {
+        particles.push({
+          x: attacker.x + attacker.facing * 50,
+          y: attacker.y - 60 + (Math.random() - 0.5) * 10,
+          vx: attacker.facing * (2 + Math.random() * 2),
+          vy: (Math.random() - 0.5) * 1.5,
+          life: 14, color: "#ff6688", size: 3,
+        });
+      }
+    }
+  }
+
+  // 谢只因 L 前冲突进：冲 + 沿途击飞
+  if (char === "xzy" && attacker.xzyDashT > 0) {
+    attacker.xzyDashT--;
+    attacker.vx = attacker.facing * 10;   // 冲刺速度
+    attacker.x += attacker.vx;
+    attacker.x = Math.max(40, Math.min(W_WORLD - 40, attacker.x));
+    // 沿途碰撞（整段仅命中一次）
+    const dxD = target.x - attacker.x;
+    if (!attacker.xzyDashHit && Math.sign(dxD) === attacker.facing && Math.abs(dxD) < 80) {
+      attacker.xzyDashHit = true;
+      applyDamageTo(target, 800);
+      if (typeof target.vy === "number" && !isInSubstitute(target)) {
+        target.vy = -11;
+        target.onGround = false;
+        target.x += attacker.facing * 40;
+      }
+      target.shakeT = 18;
+      hitStopT = Math.max(hitStopT, 5);
+      shakeT = 14; shakeStrength = 10;
+      spawnHitImpact(target.x, target.y - 60, 46);
+      for (let i = 0; i < 14; i++) {
+        const a = Math.random() * Math.PI * 2;
+        particles.push({
+          x: target.x + Math.cos(a) * 10,
+          y: target.y - 60 + Math.sin(a) * 10,
+          vx: Math.cos(a) * 3, vy: Math.sin(a) * 2 - 1,
+          life: 26, color: "#ffd91f", size: 3,
+        });
+      }
+    }
+  }
+
+  // 谢只因 U 鸡你太美：跳舞期间每 20 帧发出震荡波（圆形范围伤害 + 眩晕）
+  if (char === "xzy" && attacker.danceT > 0) {
+    attacker.danceT--;
+    attacker.vx = 0;  // 原地跳舞
+    const frame = 120 - attacker.danceT;
+    if (frame % 20 === 10) {
+      // 产生一个震荡波
+      particles.push({
+        x: attacker.x, y: attacker.y - 50,
+        vx: 0, vy: 0, life: 24,
+        color: "#ff66cc", size: 4,
+        ring: true, ringMax: 180,
+      });
+      // 检测目标是否在范围内
+      const dxD = target.x - attacker.x;
+      const dyD = (target.y - 60) - (attacker.y - 50);
+      if (dxD * dxD + dyD * dyD < 180 * 180) {
+        applyDamageTo(target, 180);
+        if (!isInSubstitute(target)) target.stunT = Math.max(target.stunT || 0, 60);
+        spawnHitImpact(target.x, target.y - 60, 30);
+        shakeT = 10; shakeStrength = 6;
+      }
+    }
+    // 跳舞粒子（表演感）
+    if (frame % 3 === 0) {
+      particles.push({
+        x: attacker.x + (Math.random() - 0.5) * 60,
+        y: attacker.y - 80 + (Math.random() - 0.5) * 30,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -Math.random() * 2,
+        life: 30, color: ["#ff66cc","#ffdd33","#66ffff"][frame % 3], size: 4,
+      });
+    }
+  }
+
+  // 哆啦A梦下砸着地 → 裁剪剩余 atkT 到 14 帧（≈230ms）着地硬直
+  // 让下一次 1A 能立刻衔接，不用等 60 帧攻击期走完（命中与否都生效）
+  if (char === "doraemon" && attacker.atkType === 99 && attacker.onGround && attacker.atkT > 14) {
+    attacker.atkT = 14;
+    attacker.slamT = 0;
+  }
+
   // 计时器衰减
   if (attacker.atkT > 0) attacker.atkT--;
   if (attacker.atkT === 0 && attacker.atkType !== 0) attacker.atkType = 0;
@@ -3032,6 +3453,7 @@ const COMBO_NAMES = {
   xueking:  ["1A 前刺", "2A 上挑", "3A 横斩", "4A 天降"],
   zjy:      ["1A 前踢冲刺", "2A 跳踢", "3A 回旋踢", "4A 重拳", "5A 小拳拳", "6A 踢腿"],
   itachi:   ["1A 拔刀斩", "2A 双刀回旋", "3A 手里剑", "4A 豪火球", "5A 万鸦啄噬"],
+  xzy:      ["1A 巴掌", "2A 屁股顶", "3A 舌头", "4A 胸口击退"],
 };
 
 function updateComboIndicator() {
@@ -3100,28 +3522,36 @@ function castSkill(idx) {
     castItachiSkill(idx, player, dummy);
     return;
   }
+  if (selectedChar === "xzy") {
+    castXzySkill(idx, player, dummy);
+    return;
+  }
   if (idx === 0) {
-    // 苦无（正统飞镖）
-    projectiles.push({
-      x: player.x + player.facing * 30,
-      y: player.y - 50,
-      vx: player.facing * 12,
-      life: 80,
-      rot: 0,
-      damage: 1000,
-    });
-    spawnParticles(player.x + player.facing * 30, player.y - 50, "#7cf", 6);
-    // 影分身同步甩苦无（50% 伤害）
-    clones.forEach(c => {
+    // 苦无：地面单发直线；空中（螺旋丸升空状态 + 还有次数）双发追踪
+    if (selectedChar === "naruto" && inAerial() && fireHomingKunaiVolley()) {
+      // 成功发射追踪双发，不走普通苦无
+    } else {
       projectiles.push({
-        x: c.x + c.facing * 30,
-        y: c.y - 50,
-        vx: c.facing * 12,
+        x: player.x + player.facing * 30,
+        y: player.y - 50,
+        vx: player.facing * 12,
         life: 80,
         rot: 0,
-        damage: 500,
+        damage: 1000,
       });
-    });
+      spawnParticles(player.x + player.facing * 30, player.y - 50, "#7cf", 6);
+      // 影分身同步甩苦无（50% 伤害）
+      clones.forEach(c => {
+        projectiles.push({
+          x: c.x + c.facing * 30,
+          y: c.y - 50,
+          vx: c.facing * 12,
+          life: 80,
+          rot: 0,
+          damage: 500,
+        });
+      });
+    }
   } else if (idx === 1) {
     // 色诱之术：本体和影分身各放一团粉色云雾 2 秒
     const casters = [{ x: player.x, y: player.y - 40 }];
@@ -3205,6 +3635,51 @@ function triggerCloneAttack(c, type) {
       damage: 300,
     });
   }
+}
+
+// 收集敌方目标，按距离排序（空中追踪苦无用）
+function collectEnemyTargetsFor(caster) {
+  const out = [];
+  if (typeof dummy !== "undefined" && dummy && dummy !== caster) out.push(dummy);
+  if (gameMode === "pvp" && typeof p2 !== "undefined" && p2 && p2 !== caster) out.push(p2);
+  out.sort((a, b) => {
+    const da = Math.hypot((a.x||0) - caster.x, ((a.y||0) - 50) - (caster.y - 50));
+    const db = Math.hypot((b.x||0) - caster.x, ((b.y||0) - 50) - (caster.y - 50));
+    return da - db;
+  });
+  return out;
+}
+
+// 空中双发追踪苦无（螺旋丸升空中按 J 触发）
+// 与空中螺旋丸球共用 aerialShotsLeft 配额（飞天中最多 2 次特殊技）
+function fireHomingKunaiVolley() {
+  if (player.aerialShotsLeft <= 0) return false;
+  player.aerialShotsLeft--;
+  const targets = collectEnemyTargetsFor(player);
+  const spawnX = player.x + player.facing * 20;
+  const spawnY = player.y - 50;
+  // 扇形初速，各自选最近的敌人追（2 敌追不同，1 敌两发同目标）
+  const spreads = [-0.18, 0.18];
+  for (let i = 0; i < 2; i++) {
+    const tgt = targets[Math.min(i, targets.length - 1)] || null;
+    const v = 11;
+    const ang = spreads[i];
+    projectiles.push({
+      x: spawnX,
+      y: spawnY - i * 8,   // 两发错开一点 y
+      vx: Math.cos(ang) * v * player.facing,
+      vy: Math.sin(ang) * v,
+      life: 120,
+      rot: 0,
+      damage: 700,
+      homing: true,
+      target: tgt,
+      turnRate: 0.18,
+      maxSpeed: 13,
+    });
+  }
+  spawnParticles(spawnX, spawnY, "#7cf", 14);
+  return true;
 }
 
 function startRasenCharge() {
@@ -4883,6 +5358,50 @@ function drawSnowKing(state, attacking, tint) {
   ctx.restore();
 }
 
+// 谢只因巨碗：命中/落地的陶瓷碎片飞溅
+function spawnBowlShatter(x, y) {
+  for (let i = 0; i < 18; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const v = 3 + Math.random() * 5;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * v,
+      vy: Math.sin(a) * v - 2,
+      life: 30 + Math.random() * 15,
+      color: i % 2 ? "#c89060" : "#f0e0c0",
+      size: 2 + Math.random() * 3,
+    });
+  }
+  // 米粒
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -Math.random() * 3,
+      life: 24 + Math.random() * 10,
+      color: "#f8f4e8", size: 2,
+    });
+  }
+}
+
+// 推迟目标所有技能的 CD（比如巨碗命中加 4s）
+// player 的技能列表是全局 skills（不是 player.skills）；p2 有 p2.skills；木桩无技能
+function applyCdDebuff(target, ms) {
+  let list = null;
+  if (target === player) list = skills;
+  else if (target && Array.isArray(target.skills)) list = target.skills;
+  if (!list || !list.length) return;
+  const now = performance.now();
+  for (const s of list) {
+    s.ready = Math.max(s.ready || 0, now) + ms;
+  }
+  damageTexts.push({
+    x: target.x, y: (target.y || 0) - 130, vx: 0, vy: -2,
+    life: 45, maxLife: 45, text: "CD +" + (ms / 1000) + "s",
+    color: "#c89060", size: 18, crit: true,
+  });
+}
+
 function spawnHitImpact(x, y, radius) {
   // 白色扩散冲击环
   particles.push({
@@ -5050,7 +5569,7 @@ function showSeriesEnd() {
   const sub = document.getElementById("matchSub");
   const buttons = document.querySelector('.match-buttons');
   buttons.style.display = '';
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : c === "itachi" ? "宇 智 波 鼬" : "张 鸡 块";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : c === "itachi" ? "宇 智 波 鼬" : c === "xzy" ? "谢 只 因" : "张 鸡 块";
   if (winner === "draw") {
     title.textContent = "D R A W";
     sub.textContent = `平 局　·　${p1Wins} : ${p2Wins}`;
@@ -5096,6 +5615,10 @@ function resetRound() {
   p2.hailStormEnd = 0; p2.hailStormX = 0; p2.hailNextTick = 0;
   p2.slowUntil = 0; p2.dmgDebuffUntil = 0;
   p2.narutoBuffUntil = 0; p2.sealT = 0; p2.rasenThrowT = 0;
+  // 谢只因 状态复位
+  p2.tongueT = 0; p2.tongueLastTick = 0;
+  p2.xzyDashT = 0; p2.xzyDashHit = false;
+  p2.danceT = 0; p2.danceHit = false; p2.danceWaveNext = 0;
   p2.skills = skillConfigs[p2.char].map(c => ({ ...c, ready: 0 }));
   p2ShieldUntil = 0;
   p1FrozenUntil = 0;
@@ -5122,6 +5645,10 @@ function resetRound() {
   player.iceGate1 = null; player.iceGate2 = null; player.iceGateCooldown = 0;
   player.hailStormEnd = 0; player.hailStormX = 0; player.hailNextTick = 0;
   player.slowUntil = 0; player.dmgDebuffUntil = 0;
+  // 谢只因 状态复位
+  player.tongueT = 0; player.tongueLastTick = 0;
+  player.xzyDashT = 0; player.xzyDashHit = false;
+  player.danceT = 0; player.danceHit = false; player.danceWaveNext = 0;
   player.comboStage = 0; player.comboWindow = 0;
   p2.comboStage = 0; p2.comboWindow = 0;
   updateComboIndicator();
@@ -5196,7 +5723,7 @@ function updateWinPips() {
   };
   const p1NameEl = document.querySelector('.hpbar.left .name > span');
   const p2NameEl = document.querySelector('.hpbar.right .name > span');
-  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : c === "itachi" ? "宇 智 波 鼬" : "张 鸡 块";
+  const nameOf = (c) => c === "naruto" ? "鸣 人" : c === "doraemon" ? "哆 啦 A 梦" : c === "xueking" ? "雪 王" : c === "itachi" ? "宇 智 波 鼬" : c === "xzy" ? "谢 只 因" : "张 鸡 块";
   const p1Name = nameOf(selectedChar);
   if (gameMode === "pvp") {
     p1NameEl.innerHTML = p1Name + pipsHtml(p1Wins);
@@ -5423,13 +5950,34 @@ function update() {
   // 投射物（手里剑 / 冰淇淋 / 冰雹）
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i];
+    // 追踪苦无：每帧微调朝向目标
+    if (p.homing && p.target) {
+      const tx = p.target.x;
+      const ty = (p.target.y || 0) - 50;
+      const dx = tx - p.x;
+      const dy = ty - p.y;
+      if (Math.abs(dx) + Math.abs(dy) > 0.5) {
+        const desired = Math.atan2(dy, dx);
+        const cur = Math.atan2(p.vy || 0, p.vx);
+        let delta = desired - cur;
+        while (delta > Math.PI) delta -= 2 * Math.PI;
+        while (delta < -Math.PI) delta += 2 * Math.PI;
+        const maxTurn = p.turnRate || 0.15;
+        delta = Math.max(-maxTurn, Math.min(maxTurn, delta));
+        const newAng = cur + delta;
+        const speed = Math.min(p.maxSpeed || 12, Math.hypot(p.vx, p.vy || 0) || 10);
+        p.vx = Math.cos(newAng) * speed;
+        p.vy = Math.sin(newAng) * speed;
+      }
+    }
     p.x += p.vx;
     p.y += (p.vy || 0);
     if (p.gravity) p.vy = (p.vy || 0) + p.gravity;
     p.rot += 0.4;
     p.life--;
+    const hR = p.hitR || 32;
     // 命中 P1（仅由 P2 发出的弹可伤 P1）
-    if (p.owner === "p2" && Math.abs(p.x - player.x) < 32 && Math.abs(p.y - (player.y - 50)) < 56) {
+    if (p.owner === "p2" && Math.abs(p.x - player.x) < hR && Math.abs(p.y - (player.y - 50)) < 56) {
       damagePlayer(p.damage || 10);
       spawnHitImpact(p.x, p.y, 28);
       if (p.debuff) {
@@ -5437,20 +5985,32 @@ function update() {
         player.slowUntil = Math.max(player.slowUntil || 0, nowD + 1500);
         player.dmgDebuffUntil = Math.max(player.dmgDebuffUntil || 0, nowD + 1500);
       }
+      // 巨碗命中：P1 所有技能 CD +4s
+      if (p.cdDebuff) applyCdDebuff(player, p.cdDebuff);
       if (p.heal) applyIcecreamHeal(p2, "p2", p.heal);  // P2 发的冰淇淋 → 回 P2
+      if (p.kind === "xzyBowl") spawnBowlShatter(p.x, p.y);
       projectiles.splice(i, 1);
       continue;
     }
     // 命中 P2/木桩（P1 发出的 + 无归属兼容）
-    if (p.owner !== "p2" && Math.abs(p.x - dummy.x) < 40 && Math.abs(p.y - (dummy.y - 50)) < 60) {
+    if (p.owner !== "p2" && Math.abs(p.x - dummy.x) < hR + 8 && Math.abs(p.y - (dummy.y - 50)) < 60) {
       damageDummy(p.damage || 10);
-      if (p.kind === "icecream" || p.kind === "hail") spawnHitImpact(p.x, p.y, 28);
+      if (p.kind === "icecream" || p.kind === "hail" || p.kind === "xzyBowl") spawnHitImpact(p.x, p.y, 28);
       if (p.debuff) {
         const nowD = performance.now();
         dummy.slowUntil = Math.max(dummy.slowUntil || 0, nowD + 1500);
         dummy.dmgDebuffUntil = Math.max(dummy.dmgDebuffUntil || 0, nowD + 1500);
       }
+      // 巨碗命中 P2/木桩：P2 所有技能 CD +4s（木桩无 skills 就跳过）
+      if (p.cdDebuff) applyCdDebuff(dummy, p.cdDebuff);
       if (p.heal) applyIcecreamHeal(player, "p1", p.heal); // P1 发的冰淇淋 → 回 P1
+      if (p.kind === "xzyBowl") spawnBowlShatter(p.x, p.y);
+      projectiles.splice(i, 1);
+      continue;
+    }
+    // 巨碗落地：碎开消失（只视觉，不伤害）
+    if (p.kind === "xzyBowl" && p.y >= GROUND - 6) {
+      spawnBowlShatter(p.x, GROUND - 6);
       projectiles.splice(i, 1);
       continue;
     }
@@ -7123,6 +7683,8 @@ function draw() {
     drawZjy(player, player.atkT > 0);
   } else if (selectedChar === "itachi") {
     drawItachi(player, player.atkT > 0);
+  } else if (selectedChar === "xzy") {
+    drawXzy(player, player.atkT > 0);
   } else {
     drawNinja(player.x, player.y, player.facing, player.slashT > 0 || player.atkT > 0);
   }
@@ -7365,6 +7927,8 @@ function draw() {
       drawZjy(p2, p2.atkT > 0);
     } else if (p2.char === "itachi") {
       drawItachi(p2, p2.atkT > 0);
+    } else if (p2.char === "xzy") {
+      drawXzy(p2, p2.atkT > 0);
     } else {
       drawNinja(p2.x, p2.y, p2.facing, p2.atkT > 0, undefined, p2);
     }
@@ -7420,6 +7984,43 @@ function draw() {
   // 投射物（苦无 / 冰淇淋 / 冰雹）
   projectiles.forEach(p => {
     const dir = Math.sign(p.vx) || 1;
+
+    if (p.kind === "xzyBowl") {
+      // 巨碗：旋转的碗 + 米粒溢出的拖尾
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      // 碗外壁（深棕）
+      ctx.fillStyle = "#8a5a2a";
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 22, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // 碗内壁（浅色）
+      ctx.fillStyle = "#e6c09a";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 18, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // 米饭（白色凸起）
+      ctx.fillStyle = "#f8f4e8";
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 15, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // 外沿高光
+      ctx.strokeStyle = "#c89060";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 22, 10, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      // 拖尾米粒
+      ctx.fillStyle = "rgba(248,244,232,0.7)";
+      for (let i = 1; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.arc(p.x - dir * i * 6, p.y - 2 + (i % 2) * 3, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return;
+    }
 
     if (p.kind === "icecream") {
       // 冰淇淋：甜筒 + 白球，带旋转
@@ -7499,6 +8100,43 @@ function draw() {
     }
 
     // 默认：苦无
+    if (p.homing) {
+      // 追踪苦无：按速度方向画 + 青蓝微光拖尾
+      const ang = Math.atan2(p.vy || 0, p.vx);
+      ctx.strokeStyle = "rgba(124,220,255,0.55)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(p.x - Math.cos(ang) * 26, p.y - Math.sin(ang) * 26);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(ang);
+      ctx.fillStyle = "#3a2418";
+      ctx.fillRect(-12, -2, 10, 4);
+      ctx.strokeStyle = "#777";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(-14, 0, 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "#d8dde4";
+      ctx.beginPath();
+      ctx.moveTo(-2, -5);
+      ctx.lineTo(14, 0);
+      ctx.lineTo(-2, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "#8a9099";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // 追踪标记：刀尖前方发光点
+      ctx.fillStyle = "rgba(124,220,255,0.9)";
+      ctx.beginPath();
+      ctx.arc(16, 0, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
     ctx.strokeStyle = "rgba(200,220,255,0.4)";
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -8039,8 +8677,10 @@ function buildKofPortraitSVG(char) {
     doraemon: { bg1: "#4cc8ff", bg2: "#0a3a6a", ray: "#ffffff", nameColor: "#ffeecc" },
     xueking:  { bg1: "#7dd3fc", bg2: "#0c4a6e", ray: "#e0f2fe", nameColor: "#e0f2fe" },
     zjy:      { bg1: "#ff5a30", bg2: "#5a0808", ray: "#ffaa33", nameColor: "#ffdd66" },
+    itachi:   { bg1: "#c5201c", bg2: "#1a0a0a", ray: "#ff5544", nameColor: "#ffcccc" },
+    xzy:      { bg1: "#f5c36a", bg2: "#6a3a10", ray: "#ffd91f", nameColor: "#ffe29a" },
   };
-  const t = themes[char];
+  const t = themes[char] || { bg1: "#888", bg2: "#222", ray: "#ccc", nameColor: "#fff" };
   const innerXueking = `
     <!-- 雪王（上半身）-->
     <g transform="translate(100 165) scale(4.5)">
@@ -8123,7 +8763,35 @@ function buildKofPortraitSVG(char) {
       <circle cx="-20" cy="10" r="4.5" fill="#f25a3a"/>
     </g>
   `;
-  const innerSVG = char === "zjy" ? innerZjy : (char === "xueking" ? innerXueking : (char === "naruto" ? `
+  const innerXzy = `
+    <!-- 谢只因（上半身占位）-->
+    <g transform="translate(100 165) scale(4.8)">
+      <!-- 深色短裤 -->
+      <rect x="-14" y="20" width="28" height="10" fill="#3a2a1a"/>
+      <!-- 黄 T恤 -->
+      <path d="M-18,26 L-14,-4 L14,-4 L18,26 Z" fill="#f5c36a"/>
+      <path d="M-14,-4 L0,4 L14,-4 Z" fill="#e0a040"/>
+      <!-- 脸 -->
+      <ellipse cx="0" cy="-16" rx="14" ry="13" fill="#ffe29a"/>
+      <!-- 头顶一撮发 -->
+      <path d="M-6,-28 Q0,-34 6,-28" stroke="#3a2a1a" stroke-width="2" fill="none"/>
+      <!-- 眯眯眼 -->
+      <path d="M-7,-16 Q-4,-13 -1,-16" stroke="#111" stroke-width="1.4" fill="none"/>
+      <path d="M1,-16 Q4,-13 7,-16" stroke="#111" stroke-width="1.4" fill="none"/>
+      <!-- 嘴 -->
+      <ellipse cx="0" cy="-8" rx="3" ry="1.5" fill="#c03030"/>
+      <!-- 腮红 -->
+      <circle cx="-9" cy="-11" r="2" fill="#ff9b9b" opacity="0.65"/>
+      <circle cx="9" cy="-11" r="2" fill="#ff9b9b" opacity="0.65"/>
+      <!-- 手举饭碗 -->
+      <circle cx="22" cy="4" r="5" fill="#ffe29a"/>
+      <ellipse cx="26" cy="-4" rx="8" ry="3.5" fill="#c89060" stroke="#8a5a2a" stroke-width="0.8"/>
+      <path d="M18,-4 Q26,0 34,-4" stroke="#8a5a2a" stroke-width="1" fill="#e6c09a"/>
+      <!-- 另一只手叉腰 -->
+      <circle cx="-22" cy="6" r="5" fill="#ffe29a"/>
+    </g>
+  `;
+  const innerSVG = char === "xzy" ? innerXzy : (char === "zjy" ? innerZjy : (char === "xueking" ? innerXueking : (char === "naruto" ? `
     <!-- 鸣人（上半身）-->
     <g transform="translate(100 150) scale(4.4)">
       <!-- 脖子 -->
@@ -8193,7 +8861,7 @@ function buildKofPortraitSVG(char) {
       <circle cx="-26" cy="6" r="6" fill="#fff"/>
       <circle cx="-28" cy="4" r="6" fill="#30a8e8"/>
     </g>
-  `));
+  `)));
   // 背景光芒（16 道辐射）
   let rays = "";
   for (let i = 0; i < 16; i++) {
@@ -8225,8 +8893,8 @@ function updateKofPortrait(side, char) {
   // 清掉除了四个角标的旧内容
   [...wrap.querySelectorAll("svg")].forEach(n => n.remove());
   wrap.insertAdjacentHTML("afterbegin", buildKofPortraitSVG(char));
-  const enName = char === "naruto" ? "NARUTO" : char === "xueking" ? "SNOW KING" : char === "zjy" ? "ZHANG JIKUAI" : "DORAEMON";
-  const cnName = char === "naruto" ? "鸣 人" : char === "xueking" ? "雪 王" : char === "zjy" ? "张 鸡 块" : "哆 啦 A 梦";
+  const enName = char === "naruto" ? "NARUTO" : char === "xueking" ? "SNOW KING" : char === "zjy" ? "ZHANG JIKUAI" : char === "itachi" ? "ITACHI" : char === "xzy" ? "XIE ZHIYIN" : "DORAEMON";
+  const cnName = char === "naruto" ? "鸣 人" : char === "xueking" ? "雪 王" : char === "zjy" ? "张 鸡 块" : char === "itachi" ? "宇 智 波 鼬" : char === "xzy" ? "谢 只 因" : "哆 啦 A 梦";
   document.getElementById(side === "p1" ? "kofNameEnP1" : "kofNameEnP2").textContent = enName;
   document.getElementById(side === "p1" ? "kofNameCnP1" : "kofNameCnP2").textContent = cnName;
 }
@@ -8839,6 +9507,8 @@ const NET_ENTITY_FIELDS = [
   "iceGate1","iceGate2","iceGateCooldown",
   "hailStormEnd","hailStormX","hailNextTick","slowUntil","dmgDebuffUntil","narutoBuffUntil",
   "flyUntil","flyNextHail","cdPenalty",
+  // 谢只因
+  "tongueT","tongueLastTick","xzyDashT","xzyDashHit","danceT","danceHit","danceWaveNext",
 ];
 // 绝对时间戳字段（需要加上时钟偏移）
 const NET_TIMER_FIELDS = new Set([
@@ -8859,7 +9529,7 @@ function netPackEntity(o) {
 }
 
 // 精简各类数组：只留客户端渲染必需字段
-function netPackProjectile(p) { return { x:p.x, y:p.y, vx:p.vx, life:p.life, rot:p.rot, owner:p.owner }; }
+function netPackProjectile(p) { return { x:p.x, y:p.y, vx:p.vx, vy:p.vy, life:p.life, rot:p.rot, owner:p.owner, kind:p.kind, hitR:p.hitR }; }
 function netPackClone(c)      { return { x:c.x, y:c.y, facing:c.facing, life:c.life, atkT:c.atkT }; }
 function netPackRasen(r)      { return { x:r.x, y:r.y, vx:r.vx, vy:r.vy, life:r.life, radius:r.radius, owner:r.owner }; }
 function netPackFog(f)        { return { x:f.x, y:f.y, radius:f.radius, maxRadius:f.maxRadius, life:f.life, maxLife:f.maxLife, owner:f.owner }; }
