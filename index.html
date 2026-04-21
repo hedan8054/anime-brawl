@@ -5383,7 +5383,8 @@ function update() {
     const tgt = b.owner === "p2" ? player : dummy;
     const dx = tgt.x - b.x;
     const dy = (tgt.y - 50) - b.y;
-    if (Math.abs(dx) < b.size + 28 && Math.abs(dy) < 60) {
+    // 触碰面积 ×2（每边 ×√2 → 面积 ×2）
+    if (Math.abs(dx) < (b.size + 28) * Math.SQRT2 && Math.abs(dy) < 60 * Math.SQRT2) {
       const base = 1500 + b.travel * 8;
       const dmg = Math.max(1, Math.round(base * (b.scale || 1)));
       if (b.owner === "p2") damagePlayer(dmg);
