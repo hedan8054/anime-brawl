@@ -751,8 +751,8 @@
   .avatar-card.zjy-bg svg { background: #b32020; }
   .avatar-card.itachi-bg svg { background: #1a1a1a; }
   .kof-cell.itachi-bg svg { background: #1a1a1a; }
-  .avatar-card.xzy-bg svg { background: #f5c36a; }
-  .kof-cell.xzy-bg svg { background: #f5c36a; }
+  .avatar-card.xzy-bg svg { background: #3f7fd8; }
+  .kof-cell.xzy-bg svg { background: #3f7fd8; }
   .avatar-card span {
     font-size: 12px;
     letter-spacing: 2px;
@@ -1252,21 +1252,20 @@
             </button>
             <button class="kof-cell xzy-bg" data-char="xzy">
               <svg viewBox="0 0 40 40">
-                <!-- 黄色大圆脸（占位，等图片替换）-->
-                <circle cx="20" cy="22" r="13" fill="#ffe29a"/>
-                <!-- 头顶一撮发 -->
-                <path d="M14 10 Q20 4 26 10" stroke="#3a2a1a" stroke-width="2" fill="none"/>
-                <!-- 眯眯眼 -->
-                <path d="M14 21 Q16 23 18 21" stroke="#111" stroke-width="1.4" fill="none"/>
-                <path d="M22 21 Q24 23 26 21" stroke="#111" stroke-width="1.4" fill="none"/>
+                <!-- 红领巾少先队员 -->
+                <!-- 蓝上衣 -->
+                <path d="M8 28 L12 18 L28 18 L32 28 L32 38 L8 38 Z" fill="#3f7fd8"/>
+                <!-- 头发（黑色）-->
+                <path d="M10 12 Q20 4 30 12 L30 16 Q20 8 10 16 Z" fill="#1a1412"/>
+                <!-- 脸 -->
+                <ellipse cx="20" cy="16" rx="8" ry="8" fill="#f0c4a0"/>
+                <!-- 红领巾（V 形） -->
+                <polygon points="14,18 20,26 26,18 22,20 20,23 18,20" fill="#e03030"/>
+                <!-- 眼（小点）-->
+                <circle cx="17" cy="16" r="1.1" fill="#111"/>
+                <circle cx="23" cy="16" r="1.1" fill="#111"/>
                 <!-- 嘴 -->
-                <ellipse cx="20" cy="27" rx="3" ry="1.5" fill="#c03030"/>
-                <!-- 腮红 -->
-                <circle cx="13" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
-                <circle cx="27" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
-                <!-- 饭碗小图标 -->
-                <ellipse cx="7" cy="34" rx="3" ry="1.2" fill="#c89060"/>
-                <path d="M4 33 Q7 36 10 33" stroke="#8a5a2a" stroke-width="0.8" fill="#e6c09a"/>
+                <path d="M18 20 Q20 21 22 20" stroke="#8a3030" stroke-width="0.8" fill="none"/>
               </svg>
               <span class="kof-cell-name">谢 只 因</span>
               <span class="kof-cursor"></span>
@@ -1458,15 +1457,13 @@
         </button>
         <button class="avatar-card xzy-bg" data-char="xzy">
           <svg viewBox="0 0 40 40">
-            <circle cx="20" cy="22" r="13" fill="#ffe29a"/>
-            <path d="M14 10 Q20 4 26 10" stroke="#3a2a1a" stroke-width="2" fill="none"/>
-            <path d="M14 21 Q16 23 18 21" stroke="#111" stroke-width="1.4" fill="none"/>
-            <path d="M22 21 Q24 23 26 21" stroke="#111" stroke-width="1.4" fill="none"/>
-            <ellipse cx="20" cy="27" rx="3" ry="1.5" fill="#c03030"/>
-            <circle cx="13" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
-            <circle cx="27" cy="25" r="1.6" fill="#ff9b9b" opacity="0.6"/>
-            <ellipse cx="7" cy="34" rx="3" ry="1.2" fill="#c89060"/>
-            <path d="M4 33 Q7 36 10 33" stroke="#8a5a2a" stroke-width="0.8" fill="#e6c09a"/>
+            <path d="M8 28 L12 18 L28 18 L32 28 L32 38 L8 38 Z" fill="#3f7fd8"/>
+            <path d="M10 12 Q20 4 30 12 L30 16 Q20 8 10 16 Z" fill="#1a1412"/>
+            <ellipse cx="20" cy="16" rx="8" ry="8" fill="#f0c4a0"/>
+            <polygon points="14,18 20,26 26,18 22,20 20,23 18,20" fill="#e03030"/>
+            <circle cx="17" cy="16" r="1.1" fill="#111"/>
+            <circle cx="23" cy="16" r="1.1" fill="#111"/>
+            <path d="M18 20 Q20 21 22 20" stroke="#8a3030" stroke-width="0.8" fill="none"/>
           </svg>
           <span>谢 只 因</span>
         </button>
@@ -1592,6 +1589,12 @@ const zjyIdleSheet = new Image();
 zjyIdleSheet.src = "zjy_idle_sheet.png";
 zjyIdleSheet.onload = () => { zjyIdleSheetReady = true; };
 let zjyIdleSheetReady = false;
+
+// 谢只因 · 立绘（红领巾少先队员单帧 80×158，先用单帧替换占位，动画后续加）
+const xzyIdleImg = new Image();
+xzyIdleImg.src = "xzy_idle.png";
+let xzyIdleImgReady = false;
+xzyIdleImg.onload = () => { xzyIdleImgReady = true; };
 const ZJY_IDLE_FRAME = 128;    // 每帧 128×128
 const ZJY_IDLE_COUNT = 10;
 const ZJY_IDLE_FPS = 10;       // 播放速率
@@ -2753,89 +2756,65 @@ function castItachiSkill(idx, caster, target) {
   });
 }
 
-// 谢只因立绘（占位版：圆头胖身黄衣；等用户发图再换成 sprite sheet）
+// 谢只因立绘：红领巾少先队员（xzy_idle.png 单帧 80×158）
+// 用户要求"人物要水平方向翻转"→ 整体 drawXzy 默认水平镜像，再由 facing 决定实际方向
 function drawXzy(state, attacking) {
   const x = state.x, y = state.y, facing = state.facing;
   const t = performance.now();
+
+  // 目标渲染高度 180（跟其他角色体量一致），按 sheet 比例算 drawW
+  const DRAW_H = 180;
+  const srcW = xzyIdleImg.naturalWidth || 80;
+  const srcH = xzyIdleImg.naturalHeight || 158;
+  const DRAW_W = DRAW_H * (srcW / srcH);
+  const dx = x - DRAW_W / 2;
+  const dy = y - DRAW_H;
+
   ctx.save();
-  if (facing < 0) {
+  // 用户要求默认水平翻转：正 facing 时翻一次，facing<0 再翻一次（抵消）
+  // 实现：只在 facing > 0 时翻（与普通角色相反）
+  if (facing > 0) {
     ctx.translate(x, 0);
     ctx.scale(-1, 1);
     ctx.translate(-x, 0);
   }
-  // 身体（胖椭圆 上半黄 T恤 + 下半深色短裤）
-  const bodyY = y - 56;
-  ctx.fillStyle = "#f5c36a";
-  ctx.beginPath();
-  ctx.ellipse(x, bodyY, 26, 36, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#3a2a1a";
-  ctx.beginPath();
-  ctx.ellipse(x, y - 18, 24, 14, 0, 0, Math.PI * 2);
-  ctx.fill();
-  // 肩腕（大胖胳膊）
-  ctx.fillStyle = "#ffe29a";
-  const armSwing = attacking ? Math.sin(t / 30) * 14 : Math.sin(t / 400) * 3;
-  // 前臂（挥舞时前伸）
-  ctx.beginPath();
-  ctx.ellipse(x + 26 + armSwing, bodyY - 2, 9, 14, 0.3, 0, Math.PI * 2);
-  ctx.fill();
-  // 后臂
-  ctx.beginPath();
-  ctx.ellipse(x - 26, bodyY - 2, 8, 14, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-  // 腿
-  ctx.fillStyle = "#3a2a1a";
-  ctx.fillRect(x - 14, y - 8, 10, 10);
-  ctx.fillRect(x + 4, y - 8, 10, 10);
-  // 鞋
-  ctx.fillStyle = "#1a1a1a";
-  ctx.fillRect(x - 16, y - 2, 14, 4);
-  ctx.fillRect(x + 2, y - 2, 14, 4);
-  // 头（胖圆）
-  const headY = y - 108;
-  const bob = Math.sin(t / 300) * 1.5;
-  ctx.fillStyle = "#ffe29a";
-  ctx.beginPath();
-  ctx.arc(x, headY + bob, 24, 0, Math.PI * 2);
-  ctx.fill();
-  // 头发（一撮）
-  ctx.strokeStyle = "#3a2a1a";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(x - 8, headY - 18 + bob);
-  ctx.quadraticCurveTo(x, headY - 28 + bob, x + 8, headY - 18 + bob);
-  ctx.stroke();
-  // 眯眯眼
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(x - 10, headY - 2 + bob);
-  ctx.quadraticCurveTo(x - 6, headY + 2 + bob, x - 2, headY - 2 + bob);
-  ctx.moveTo(x + 2, headY - 2 + bob);
-  ctx.quadraticCurveTo(x + 6, headY + 2 + bob, x + 10, headY - 2 + bob);
-  ctx.stroke();
-  // 嘴
-  ctx.fillStyle = "#c03030";
-  ctx.beginPath();
-  ctx.ellipse(x + 1, headY + 8 + bob, 4, 2, 0, 0, Math.PI * 2);
-  ctx.fill();
-  // 腮红
-  ctx.fillStyle = "rgba(255,150,150,0.6)";
-  ctx.beginPath();
-  ctx.arc(x - 14, headY + 4 + bob, 3, 0, Math.PI * 2);
-  ctx.arc(x + 14, headY + 4 + bob, 3, 0, Math.PI * 2);
-  ctx.fill();
+  if (xzyIdleImgReady && xzyIdleImg.complete && xzyIdleImg.naturalWidth > 0) {
+    ctx.imageSmoothingEnabled = false;
+    // 待机时轻微上下呼吸 bob
+    const bob = Math.sin(t / 300) * 1.5;
+    ctx.drawImage(xzyIdleImg, dx, dy + bob, DRAW_W, DRAW_H);
+  } else {
+    // 图未载入时的兜底方块
+    ctx.fillStyle = "#3f7fd8";
+    ctx.fillRect(dx + 10, dy + 40, DRAW_W - 20, DRAW_H - 40);
+    ctx.fillStyle = "#f0c4a0";
+    ctx.beginPath();
+    ctx.arc(x, dy + 30, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#e03030";
+    ctx.fillRect(dx + DRAW_W / 2 - 14, dy + 54, 28, 8);
+  }
 
-  // 攻击特效
+  // 攻击时一圈白色冲击光晕（简易效果；动画帧后续再细化）
+  if (attacking) {
+    ctx.strokeStyle = "rgba(255,255,180,0.6)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y - DRAW_H / 2, 46 + Math.sin(t / 60) * 3, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // 攻击特效 —— 3A 舌头从嘴向前伸（顺着角色朝向，由外层翻转决定视觉方向）
   if (state.atkType === 3 && state.tongueT > 0) {
-    // 3A 舌头：从嘴向前延伸一个粉色长条
+    const mouthY = dy + 48;  // 嘴大致位置（相对 dy）
+    const reach = 60;
+    ctx.fillStyle = "#c02020";
+    ctx.beginPath();
+    ctx.ellipse(x + 20 + reach / 2, mouthY, reach / 2, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = "#ff4d79";
     ctx.beginPath();
-    ctx.ellipse(x + 48, headY + 10 + bob, 30, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ff8ea9";
-    ctx.beginPath();
-    ctx.ellipse(x + 48, headY + 8 + bob, 28, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 20 + reach / 2, mouthY - 2, reach / 2 - 4, 3, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -8678,7 +8657,7 @@ function buildKofPortraitSVG(char) {
     xueking:  { bg1: "#7dd3fc", bg2: "#0c4a6e", ray: "#e0f2fe", nameColor: "#e0f2fe" },
     zjy:      { bg1: "#ff5a30", bg2: "#5a0808", ray: "#ffaa33", nameColor: "#ffdd66" },
     itachi:   { bg1: "#c5201c", bg2: "#1a0a0a", ray: "#ff5544", nameColor: "#ffcccc" },
-    xzy:      { bg1: "#f5c36a", bg2: "#6a3a10", ray: "#ffd91f", nameColor: "#ffe29a" },
+    xzy:      { bg1: "#4cc8ff", bg2: "#0a3a6a", ray: "#ffdd66", nameColor: "#ffffff" },
   };
   const t = themes[char] || { bg1: "#888", bg2: "#222", ray: "#ccc", nameColor: "#fff" };
   const innerXueking = `
@@ -9151,8 +9130,8 @@ function refreshAvatarDisplay() {
   const card = document.querySelector(`.avatar-card[data-char="${selectedChar}"]`);
   currentSvg.innerHTML = card.querySelector("svg").innerHTML;
   const btn = document.getElementById("avatarBtn");
-  const bgMap  = { naruto: "#d96518", doraemon: "#1d7db8", xueking: "#5aa8d8", zjy: "#b32020" };
-  const brdMap = { naruto: "#ffdd55", doraemon: "#4cc8ff", xueking: "#c8f0ff", zjy: "#ff7a44" };
+  const bgMap  = { naruto: "#d96518", doraemon: "#1d7db8", xueking: "#5aa8d8", zjy: "#b32020", itachi: "#1a1a1a", xzy: "#3f7fd8" };
+  const brdMap = { naruto: "#ffdd55", doraemon: "#4cc8ff", xueking: "#c8f0ff", zjy: "#ff7a44", itachi: "#c5201c", xzy: "#ff5555" };
   btn.style.background = bgMap[selectedChar] || "#1d7db8";
   btn.style.borderColor = brdMap[selectedChar] || "#fff";
   // 更新卡片选中态
