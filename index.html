@@ -1536,6 +1536,15 @@ const itachiSprite = new Image();
 itachiSprite.src = "宇智波鼬动作.jpeg";
 itachiSprite.onload = () => { itachiSpriteReady = true; };
 let itachiSpriteReady = false;
+
+// 张鸡块 · 待机贴图（从 idle_animation.gif 导出的横向 10 帧精灵表 1280×128）
+const zjyIdleSheet = new Image();
+zjyIdleSheet.src = "zjy_idle_sheet.png";
+zjyIdleSheet.onload = () => { zjyIdleSheetReady = true; };
+let zjyIdleSheetReady = false;
+const ZJY_IDLE_FRAME = 128;    // 每帧 128×128
+const ZJY_IDLE_COUNT = 10;
+const ZJY_IDLE_FPS = 10;       // 播放速率
 // 贴图帧切片（像素坐标，需根据实际图做视觉微调）
 // 原图 724 × 1024，7 行布局：1 待机 / 2 跳跃 / 3 跑步 / 4 眼睛 / 5 乌鸦 / 6 天照 / 7 月读
 const ITA_FR = {
@@ -4243,6 +4252,32 @@ function drawZjy(state, attacking, tint) {
   const landT = state.landT || 0;
   const now = performance.now();
   const stacks = state.rageStacks || 0;
+
+  // ===== 纯待机 → 走贴图（idle_animation.gif 10 帧循环）=====
+  const pureIdle = !attacking && !moving && !jumping && state.onGround
+                    && (state.downT || 0) <= 0
+                    && (state.spinT || 0) <= 0
+                    && (state.spearT || 0) <= 0
+                    && (state.punchRushT || 0) <= 0
+                    && (state.smashUntil || 0) < now;
+  if (pureIdle && zjyIdleSheetReady) {
+    const idx = Math.floor(now / (1000 / ZJY_IDLE_FPS)) % ZJY_IDLE_COUNT;
+    const sx = idx * ZJY_IDLE_FRAME, sy = 0, sw = ZJY_IDLE_FRAME, sh = ZJY_IDLE_FRAME;
+    const drawH = 150;
+    const drawW = drawH;  // 1:1
+    const dx = x - drawW / 2;
+    const dy = y - drawH;
+    ctx.save();
+    if (facing < 0) {
+      ctx.translate(x, 0);
+      ctx.scale(-1, 1);
+      ctx.translate(-x, 0);
+    }
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(zjyIdleSheet, sx, sy, sw, sh, dx, dy, drawW, drawH);
+    ctx.restore();
+    return;
+  }
 
   // 脸色：0=小麦色正常，1=微红，2=明显红，3=很红，4=爆红
   const facePalette = ["#c89674", "#d8816a", "#e06854", "#db4430", "#b82018"];
