@@ -3311,16 +3311,24 @@ function fireManualAerialShot() {
 }
 
 function spawnRasenExplosion(x, y) {
-  for (let i = 0; i < 36; i++) {
+  // 粒子数 + 速度 + 尺寸同步放大，匹配更大的螺旋丸
+  for (let i = 0; i < 80; i++) {
     particles.push({
       x, y,
-      vx: (Math.random() - 0.5) * 14,
-      vy: (Math.random() - 0.5) * 14,
-      life: 25 + Math.random() * 20,
+      vx: (Math.random() - 0.5) * 30,
+      vy: (Math.random() - 0.5) * 30,
+      life: 30 + Math.random() * 28,
       color: Math.random() < 0.6 ? "#4cf" : "#fff",
-      size: 3 + Math.random() * 5,
+      size: 5 + Math.random() * 9,
     });
   }
+  // 外扩冲击环
+  particles.push({
+    x, y, vx: 0, vy: 0,
+    life: 22, maxLife: 22,
+    color: "#9df", size: 2,
+    impact: true, expandTo: 200,
+  });
 }
 
 function drawRasenOrb(x, y, radius) {
@@ -5373,18 +5381,19 @@ function update() {
   // 飞天阶段发射由玩家按空格触发 fireManualAerialShot()
 
   // 螺旋丸球物理
+  const RASEN_SCALE = Math.sqrt(5);  // 面积 ×5 = 增加 400%（每边 ×√5）
   for (let i = rasenBalls.length - 1; i >= 0; i--) {
     const b = rasenBalls[i];
     b.x += b.vx;
     b.y += b.vy;
     b.travel += Math.hypot(b.vx, b.vy);
-    b.size = Math.min(30, 8 + b.travel * 0.05);
+    b.size = Math.min(30 * RASEN_SCALE, (8 + b.travel * 0.05) * RASEN_SCALE);
     // 按 owner 路由目标：P2 发的打 player，否则打 dummy（默认）
     const tgt = b.owner === "p2" ? player : dummy;
     const dx = tgt.x - b.x;
     const dy = (tgt.y - 50) - b.y;
-    // 触碰面积 ×2（每边 ×√2 → 面积 ×2）
-    if (Math.abs(dx) < (b.size + 28) * Math.SQRT2 && Math.abs(dy) < 60 * Math.SQRT2) {
+    // 触碰面积 +400%（每边 ×√5）
+    if (Math.abs(dx) < b.size + 28 * RASEN_SCALE && Math.abs(dy) < 60 * RASEN_SCALE) {
       const base = 1500 + b.travel * 8;
       const dmg = Math.max(1, Math.round(base * (b.scale || 1)));
       if (b.owner === "p2") damagePlayer(dmg);
