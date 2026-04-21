@@ -1637,7 +1637,13 @@ function handleP2Attack() {
     p2.doraWarpWindowUntil = 0;
     return;
   }
-  if (p2.atkT > 0) return;
+  if (p2.atkT > 0) {
+    // 哆啦A梦：动画中按平A → 排队下一段，避免 3→4 因错过窗口而回到 1
+    if (p2.char === "doraemon" && p2.comboStage > 0 && p2.comboStage < 5 && p2.comboWindow > 0) {
+      p2.comboQueued = true;
+    }
+    return;
+  }
   if (p2.stunT > 0 || p2.downT > 0) return;
   if (performance.now() < timeFrozenUntil) return;
   if (performance.now() < (p2.iceFrozenUntil || 0)) return;
@@ -1864,6 +1870,7 @@ function applyCharacter(name) {
   player.sealT = 0;
   player.comboStage = 0;
   player.comboWindow = 0;
+  player.comboQueued = false;
   player.spearT = 0;
   player.spinT = 0;
   player.spinLastTick = 0;
@@ -2484,7 +2491,13 @@ function handleNormalAttack() {
     player.doraWarpWindowUntil = 0;
     return;
   }
-  if (player.atkT > 0) return;
+  if (player.atkT > 0) {
+    // 哆啦A梦：动画中按平A → 排队下一段，避免 3→4 因错过窗口而回到 1
+    if (selectedChar === "doraemon" && player.comboStage > 0 && player.comboStage < 5 && player.comboWindow > 0) {
+      player.comboQueued = true;
+    }
+    return;
+  }
   if (inAerial()) return;
   if (selectedChar === "doraemon") handleDoraemonAttack(player);
   else if (selectedChar === "xueking") handleSnowkingAttack(player);
@@ -2773,7 +2786,10 @@ function drawXzy(state, attacking) {
   ctx.save();
   // 用户要求默认水平翻转：正 facing 时翻一次，facing<0 再翻一次（抵消）
   // 实现：只在 facing > 0 时翻（与普通角色相反）
-  if (facing > 0) {
+  // 2A 屁股顶：要"先转身再顶"——用反向朝向（屁股朝敌人）
+  const isButtThrust = attacking && state.atkType === 2 && (state.arcT || 0) > 0;
+  const shouldMirror = isButtThrust ? (facing < 0) : (facing > 0);
+  if (shouldMirror) {
     ctx.translate(x, 0);
     ctx.scale(-1, 1);
     ctx.translate(-x, 0);
@@ -3154,6 +3170,18 @@ function updateEntityCombat(attacker, target, char) {
     }
   }
 
+  // 1A 石矛：spearT 期间持续前推 attacker + 带走目标（替身/霸体免疫）
+  if (char === "doraemon" && attacker.atkType === 1 && attacker.spearT > 0) {
+    attacker.x += attacker.facing * 2.2;
+    attacker.x = Math.max(40, Math.min(W_WORLD - 40, attacker.x));
+    const dx1 = target.x - attacker.x;
+    const inReach = Math.sign(dx1) === attacker.facing && Math.abs(dx1) < 150;
+    if (inReach && !isInSubstitute(target)) {
+      target.x += attacker.facing * 2.4;
+      target.x = Math.max(100, Math.min(W_WORLD - 100, target.x));
+    }
+  }
+
   // 2A 回旋 tick 伤害（每 20ms 20 点）
   if (char === "doraemon" && attacker.spinT > 0) {
     const dx2 = target.x - attacker.x;
@@ -3310,6 +3338,18 @@ function updateEntityCombat(attacker, target, char) {
   // 计时器衰减
   if (attacker.atkT > 0) attacker.atkT--;
   if (attacker.atkT === 0 && attacker.atkType !== 0) attacker.atkType = 0;
+
+  // 哆啦A梦：平A 输入缓冲 —— 动画刚结束、排队了下一段、combo 还没走完就自动接
+  // 修的是 "3A 按完立刻按 4A，却因超时被当成新起的 1A" 这种体感问题
+  if (char === "doraemon" && attacker.atkT === 0 && attacker.comboQueued
+      && attacker.comboStage > 0 && attacker.comboStage < 5
+      && attacker.comboWindow > 0
+      && attacker.onGround
+      && !(attacker.stunT > 0) && !(attacker.downT > 0)
+      && !(performance.now() < (attacker.iceFrozenUntil || 0))) {
+    attacker.comboQueued = false;
+    handleDoraemonAttack(attacker);
+  }
   if (attacker.spearT > 0) attacker.spearT--;
   if (attacker.spinT  > 0) attacker.spinT--;
   if (attacker.flipT  > 0) attacker.flipT--;
@@ -3321,6 +3361,7 @@ function updateEntityCombat(attacker, target, char) {
     attacker.comboWindow--;
     if (attacker.comboWindow === 0) {
       attacker.comboStage = 0;
+      attacker.comboQueued = false;
       if (attacker === player) updateComboIndicator();
       else if (attacker === p2) updateP2ComboIndicator();
     }
@@ -3347,9 +3388,10 @@ function handleDoraemonAttack(e = player) {
   const target = (e === player) ? dummy : player;
 
   if (stage === 0) {
-    e.atkT = 24;
-    e.spearT = 24;
-    e.x += e.facing * 100;
+    // 1A 石矛：带走敌人 —— 小距离起手前冲，随后 spearT tick 持续推 + 拖拽
+    e.atkT = 30;
+    e.spearT = 30;
+    e.x += e.facing * 20;
   } else if (stage === 1) {
     e.atkT = 28;
     e.spinT = 28;
@@ -3378,7 +3420,10 @@ function handleDoraemonAttack(e = player) {
 
   e.x = Math.max(40, Math.min(W_WORLD - 40,e.x));
   e.comboStage = (stage + 1) % 5;
-  e.comboWindow = 54;
+  // 衔接窗口 = 当前段动画时长 + 60 帧（≈1s）缓冲
+  // 避免 3A 小拳拳(48帧)等长动画后残余窗口不够接下一段就超时重置
+  e.comboWindow = e.atkT + 60;
+  e.comboQueued = false;   // 新起一段，清空缓冲
   if (e === player) updateComboIndicator();
   else if (e === p2) updateP2ComboIndicator();
 }
@@ -5628,8 +5673,8 @@ function resetRound() {
   player.tongueT = 0; player.tongueLastTick = 0;
   player.xzyDashT = 0; player.xzyDashHit = false;
   player.danceT = 0; player.danceHit = false; player.danceWaveNext = 0;
-  player.comboStage = 0; player.comboWindow = 0;
-  p2.comboStage = 0; p2.comboWindow = 0;
+  player.comboStage = 0; player.comboWindow = 0; player.comboQueued = false;
+  p2.comboStage = 0; p2.comboWindow = 0; p2.comboQueued = false;
   updateComboIndicator();
   updateP2ComboIndicator();
   skills.forEach(s => s.ready = 0);
