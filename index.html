@@ -1545,14 +1545,14 @@ let zjyIdleSheetReady = false;
 const ZJY_IDLE_FRAME = 128;    // 每帧 128×128
 const ZJY_IDLE_COUNT = 10;
 const ZJY_IDLE_FPS = 10;       // 播放速率
-// 贴图帧切片（像素坐标，需根据实际图做视觉微调）
-// 原图 724 × 1024，7 行布局：1 待机 / 2 跳跃 / 3 跑步 / 4 眼睛 / 5 乌鸦 / 6 天照 / 7 月读
+// 贴图帧切片（像素坐标）
+// 原图 724 × 1024。y/h 严格卡在精灵行内避开标签，frameW < stride 留空隙
+// 防止露出下一帧的角色。
 const ITA_FR = {
-  idle: { y:  95, h: 115, firstX: 15, stride: 118, count: 6 },
-  jump: { y: 230, h: 130, firstX: 15, stride: 118, count: 6 },
-  run:  { y: 370, h: 115, firstX: 15, stride: 118, count: 6 },
-  // 第 5 行 释放乌鸦（用于平A + 技能预备姿态）
-  crow: { y: 590, h: 135, firstX: 10, stride: 142, count: 5 },
+  idle: { y: 115, h: 100, firstX: 10, stride: 120, frameW: 100, count: 6 },
+  jump: { y: 265, h:  95, firstX: 10, stride: 120, frameW: 100, count: 6 },
+  run:  { y: 400, h:  75, firstX: 10, stride: 120, frameW: 100, count: 6 },
+  crow: { y: 640, h: 100, firstX: 10, stride: 144, frameW: 120, count: 5 },
 };
 
 const keys = {};
@@ -2593,7 +2593,7 @@ function drawItachi(state, attacking) {
   }
   const idx = Math.max(0, Math.min(fr.count - 1, Math.floor(progress * fr.count) % fr.count));
   const sx = fr.firstX + idx * fr.stride;
-  const sy = fr.y, sw = fr.stride - 6, sh = fr.h;
+  const sy = fr.y, sw = fr.frameW || (fr.stride - 6), sh = fr.h;
   // 目标高度
   const drawH = 180;
   const drawW = drawH * (sw / sh);
