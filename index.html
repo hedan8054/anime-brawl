@@ -2397,6 +2397,9 @@ let roundTimeoutId = null;  // 局间过渡定时器
 // 训练模式无冷却开关
 let noCooldown = false;
 
+// 背景循环：0=像素草原，1=纯白道场。每局 resetRound 切换（初始 1，第一局 toggle 为 0=草原）
+let bgIndex = 1;
+
 // 回合时钟：开局 3 秒倒计时 + 60 秒战斗
 let roundStartAt = 0;             // 本局 resetRound 的绝对时刻 (performance.now)
 const ROUND_COUNTDOWN_MS = 3000;  // 开局 3-2-1-FIGHT! 时长
@@ -5051,6 +5054,7 @@ function resetRound() {
   matchEnded = false;
   winner = null;
   roundStartAt = performance.now();  // 启动开局 3-2-1 倒计时 + 60s 战斗时钟
+  bgIndex = 1 - bgIndex;  // 每局切换背景（草原 ↔ 纯白道场）
   // 位置 + HP + 计时器归零（保留胜场数）
   // 关键：先把 maxHp 重置回初始值，抹去上一局雪王冰甲转永久 HP 的残留
   p2.maxHp = BASE_MAX_HP.p2;
@@ -6833,6 +6837,108 @@ function drawPvpGrasslandBG() {
   }
 }
 
+// 纯白决斗场（日式道场风）：白色天空 + 淡色远景 + 浅灰地面 + 木地板纹
+function drawPvpArenaBG() {
+  // 天空：几乎纯白，带一点点冷灰让不刺眼
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND - 28);
+  skyGrad.addColorStop(0, "#ffffff");
+  skyGrad.addColorStop(1, "#f2f4f8");
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W_WORLD, GROUND - 28);
+
+  // 远处淡灰色山剪影（做层次，不至于太单调）
+  ctx.fillStyle = "#e4e6ec";
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND - 28);
+  const peaks = [[120, 120], [340, 90], [560, 110], [810, 80], [1040, 100],
+                 [1260, 85], [1480, 105], [1700, 95], [1900, 115]];
+  ctx.lineTo(0, GROUND - 28);
+  for (const [x, h] of peaks) {
+    ctx.lineTo(x - 60, GROUND - 28);
+    ctx.lineTo(x, GROUND - 28 - h);
+    ctx.lineTo(x + 60, GROUND - 28);
+  }
+  ctx.lineTo(W_WORLD, GROUND - 28);
+  ctx.closePath();
+  ctx.fill();
+
+  // 稍近一层山：更浅的白灰
+  ctx.fillStyle = "#eef0f4";
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND - 28);
+  const nearPeaks = [[200, 70], [500, 55], [800, 68], [1100, 50], [1400, 62], [1700, 55]];
+  for (const [x, h] of nearPeaks) {
+    ctx.lineTo(x - 80, GROUND - 28);
+    ctx.lineTo(x, GROUND - 28 - h);
+    ctx.lineTo(x + 80, GROUND - 28);
+  }
+  ctx.lineTo(W_WORLD, GROUND - 28);
+  ctx.closePath();
+  ctx.fill();
+
+  // 远处节日红灯笼（跟草原背景风格呼应，不过换成淡红）
+  for (let i = 0; i < 5; i++) {
+    const lx = 160 + i * 360;
+    const ly = 70 + Math.sin(performance.now() / 600 + i) * 5;
+    ctx.fillStyle = "rgba(220, 80, 80, 0.55)";
+    ctx.beginPath();
+    ctx.arc(lx, ly, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(120, 30, 30, 0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(lx, ly - 14);
+    ctx.lineTo(lx, 20);
+    ctx.stroke();
+  }
+
+  // 地平线细灰线
+  ctx.strokeStyle = "#bbbec4";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND - 28);
+  ctx.lineTo(W_WORLD, GROUND - 28);
+  ctx.stroke();
+
+  // 地面主体：浅灰白（模拟日式道场木地板）
+  const floorGrad = ctx.createLinearGradient(0, GROUND - 28, 0, H);
+  floorGrad.addColorStop(0, "#f5f6f8");
+  floorGrad.addColorStop(1, "#dadde2");
+  ctx.fillStyle = floorGrad;
+  ctx.fillRect(0, GROUND - 28, W_WORLD, H - GROUND + 28);
+
+  // 地板木纹：竖直线分隔（每 80px 一条）
+  ctx.strokeStyle = "#cdd0d6";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W_WORLD; x += 80) {
+    ctx.beginPath();
+    ctx.moveTo(x, GROUND - 24);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+
+  // 地板细横纹：几条淡灰横线加质感
+  ctx.strokeStyle = "#d4d7dc";
+  for (let y = GROUND + 20; y < H; y += 28) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W_WORLD, y);
+    ctx.stroke();
+  }
+
+  // 中心圆环（决斗场风格地标，位于舞台中点）
+  ctx.strokeStyle = "rgba(180, 70, 70, 0.4)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(W_WORLD / 2, GROUND + 8, 180, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(180, 70, 70, 0.25)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(W_WORLD / 2, GROUND + 8, 120, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
 function drawPixelCloud(cx, cy, size) {
   const u = 6;             // 像素单位
   const w1 = size;          // 底层宽
@@ -6857,9 +6963,10 @@ function draw() {
   }
   ctx.translate(-camX, 0);   // ===== 进入世界坐标 =====
 
-  // 背景：PVP 模式画像素草原（蓝天 + 云 + 草 + 土），训练模式保留原暗紫
+  // 背景：PVP 模式在「像素草原」和「纯白道场」之间按局轮换，训练模式保留原暗紫
   if (gameMode === "pvp") {
-    drawPvpGrasslandBG();
+    if (bgIndex === 1) drawPvpArenaBG();
+    else drawPvpGrasslandBG();
   } else {
     ctx.fillStyle = "#1a0a2e";
     ctx.fillRect(0, GROUND, W_WORLD, H - GROUND);
@@ -8757,6 +8864,7 @@ function netSerializeState() {
     camX, hitStopT, shakeT,
     gameMode,
     roundStartAt,   // 客户端用于 3-2-1 倒计时 + 60s 时限显示
+    bgIndex,        // 背景循环（草原 / 纯白道场）
     skillsReady: skills.map(s => s.ready),
   };
 }
@@ -8843,6 +8951,7 @@ function netApplyState(data) {
   if (typeof data.roundStartAt === "number") {
     roundStartAt = data.roundStartAt === 0 ? 0 : data.roundStartAt + offset;
   }
+  if (typeof data.bgIndex === "number") bgIndex = data.bgIndex;
 
   // HP 条 + 胜场圆点
   document.getElementById("hp1").style.width = (player.hp / player.maxHp * 100) + "%";
