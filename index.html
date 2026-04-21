@@ -2672,13 +2672,15 @@ function castXzySkill(idx, caster, target) {
       x: caster.x + caster.facing * 30,
       y: caster.y - 70,
       vx: caster.facing * 10,
-      vy: -5,
-      gravity: 0.38,   // 抛物线
-      life: 180,
+      vy: 0,               // 直线飞行（去掉抛物线）
+      // 无 gravity
+      life: 120,           // 120 帧 × 10 速度 = 1200px ≈ 半张地图（W_WORLD=2000）
       rot: 0,
       damage: 400,
-      cdDebuff: 4000,  // 命中目标 → 所有技能 CD +4s
-      owner, hitR: 40,
+      cdDebuff: 4000,      // 命中目标 → 所有技能 CD +4s
+      owner,
+      hitR: 200,           // 触碰范围 ×5（原 40 → 200）
+      bigScale: 5,         // 绘制尺寸 ×5（drawImage 里读取）
     });
     spawnParticles(caster.x + caster.facing * 30, caster.y - 70, "#c89060", 10);
     damageTexts.push({
@@ -8022,10 +8024,12 @@ function draw() {
     const dir = Math.sign(p.vx) || 1;
 
     if (p.kind === "xzyBowl") {
-      // 巨碗：旋转的碗 + 米粒溢出的拖尾
+      // 巨碗：旋转的碗 + 米粒溢出的拖尾（bigScale ×5 让体积显著）
+      const s = p.bigScale || 1;
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rot);
+      ctx.scale(s, s);
       // 碗外壁（深棕）
       ctx.fillStyle = "#8a5a2a";
       ctx.beginPath();
@@ -8043,16 +8047,16 @@ function draw() {
       ctx.fill();
       // 外沿高光
       ctx.strokeStyle = "#c89060";
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.5 / s;   // 不跟着放大描边
       ctx.beginPath();
       ctx.ellipse(0, 0, 22, 10, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
-      // 拖尾米粒
+      // 拖尾米粒（放大后的间距）
       ctx.fillStyle = "rgba(248,244,232,0.7)";
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 1; i <= 6; i++) {
         ctx.beginPath();
-        ctx.arc(p.x - dir * i * 6, p.y - 2 + (i % 2) * 3, 1.8, 0, Math.PI * 2);
+        ctx.arc(p.x - dir * i * 14, p.y - 2 + (i % 2) * 6, 2 + s * 0.4, 0, Math.PI * 2);
         ctx.fill();
       }
       return;
