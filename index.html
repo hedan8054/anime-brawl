@@ -1608,6 +1608,20 @@ const xzyIdleImg = new Image();
 xzyIdleImg.src = "xzy_idle.png";
 let xzyIdleImgReady = false;
 xzyIdleImg.onload = () => { xzyIdleImgReady = true; };
+
+// 谢只因：待机动画（6 帧 153×396 横向 sheet）
+const xzyIdleSheet = new Image();
+xzyIdleSheet.src = "xzx_idle_sheet.png";
+let xzyIdleSheetReady = false;
+xzyIdleSheet.onload = () => { xzyIdleSheetReady = true; };
+const XZY_IDLE_FRAME_W = 153, XZY_IDLE_FRAME_H = 396, XZY_IDLE_COUNT = 6, XZY_IDLE_FPS = 8;
+
+// 谢只因：蛇刺动画（7 帧 686×420 横向 sheet）
+const xzySheciSheet = new Image();
+xzySheciSheet.src = "xzx_sheci_sheet.png";
+let xzySheciSheetReady = false;
+xzySheciSheet.onload = () => { xzySheciSheetReady = true; };
+const XZY_SHECI_FRAME_W = 686, XZY_SHECI_FRAME_H = 420, XZY_SHECI_COUNT = 7;
 const ZJY_IDLE_FRAME = 128;    // 每帧 128×128
 const ZJY_IDLE_COUNT = 10;
 const ZJY_IDLE_FPS = 10;       // 播放速率
@@ -2820,16 +2834,37 @@ function castItachiSkill(idx, caster, target) {
   });
 }
 
-// 谢只因立绘：红领巾少先队员（xzy_idle.png 单帧 80×158）
-// 用户要求"人物要水平方向翻转"→ 整体 drawXzy 默认水平镜像，再由 facing 决定实际方向
+// 谢只因立绘：用 xzxdaiji.gif（6 帧待机）+ xzxsheci.gif（7 帧蛇刺）
+// 用户要求"人物要水平方向翻转"→ 默认朝右，facing<0 时翻转
 function drawXzy(state, attacking) {
   const x = state.x, y = state.y, facing = state.facing;
   const t = performance.now();
-
-  // 目标渲染高度 180（跟其他角色体量一致），按 sheet 比例算 drawW
   const DRAW_H = 180;
-  const srcW = xzyIdleImg.naturalWidth || 80;
-  const srcH = xzyIdleImg.naturalHeight || 158;
+
+  // 3A 蛇刺：专用 7 帧 sheet 覆盖（含张嘴吐蛇的完整动画）
+  if (state.atkType === 3 && (state.tongueT || 0) > 0 && xzySheciSheetReady) {
+    const prog = 1 - (state.tongueT / 60);        // 0→1
+    const fi = Math.max(0, Math.min(XZY_SHECI_COUNT - 1,
+                                    Math.floor(prog * XZY_SHECI_COUNT)));
+    const sDW = DRAW_H * XZY_SHECI_FRAME_W / XZY_SHECI_FRAME_H;   // ≈ 294
+    // 身体中心在 sheet 帧的左起约 100px（观察截图）
+    const anchorX = sDW * (100 / XZY_SHECI_FRAME_W);
+    ctx.save();
+    ctx.translate(x, y);
+    if (facing < 0) ctx.scale(-1, 1);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(xzySheciSheet,
+                  fi * XZY_SHECI_FRAME_W, 0,
+                  XZY_SHECI_FRAME_W, XZY_SHECI_FRAME_H,
+                  -anchorX, -DRAW_H, sDW, DRAW_H);
+    ctx.restore();
+    return;
+  }
+
+  // 其他状态：用 6 帧待机 sheet（循环）
+  const idleReady = xzyIdleSheetReady && xzyIdleSheet.naturalWidth > 0;
+  const srcW = idleReady ? XZY_IDLE_FRAME_W : (xzyIdleImg.naturalWidth || 80);
+  const srcH = idleReady ? XZY_IDLE_FRAME_H : (xzyIdleImg.naturalHeight || 158);
   const DRAW_W = DRAW_H * (srcW / srcH);
   const dx = x - DRAW_W / 2;
   const dy = y - DRAW_H;
@@ -2844,66 +2879,60 @@ function drawXzy(state, attacking) {
     ctx.scale(-1, 1);
     ctx.translate(-x, 0);
   }
-  if (xzyIdleImgReady && xzyIdleImg.complete && xzyIdleImg.naturalWidth > 0) {
-    ctx.imageSmoothingEnabled = false;
-    // 待机时轻微上下呼吸 bob
-    const bob = Math.sin(t / 300) * 1.5;
 
-    // 4A 磕头：前半段快速低头到底（0→peak=0.35），中段按地停留（0.35→0.65），后半段起身（0.65→1）
-    // 围绕脚底旋转前倾（shouldMirror 已经翻过，所以这里直接绕世界 x 旋转即可）
-    const KOW_TOT = 40;
-    const kt = state.kowtowT || 0;
-    if (state.atkType === 4 && kt > 0) {
-      const p = 1 - kt / KOW_TOT;         // 0 → 1
-      let bend;                           // 0=直立 1=完全低头贴地
-      if (p < 0.35)      bend = p / 0.35;
-      else if (p < 0.65) bend = 1;
-      else               bend = 1 - (p - 0.65) / 0.35;
-      // shouldMirror 之后世界坐标系被镜像过，这里用"屏幕朝向"角度：
-      // 未镜像时 facing=1，向前磕即绕脚底 -90°（沿 -z 轴 俯冲）
-      // 镜像后就反着来（shouldMirror ? +angle : -angle），但绘制 ctx 已在镜像状态，统一用 -
-      ctx.save();
-      ctx.translate(x, y);                // 脚底原点
-      ctx.rotate(-bend * Math.PI * 0.48); // 最深弯腰约 -86°
-      ctx.translate(-x, -y);
-      ctx.drawImage(xzyIdleImg, dx, dy + bob, DRAW_W, DRAW_H);
-      ctx.restore();
+  // 从 sheet/单张图 取当前帧
+  const drawChar = (extraY = 0) => {
+    ctx.imageSmoothingEnabled = false;
+    if (idleReady) {
+      const fi = Math.floor(t / (1000 / XZY_IDLE_FPS)) % XZY_IDLE_COUNT;
+      ctx.drawImage(xzyIdleSheet,
+                    fi * XZY_IDLE_FRAME_W, 0, XZY_IDLE_FRAME_W, XZY_IDLE_FRAME_H,
+                    dx, dy + extraY, DRAW_W, DRAW_H);
+    } else if (xzyIdleImgReady && xzyIdleImg.complete && xzyIdleImg.naturalWidth > 0) {
+      ctx.drawImage(xzyIdleImg, dx, dy + extraY, DRAW_W, DRAW_H);
     } else {
-      ctx.drawImage(xzyIdleImg, dx, dy + bob, DRAW_W, DRAW_H);
+      // 兜底方块
+      ctx.fillStyle = "#3f7fd8";
+      ctx.fillRect(dx + 10, dy + extraY + 40, DRAW_W - 20, DRAW_H - 40);
+      ctx.fillStyle = "#f0c4a0";
+      ctx.beginPath();
+      ctx.arc(x, dy + extraY + 30, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#e03030";
+      ctx.fillRect(dx + DRAW_W / 2 - 14, dy + extraY + 54, 28, 8);
     }
+  };
+
+  const bob = Math.sin(t / 300) * 1.5;
+  const KOW_TOT = 40;
+  const kt = state.kowtowT || 0;
+  if (state.atkType === 4 && kt > 0) {
+    // 4A 磕头：前中后三段弯腰起身
+    const p = 1 - kt / KOW_TOT;
+    let bend;
+    if (p < 0.35)      bend = p / 0.35;
+    else if (p < 0.65) bend = 1;
+    else               bend = 1 - (p - 0.65) / 0.35;
+    // 绕脚底向前弯腰：正角度=屏幕顺时针，未镜像（facing=1 朝右）时头偏右即朝前；
+    // 镜像过（facing=-1 朝左）时 scale(-1,1) 会把角度翻成逆时针 → 头偏左还是朝前。
+    // 所以无论朝向，这里都用 +bend 即可"永远朝前磕"。
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(bend * Math.PI * 0.48);
+    ctx.translate(-x, -y);
+    drawChar(bob);
+    ctx.restore();
   } else {
-    // 图未载入时的兜底方块
-    ctx.fillStyle = "#3f7fd8";
-    ctx.fillRect(dx + 10, dy + 40, DRAW_W - 20, DRAW_H - 40);
-    ctx.fillStyle = "#f0c4a0";
-    ctx.beginPath();
-    ctx.arc(x, dy + 30, 22, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#e03030";
-    ctx.fillRect(dx + DRAW_W / 2 - 14, dy + 54, 28, 8);
+    drawChar(bob);
   }
 
-  // 攻击时一圈白色冲击光晕（简易效果；动画帧后续再细化）
+  // 攻击时一圈白色冲击光晕（简易效果）
   if (attacking) {
     ctx.strokeStyle = "rgba(255,255,180,0.6)";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(x, y - DRAW_H / 2, 46 + Math.sin(t / 60) * 3, 0, Math.PI * 2);
     ctx.stroke();
-  }
-
-  // 攻击特效 —— 3A 舌头从嘴向前伸（顺着角色朝向，由外层翻转决定视觉方向）
-  if (state.atkType === 3 && state.tongueT > 0) {
-    const mouthY = dy + 48;  // 嘴大致位置（相对 dy）
-    const reach = 60;
-    ctx.fillStyle = "#c02020";
-    ctx.beginPath();
-    ctx.ellipse(x + 20 + reach / 2, mouthY, reach / 2, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ff4d79";
-    ctx.beginPath();
-    ctx.ellipse(x + 20 + reach / 2, mouthY - 2, reach / 2 - 4, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
   }
 
   ctx.restore();
@@ -3600,7 +3629,7 @@ const COMBO_NAMES = {
   xueking:  ["1A 前刺", "2A 上挑", "3A 横斩", "4A 天降"],
   zjy:      ["1A 前踢冲刺", "2A 跳踢", "3A 回旋踢", "4A 重拳", "5A 小拳拳", "6A 踢腿"],
   itachi:   ["1A 拔刀斩", "2A 双刀回旋", "3A 手里剑", "4A 豪火球", "5A 万鸦啄噬"],
-  xzy:      ["1A 巴掌", "2A 屁股顶", "3A 舌头", "4A 磕头"],
+  xzy:      ["1A 巴掌", "2A 屁股顶", "3A 蛇刺", "4A 磕头"],
 };
 
 function updateComboIndicator() {
