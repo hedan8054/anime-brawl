@@ -4882,6 +4882,105 @@ function drawDoraemon(state, attacking, tint) {
   }
 }
 
+// ===== 巧克力狗（zjy U 形态）=====
+function drawChocolateDog(state) {
+  const x = state.x, y = state.y, facing = state.facing;
+  const t = performance.now();
+  const biteFlash = Math.max(0, ((state.chocolateBiteNext || 0) - t - 400)) / 100;
+  const bodyY = y - 26 + Math.sin(t / 120) * 1.2;
+  const brown = "#6b3410";
+  const brownDk = "#3a1b08";
+  const brownLt = "#8b5a2b";
+  const shoes = "#2c1a0a";
+  ctx.save();
+  ctx.translate(x, 0);
+  ctx.scale(facing, 1);
+  // 尾巴（甩动）
+  const tailWag = Math.sin(t / 90) * 0.6;
+  ctx.save();
+  ctx.translate(-30, bodyY);
+  ctx.rotate(tailWag);
+  ctx.fillStyle = brown;
+  ctx.fillRect(-10, -2, 14, 5);
+  ctx.fillStyle = brownLt;
+  ctx.fillRect(-12, -1, 4, 3);
+  ctx.restore();
+  // 身体（椭圆）
+  ctx.fillStyle = brown;
+  ctx.beginPath();
+  ctx.ellipse(0, bodyY, 28, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // 肚子亮色
+  ctx.fillStyle = brownLt;
+  ctx.beginPath();
+  ctx.ellipse(2, bodyY + 4, 18, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // 4 条腿（前后小跑）
+  const legSwing = Math.sin(t / 100) * 3;
+  ctx.fillStyle = brownDk;
+  ctx.fillRect(-20, bodyY + 8, 6, 14 - legSwing);   // 后左
+  ctx.fillRect(-10, bodyY + 8, 6, 14 + legSwing);   // 后右
+  ctx.fillRect( 10, bodyY + 8, 6, 14 - legSwing);   // 前左
+  ctx.fillRect( 20, bodyY + 8, 6, 14 + legSwing);   // 前右
+  // 爪子
+  ctx.fillStyle = shoes;
+  ctx.fillRect(-20, bodyY + 22 - legSwing, 6, 3);
+  ctx.fillRect(-10, bodyY + 22 + legSwing, 6, 3);
+  ctx.fillRect( 10, bodyY + 22 - legSwing, 6, 3);
+  ctx.fillRect( 20, bodyY + 22 + legSwing, 6, 3);
+  // 头
+  const headX = 28, headY = bodyY - 14;
+  ctx.fillStyle = brown;
+  ctx.beginPath();
+  ctx.ellipse(headX, headY, 16, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // 嘴（咬合张合）
+  const jawOpen = biteFlash > 0 ? 4 : 1;
+  ctx.fillStyle = brownDk;
+  ctx.fillRect(headX + 8, headY + 2, 10, jawOpen);
+  // 牙
+  if (biteFlash > 0) {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(headX + 12, headY + 2, 2, 3);
+    ctx.fillRect(headX + 15, headY + 5, 2, 3);
+  }
+  // 眼睛
+  ctx.fillStyle = "#111";
+  ctx.fillRect(headX + 4, headY - 2, 2, 3);
+  ctx.fillRect(headX + 10, headY - 2, 2, 3);
+  // 耳朵（下垂 + 轻抖）
+  ctx.fillStyle = brownDk;
+  const earBob = Math.sin(t / 180) * 1.2;
+  ctx.beginPath();
+  ctx.moveTo(headX - 12, headY - 8);
+  ctx.lineTo(headX - 6, headY - 14);
+  ctx.lineTo(headX - 4, headY + 4 + earBob);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(headX + 10, headY - 12);
+  ctx.lineTo(headX + 16, headY - 14);
+  ctx.lineTo(headX + 18, headY + 2 + earBob);
+  ctx.closePath();
+  ctx.fill();
+  // 鼻子
+  ctx.fillStyle = "#111";
+  ctx.beginPath();
+  ctx.arc(headX + 15, headY - 1, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // 头顶状态文字
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "900 14px -apple-system, 'PingFang SC', sans-serif";
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#000";
+  ctx.strokeText("巧 克 力", x, y - 70);
+  ctx.fillStyle = "#ffcc66";
+  ctx.fillText("巧 克 力", x, y - 70);
+  ctx.restore();
+}
+
 // ===== 红温（zjy）=====
 // 少先队员造型：红领巾 + 蓝上衣 + 深蓝裤 + 黑发。脸色随 rageStacks 越来越红，满层冒气
 function drawZjy(state, attacking, tint) {
@@ -4893,6 +4992,12 @@ function drawZjy(state, attacking, tint) {
   const landT = state.landT || 0;
   const now = performance.now();
   const stacks = state.rageStacks || 0;
+
+  // ===== 巧克力形态 → 画一只褐色小狗 =====
+  if (now < (state.chocolateUntil || 0)) {
+    drawChocolateDog(state);
+    return;
+  }
 
   // ===== 纯待机 → 走贴图（idle_animation.gif 10 帧循环）=====
   const pureIdle = !attacking && !moving && !jumping && state.onGround
