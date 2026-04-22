@@ -1568,7 +1568,7 @@ const skillConfigs = {
     { name: "我就不!",       key: "j", cd: 8000,  icon: "📢" },
     { name: "我去你的!",     key: "k", cd: 12000, icon: "👊" },
     { name: "你叫个屁呀叫!", key: "l", cd: 10000, icon: "💨" },
-    { name: "耶!",           key: "u", cd: 20000, icon: "🙌" },
+    { name: "变成巧克力",    key: "u", cd: 20000, icon: "🐕" },
   ],
   itachi: [
     { name: "月读",     key: "j", cd: 15000, icon: "🌙" },
@@ -1642,6 +1642,8 @@ addEventListener("keydown", e => {
 function handleP2Attack() {
   if (matchEnded) return;
   if (roundCountdownActive()) return;  // 开局 3-2-1 禁操作
+  // 被"巧克力"锁死：对手是巧克力形态，P2 无法普攻
+  if (isChocolateVictim(p2)) return;
   // 张鸡块「我去你的!」狂按窗口：优先拦截，不走普攻
   if (isZjySmashing(p2)) { zjySmashBeat(p2); return; }
   // 哆啦A梦任意门窗口：按↓ → 传送到身后 + 元气波
@@ -1651,8 +1653,10 @@ function handleP2Attack() {
     return;
   }
   if (p2.atkT > 0) {
-    // 哆啦A梦：动画中按平A → 排队下一段，避免 3→4 因错过窗口而回到 1
+    // 动画中按平A → 排队下一段，避免 3→4 因错过窗口而回到 1
     if (p2.char === "doraemon" && p2.comboStage > 0 && p2.comboStage < 5 && p2.comboWindow > 0) {
+      p2.comboQueued = true;
+    } else if (p2.char === "xzy" && p2.comboStage > 0 && p2.comboStage < 4 && p2.comboWindow > 0) {
       p2.comboQueued = true;
     }
     return;
@@ -1750,6 +1754,10 @@ function castP2NarutoSkill(idx) {
 }
 
 function castP2Skill(idx) {
+  // 被"巧克力"锁死：对手是巧克力形态，P2 不能用任何技能
+  if (isChocolateVictim(p2)) return;
+  // P2 自己处于巧克力形态：只能普攻
+  if (isInChocolate(p2)) return;
   if (p2.char === "xueking") {
     castSnowkingSkill(idx, p2, player, true);
     return;
@@ -2120,6 +2128,17 @@ function isZjySmashing(entity) {
   return entity && entity.char === "zjy" && performance.now() < (entity.smashUntil || 0);
 }
 
+// 张鸡块 U「变成巧克力」形态：只能普攻撕咬，敌方所有操作锁死
+function isInChocolate(entity) {
+  return entity && entity.char === "zjy" && performance.now() < (entity.chocolateUntil || 0);
+}
+// 目标是否被"巧克力撕咬"锁死（对手正处于巧克力形态）
+function isChocolateVictim(victim) {
+  if (!victim) return false;
+  const opponent = (victim === player) ? p2 : player;
+  return isInChocolate(opponent);
+}
+
 // 窗口内按一次平A：小段伤害 + 增加累计按数
 function zjySmashBeat(caster) {
   const target = (caster === player) ? dummy : player;
@@ -2211,6 +2230,15 @@ function spawnZjyHitParticles(x, y, facing, count) {
 // 记录一次"被控时按平A"。返回 true 表示本次双击成功解控
 function registerSubstituteTap(entity, side) {
   const now = performance.now();
+  // 巧克力形态锁死：对手是巧克力，替身也禁用
+  if (isChocolateVictim(entity)) {
+    damageTexts.push({
+      x: entity.x, y: entity.y - 130,
+      vx: 0, vy: -1.6, life: 30, maxLife: 30,
+      text: "被 撕 咬!", color: "#6b3410", size: 16, crit: false,
+    });
+    return false;
+  }
   // 时空暂停期间禁用替身——这是哆啦A梦时停的设计意图：被冻住就是被冻住
   const timeStopped = side === "p1" ? now < p1FrozenUntil : now < timeFrozenUntil;
   if (timeStopped) {
@@ -2497,6 +2525,8 @@ function roundTimeIsUp() {
 }
 
 function handleNormalAttack() {
+  // 被"巧克力"锁死：对手是巧克力形态，P1 无法普攻
+  if (isChocolateVictim(player)) return;
   // 张鸡块「我去你的!」狂按窗口：优先拦截，绕开 atkT 门
   if (isZjySmashing(player)) { zjySmashBeat(player); return; }
   // 哆啦A梦任意门窗口：按 Space → 传送到身后 + 元气波击飞
@@ -2506,8 +2536,10 @@ function handleNormalAttack() {
     return;
   }
   if (player.atkT > 0) {
-    // 哆啦A梦：动画中按平A → 排队下一段，避免 3→4 因错过窗口而回到 1
+    // 动画中按平A → 排队下一段，避免 3→4 因错过窗口而回到 1
     if (selectedChar === "doraemon" && player.comboStage > 0 && player.comboStage < 5 && player.comboWindow > 0) {
+      player.comboQueued = true;
+    } else if (selectedChar === "xzy" && player.comboStage > 0 && player.comboStage < 4 && player.comboWindow > 0) {
       player.comboQueued = true;
     }
     return;
@@ -2629,7 +2661,6 @@ function handleXzyAttack(e = player) {
   const stage = e.comboStage || 0;
   e.atkType = stage + 1;
   e.atkHit = false;
-  e.comboWindow = 54;
   const target = (e === player) ? dummy : player;
 
   if (stage === 0) {
@@ -2658,6 +2689,9 @@ function handleXzyAttack(e = player) {
 
   e.x = Math.max(40, Math.min(W_WORLD - 40, e.x));
   e.comboStage = (stage + 1) % 4;
+  // 衔接窗口 = 当前段动画 + 60 帧缓冲（修 3A atkT=60 > 旧 comboWindow=54 导致超时重置）
+  e.comboWindow = e.atkT + 60;
+  e.comboQueued = false;
   if (e === player) updateComboIndicator();
   else if (e === p2) updateP2ComboIndicator();
 }
@@ -3392,16 +3426,19 @@ function updateEntityCombat(attacker, target, char) {
   if (attacker.atkT > 0) attacker.atkT--;
   if (attacker.atkT === 0 && attacker.atkType !== 0) attacker.atkType = 0;
 
-  // 哆啦A梦：平A 输入缓冲 —— 动画刚结束、排队了下一段、combo 还没走完就自动接
+  // 平A 输入缓冲 —— 动画刚结束、排队了下一段、combo 还没走完就自动接
   // 修的是 "3A 按完立刻按 4A，却因超时被当成新起的 1A" 这种体感问题
-  if (char === "doraemon" && attacker.atkT === 0 && attacker.comboQueued
-      && attacker.comboStage > 0 && attacker.comboStage < 5
-      && attacker.comboWindow > 0
+  const canAutoCombo = attacker.atkT === 0 && attacker.comboQueued
+      && attacker.comboStage > 0 && attacker.comboWindow > 0
       && attacker.onGround
       && !(attacker.stunT > 0) && !(attacker.downT > 0)
-      && !(performance.now() < (attacker.iceFrozenUntil || 0))) {
+      && !(performance.now() < (attacker.iceFrozenUntil || 0));
+  if (canAutoCombo && char === "doraemon" && attacker.comboStage < 5) {
     attacker.comboQueued = false;
     handleDoraemonAttack(attacker);
+  } else if (canAutoCombo && char === "xzy" && attacker.comboStage < 4) {
+    attacker.comboQueued = false;
+    handleXzyAttack(attacker);
   }
   if (attacker.spearT > 0) attacker.spearT--;
   if (attacker.spinT  > 0) attacker.spinT--;
@@ -3486,6 +3523,38 @@ function handleDoraemonAttack(e = player) {
 //   1A 前踢冲刺（带走目标） / 2A 跳踢（僵直） / 3A 回旋踢 2s（倒地+持续伤害）
 //   4A 重拳（击退）       / 5A 小拳拳（连击拖拽） / 6A 踢腿
 function handleZjyAttack(e = player) {
+  // 巧克力形态：普攻直接走"撕咬"分支，取代整个 6 段连招
+  const now = performance.now();
+  if (now < (e.chocolateUntil || 0)) {
+    if (now < (e.chocolateBiteNext || 0)) return;  // 0.5s 冷却
+    const target = (e === player) ? dummy : player;
+    e.chocolateBiteNext = now + 500;
+    e.atkT = 12;               // 动作提示帧
+    e.atkType = 0;             // 不计入连招
+    e.comboStage = 0; e.comboWindow = 0;
+    // 每咬一下直接 1500 伤害（绕过替身/护盾判定：target 在巧克力期不能用替身）
+    if (target === player) damagePlayer(1500);
+    else damageDummy(1500);
+    target.shakeT = Math.max(target.shakeT || 0, 16);
+    hitStopT = Math.max(hitStopT, 4);
+    // 撕咬飞溅粒子（红）
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2;
+      particles.push({
+        x: target.x + Math.cos(a) * 20,
+        y: target.y - 60 + Math.sin(a) * 20,
+        vx: Math.cos(a) * 3.2,
+        vy: Math.sin(a) * 3.2 - 1,
+        life: 28, color: i % 2 ? "#b82020" : "#ff4422", size: 3,
+      });
+    }
+    damageTexts.push({
+      x: target.x + (Math.random() - 0.5) * 20, y: target.y - 120,
+      vx: 0, vy: -2.5, life: 42, maxLife: 42,
+      text: "撕 咬!", color: "#6b3410", size: 20, crit: true,
+    });
+    return;
+  }
   const stage = e.comboStage || 0;
   e.atkType = stage + 1;
   e.atkHit = false;
@@ -3584,6 +3653,10 @@ function currentP1Keys()   { return P1_SKILL_KEYS[gameMode]; }
 function currentP1RasenKey(){ return currentP1Keys()[2]; }   // 螺旋丸索引=2
 
 function castSkill(idx) {
+  // 被"巧克力"锁死：对手是巧克力形态，P1 不能用任何技能
+  if (isChocolateVictim(player)) return;
+  // 张鸡块自己处于巧克力形态：只能普攻，不能放技能
+  if (isInChocolate(player)) return;
   if (selectedChar === "doraemon") {
     castDoraemonSkill(idx);
     return;
@@ -4319,42 +4392,37 @@ function castZjySkill(idx, caster, target) {
       text: "💨", color: "#c8d060", size: 32, crit: false,
     });
   } else if (idx === 3) {
-    // U 耶!——普攻和技能伤害 +100%，持续 6s；屏幕上方刷 6 个"耶"
-    const buffDur = 6000;
-    caster.zjyYeahBuffUntil = now + buffDur;
-    // 自身脚下金光
+    // U 变成巧克力：变成一只叫巧克力的狗，3s 内只能普攻（撕咬）
+    // 瞬移到敌人身后，咬间隔 500ms，单下 1500 伤；敌方期间不能用替身/技能/普攻
+    const backOffset = 90;
+    const toX = target.x - target.facing * backOffset;
+    caster.x = Math.max(40, Math.min(W_WORLD - 40, toX));
+    caster.facing = target.facing;             // 面朝同向，咬背后
+    caster.chocolateUntil = now + 3000;
+    caster.chocolateBiteNext = now;            // 落地就能咬
+    // 清空当前攻击/连招/状态
+    caster.atkT = 0; caster.atkType = 0; caster.atkHit = false;
+    caster.comboStage = 0; caster.comboWindow = 0;
+    caster.spearT = 0; caster.spinT = 0; caster.punchRushT = 0;
+    // 敌人脚底震一下表明被锁
+    target.shakeT = Math.max(target.shakeT || 0, 10);
+    // 巧克力旋涡 VFX
     for (let i = 0; i < 40; i++) {
       const a = (i / 40) * Math.PI * 2;
-      const r = 26 + Math.random() * 16;
+      const r = 20 + Math.random() * 40;
       particles.push({
         x: caster.x + Math.cos(a) * r,
-        y: caster.y - 4 + Math.sin(a) * r * 0.25,
-        vx: Math.cos(a) * 2.4,
-        vy: -1.5 - Math.random() * 2.2,
-        life: 50 + Math.random() * 20,
-        color: i % 2 ? "#ffdd33" : "#ffaa33",
-        size: 4 + Math.random() * 3,
+        y: caster.y - 30 + Math.sin(a) * r * 0.6,
+        vx: Math.cos(a) * 2.5,
+        vy: Math.sin(a) * 1.8 - 1.5,
+        life: 45 + Math.random() * 20,
+        color: i % 3 === 0 ? "#3a1b08" : (i % 3 === 1 ? "#6b3410" : "#8b5a2b"),
+        size: 3 + Math.random() * 3,
       });
     }
-    // 屏幕上方 6 个"耶"，横向铺开；camX+W/2 作为屏幕中心锚点
-    const screenMid = camX + W / 2;
-    for (let i = 0; i < 6; i++) {
-      damageTexts.push({
-        x: screenMid - 210 + i * 84 + (Math.random() - 0.5) * 12,
-        y: 54 + (Math.random() - 0.5) * 14,
-        vx: 0, vy: -0.2,
-        life: 150, maxLife: 150,
-        text: "耶",
-        color: i % 2 ? "#ffdd33" : "#ff6622",
-        size: 56,
-        crit: true,
-      });
-    }
-    // 头顶 "+100% 伤害" 小提示
     damageTexts.push({
-      x: caster.x, y: caster.y - 160,
-      vx: 0, vy: -2.4, life: 70, maxLife: 70,
-      text: "耶! +100% 伤害", color: "#ffaa33", size: 24, crit: true,
+      x: caster.x, y: caster.y - 170, vx: 0, vy: -2.2,
+      life: 70, maxLife: 70, text: "巧 克 力!", color: "#6b3410", size: 28, crit: true,
     });
     hitStopT = Math.max(hitStopT, 6);
   }
