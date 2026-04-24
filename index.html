@@ -1568,7 +1568,7 @@ const skillConfigs = {
     { name: "我就不!",       key: "j", cd: 8000,  icon: "📢" },
     { name: "我去你的!",     key: "k", cd: 12000, icon: "👊" },
     { name: "你叫个屁呀叫!", key: "l", cd: 10000, icon: "💨" },
-    { name: "变成巧克力",    key: "u", cd: 20000, icon: "🐕" },
+    { name: "耶!",           key: "u", cd: 15000, icon: "✌" },
   ],
   itachi: [
     { name: "月读",     key: "j", cd: 15000, icon: "🌙" },
@@ -1580,7 +1580,7 @@ const skillConfigs = {
     { name: "巨碗投掷",  key: "j", cd: 8000,  icon: "🍜" },
     { name: "KMJ 爆炸",  key: "k", cd: 14000, icon: "💥" },
     { name: "前冲突进",  key: "l", cd: 6000,  icon: "💨" },
-    { name: "鸡你太美",  key: "u", cd: 18000, icon: "🪩" },
+    { name: "变成巧克力",key: "u", cd: 20000, icon: "🐕" },
   ],
 };
 
@@ -2142,9 +2142,11 @@ function isZjySmashing(entity) {
   return entity && entity.char === "zjy" && performance.now() < (entity.smashUntil || 0);
 }
 
-// 张鸡块 U「变成巧克力」形态：只能普攻撕咬，敌方所有操作锁死
+// 「变成巧克力」形态：只能普攻撕咬，敌方所有操作锁死（zjy、xzy 共用）
 function isInChocolate(entity) {
-  return entity && entity.char === "zjy" && performance.now() < (entity.chocolateUntil || 0);
+  if (!entity) return false;
+  if (entity.char !== "zjy" && entity.char !== "xzy") return false;
+  return performance.now() < (entity.chocolateUntil || 0);
 }
 // 目标是否被"巧克力撕咬"锁死（对手正处于巧克力形态）
 function isChocolateVictim(victim) {
@@ -3144,8 +3146,9 @@ function updateEntityCombat(attacker, target, char) {
         // 3A 舌头：首击轻伤；持续伤害由 tongueT tick 分支处理
         dmg = 100; hit = true;
         target.shakeT = 8;
-      } else if (attacker.atkType === 4 && Math.abs(dx) < 120 && sameSide) {
-        // 4A 磕头：1s 眩晕（60 帧）+ 中等伤害；不击退（要让敌人原地僵直给后续连招/技能衔接）
+      } else if (attacker.atkType === 4 && Math.abs(dx) < 120 && (sameSide || Math.abs(dx) < 40)) {
+        // 4A 磕头：贴脸也要能命中（sameSide 在 dx≈0 时会因 Math.sign(0)=0 判失败），
+        // 所以放宽：40px 内无视前后都算中；1s 眩晕（60 帧）+ 中等伤害；不击退便于衔接连招
         dmg = 500; hit = true;
         if (!isInSubstitute(target)) {
           target.stunT = Math.max(target.stunT || 0, 60);
