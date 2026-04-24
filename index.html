@@ -2674,6 +2674,36 @@ function handleItachiAttack(e = player) {
 // ========== 谢只因（xzy）4 段平A + 4 技能 ==========
 // 1A 巴掌 / 2A 屁股顶（0.5s 眩晕）/ 3A 舌头（1s 持续伤害每 0.02s 25dmg）/ 4A 磕头（1s 眩晕）
 function handleXzyAttack(e = player) {
+  // 巧克力形态：普攻 → 撕咬（和张鸡块共用同一套机制）
+  const now = performance.now();
+  if (now < (e.chocolateUntil || 0)) {
+    if (now < (e.chocolateBiteNext || 0)) return;
+    const bt = (e === player) ? dummy : player;
+    e.chocolateBiteNext = now + 500;
+    e.atkT = 12;
+    e.atkType = 0;
+    e.comboStage = 0; e.comboWindow = 0;
+    if (bt === player) damagePlayer(1500);
+    else damageDummy(1500);
+    bt.shakeT = Math.max(bt.shakeT || 0, 16);
+    hitStopT = Math.max(hitStopT, 4);
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2;
+      particles.push({
+        x: bt.x + Math.cos(a) * 20,
+        y: bt.y - 60 + Math.sin(a) * 20,
+        vx: Math.cos(a) * 3.2,
+        vy: Math.sin(a) * 3.2 - 1,
+        life: 28, color: i % 2 ? "#b82020" : "#ff4422", size: 3,
+      });
+    }
+    damageTexts.push({
+      x: bt.x + (Math.random() - 0.5) * 20, y: bt.y - 120,
+      vx: 0, vy: -2.5, life: 42, maxLife: 42,
+      text: "撕 咬!", color: "#6b3410", size: 20, crit: true,
+    });
+    return;
+  }
   const stage = e.comboStage || 0;
   e.atkType = stage + 1;
   e.atkHit = false;
@@ -2789,15 +2819,38 @@ function castXzySkill(idx, caster, target) {
   }
 
   if (idx === 3) {
-    // U 鸡你太美：2 秒跳舞，身边圆形范围震荡 + 敌人眩晕 1s
-    caster.danceT = 120;         // 120 帧 ≈ 2s
-    caster.danceHit = false;
-    caster.danceWaveNext = 0;    // 下次震荡 tick
-    spawnParticles(caster.x, caster.y - 60, "#ff66cc", 24);
+    // U 变成巧克力：变成一只叫巧克力的狗，3s 内只能普攻（撕咬）
+    // 瞬移到敌人身后，咬间隔 500ms，单下 1500 伤；敌方期间不能用替身/技能/普攻
+    const backOffset = 90;
+    const toX = target.x - target.facing * backOffset;
+    caster.x = Math.max(40, Math.min(W_WORLD - 40, toX));
+    caster.facing = target.facing;
+    caster.chocolateUntil = now + 3000;
+    caster.chocolateBiteNext = now;
+    // 清空 xzy 所有攻击/连招/状态，避免遗留动画叠加
+    caster.atkT = 0; caster.atkType = 0; caster.atkHit = false;
+    caster.comboStage = 0; caster.comboWindow = 0;
+    caster.arcT = 0; caster.tongueT = 0; caster.kowtowT = 0;
+    caster.xzyDashT = 0; caster.danceT = 0;
+    target.shakeT = Math.max(target.shakeT || 0, 10);
+    for (let i = 0; i < 40; i++) {
+      const a = (i / 40) * Math.PI * 2;
+      const r = 20 + Math.random() * 40;
+      particles.push({
+        x: caster.x + Math.cos(a) * r,
+        y: caster.y - 30 + Math.sin(a) * r * 0.6,
+        vx: Math.cos(a) * 2.5,
+        vy: Math.sin(a) * 1.8 - 1.5,
+        life: 45 + Math.random() * 20,
+        color: i % 3 === 0 ? "#3a1b08" : (i % 3 === 1 ? "#6b3410" : "#8b5a2b"),
+        size: 3 + Math.random() * 3,
+      });
+    }
     damageTexts.push({
-      x: caster.x, y: caster.y - 150, vx: 0, vy: -2,
-      life: 60, maxLife: 60, text: "鸡 你 太 美", color: "#ff66cc", size: 22, crit: true,
+      x: caster.x, y: caster.y - 170, vx: 0, vy: -2.2,
+      life: 70, maxLife: 70, text: "巧 克 力!", color: "#6b3410", size: 28, crit: true,
     });
+    hitStopT = Math.max(hitStopT, 6);
     return;
   }
 }
@@ -2841,6 +2894,11 @@ function castItachiSkill(idx, caster, target) {
 function drawXzy(state, attacking) {
   const x = state.x, y = state.y, facing = state.facing;
   const t = performance.now();
+  // 巧克力形态 → 画一只褐色小狗（和张鸡块共用绘制）
+  if (t < (state.chocolateUntil || 0)) {
+    drawChocolateDog(state);
+    return;
+  }
   const DRAW_H = 180;
 
   // 3A 蛇刺：专用 7 帧 sheet 覆盖（含张嘴吐蛇的完整动画）
@@ -4424,39 +4482,46 @@ function castZjySkill(idx, caster, target) {
       text: "💨", color: "#c8d060", size: 32, crit: false,
     });
   } else if (idx === 3) {
-    // U 变成巧克力：变成一只叫巧克力的狗，3s 内只能普攻（撕咬）
-    // 瞬移到敌人身后，咬间隔 500ms，单下 1500 伤；敌方期间不能用替身/技能/普攻
-    const backOffset = 90;
-    const toX = target.x - target.facing * backOffset;
-    caster.x = Math.max(40, Math.min(W_WORLD - 40, toX));
-    caster.facing = target.facing;             // 面朝同向，咬背后
-    caster.chocolateUntil = now + 3000;
-    caster.chocolateBiteNext = now;            // 落地就能咬
-    // 清空当前攻击/连招/状态
-    caster.atkT = 0; caster.atkType = 0; caster.atkHit = false;
-    caster.comboStage = 0; caster.comboWindow = 0;
-    caster.spearT = 0; caster.spinT = 0; caster.punchRushT = 0;
-    // 敌人脚底震一下表明被锁
-    target.shakeT = Math.max(target.shakeT || 0, 10);
-    // 巧克力旋涡 VFX
-    for (let i = 0; i < 40; i++) {
-      const a = (i / 40) * Math.PI * 2;
-      const r = 20 + Math.random() * 40;
+    // U 耶!：5s 自身伤害 +100%（通过 zjyYeahBuffUntil，rageDamageMul 里统一加成）
+    caster.zjyYeahBuffUntil = now + 5000;
+    caster.atkT = Math.max(caster.atkT || 0, 14);
+    caster.invincibleUntil = Math.max(caster.invincibleUntil || 0, now + 300);
+    // 头顶「耶!」大字
+    damageTexts.push({
+      x: caster.x, y: caster.y - 170, vx: 0, vy: -2.4,
+      life: 80, maxLife: 80, text: "耶!", color: "#ffdd33", size: 36, crit: true,
+    });
+    damageTexts.push({
+      x: caster.x, y: caster.y - 130, vx: 0, vy: -1.8,
+      life: 70, maxLife: 70, text: "伤害 +100% · 5s", color: "#ff4422", size: 16, crit: false,
+    });
+    // 金色爆发粒子 + 红温火焰
+    for (let i = 0; i < 48; i++) {
+      const a = (i / 48) * Math.PI * 2;
+      const r = 18 + Math.random() * 24;
       particles.push({
         x: caster.x + Math.cos(a) * r,
-        y: caster.y - 30 + Math.sin(a) * r * 0.6,
-        vx: Math.cos(a) * 2.5,
-        vy: Math.sin(a) * 1.8 - 1.5,
-        life: 45 + Math.random() * 20,
-        color: i % 3 === 0 ? "#3a1b08" : (i % 3 === 1 ? "#6b3410" : "#8b5a2b"),
+        y: caster.y - 60 + Math.sin(a) * r * 0.7,
+        vx: Math.cos(a) * 3.2,
+        vy: Math.sin(a) * 2.4 - 1.4,
+        life: 38 + Math.random() * 20,
+        color: i % 3 === 0 ? "#ffdd33" : (i % 3 === 1 ? "#ff8833" : "#fff2a8"),
         size: 3 + Math.random() * 3,
       });
     }
-    damageTexts.push({
-      x: caster.x, y: caster.y - 170, vx: 0, vy: -2.2,
-      life: 70, maxLife: 70, text: "巧 克 力!", color: "#6b3410", size: 28, crit: true,
-    });
-    hitStopT = Math.max(hitStopT, 6);
+    // 脚下光环
+    for (let i = 0; i < 20; i++) {
+      const a = (i / 20) * Math.PI * 2;
+      particles.push({
+        x: caster.x + Math.cos(a) * 36,
+        y: caster.y - 4 + Math.sin(a) * 6,
+        vx: Math.cos(a) * 1.6,
+        vy: -1.2 - Math.random() * 1.2,
+        life: 30, color: "#ffee66", size: 3,
+      });
+    }
+    hitStopT = Math.max(hitStopT, 4);
+    shakeT = 8; shakeStrength = 4;
   }
 }
 
